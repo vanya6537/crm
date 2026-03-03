@@ -3,8 +3,21 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import laravel from 'laravel-vite-plugin';
 import { defineConfig } from 'vite';
+import path from 'path';
 
 export default defineConfig({
+    resolve: {
+        alias: {
+            '@/components': path.resolve(__dirname, './resources/js/components'),
+            '@/pages': path.resolve(__dirname, './resources/js/pages'),
+            '@/layouts': path.resolve(__dirname, './resources/js/layouts'),
+            '@/hooks': path.resolve(__dirname, './hooks'),
+            '@/lib': path.resolve(__dirname, './lib'),
+            '@/routes': path.resolve(__dirname, './resources/js/routes'),
+            '@/types': path.resolve(__dirname, './resources/js/types'),
+            '@': path.resolve(__dirname, './resources/js'),
+        },
+    },
     plugins: [
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.tsx'],

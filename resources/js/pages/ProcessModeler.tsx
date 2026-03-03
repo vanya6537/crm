@@ -438,7 +438,6 @@ export default function ProcessModelerPage() {
           </div>
         </div>
       )}
-      </div>
       </CRMLayout>
     </>
   )

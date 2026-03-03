@@ -67,10 +67,12 @@ function TooltipContent({
 }
 
 export {
+  TooltipProvider,
   Tooltip,
   TooltipTrigger,
   TooltipContent,
   type TooltipProps,
   type TooltipTriggerProps,
   type TooltipContentProps,
+  type TooltipProviderProps,
 };
