@@ -35,6 +35,11 @@ class ProcessDefinition extends Model
         return $this->hasMany(ProcessInstance::class);
     }
 
+    public function triggers(): HasMany
+    {
+        return $this->hasMany(ProcessTrigger::class);
+    }
+
     public function latestPublishedVersion()
     {
         return $this->versions()

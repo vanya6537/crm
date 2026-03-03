@@ -2,6 +2,7 @@
 
 use App\ProcessManagement\Http\Controllers\RegistryController;
 use App\ProcessManagement\Http\Controllers\OrchestratorController;
+use App\Http\Controllers\Api\V1\ProcessTriggerController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('api/v1/registry')->group(function () {
@@ -40,3 +41,33 @@ Route::prefix('api/v1/orchestrator')->group(function () {
     Route::post('/jobs/{jobId}/fail', [OrchestratorController::class, 'failJob']);
     Route::post('/jobs/{jobId}/heartbeat', [OrchestratorController::class, 'jobHeartbeat']);
 });
+
+Route::prefix('api/v1/triggers')->group(function () {
+    // Basic CRUD
+    Route::get('/', [ProcessTriggerController::class, 'index']);
+    Route::post('/', [ProcessTriggerController::class, 'store']);
+    Route::get('/{trigger}', [ProcessTriggerController::class, 'show']);
+    Route::patch('/{trigger}', [ProcessTriggerController::class, 'update']);
+    Route::delete('/{trigger}', [ProcessTriggerController::class, 'destroy']);
+    Route::post('/{trigger}/toggle', [ProcessTriggerController::class, 'toggle']);
+
+    // Trigger execution
+    Route::post('/{trigger}/execute', [ProcessTriggerController::class, 'manualExecute']);
+    Route::get('/{trigger}/history', [ProcessTriggerController::class, 'executionHistory']);
+
+    // Clone trigger
+    Route::post('/{trigger}/clone', [ProcessTriggerController::class, 'clone']);
+
+    // CRM Bindings
+    Route::post('/{trigger}/bindings', [ProcessTriggerController::class, 'createBinding']);
+    Route::patch('/bindings/{binding}', [ProcessTriggerController::class, 'updateBinding']);
+    Route::delete('/bindings/{binding}', [ProcessTriggerController::class, 'deleteBinding']);
+
+    // Queries
+    Route::get('/entity/{entityType}', [ProcessTriggerController::class, 'forEntity']);
+    Route::get('/process/{process}', [ProcessTriggerController::class, 'forProcess']);
+    Route::get('/available-events', [ProcessTriggerController::class, 'availableEvents']);
+    Route::get('/stats', [ProcessTriggerController::class, 'statistics']);
+    Route::get('/failures', [ProcessTriggerController::class, 'recentFailures']);
+});
+
