@@ -7,7 +7,7 @@ import {
   RadioGroupIndicator as RadioGroupIndicatorPrimitive,
   type RadioGroupProps as RadioGroupPrimitiveProps,
   type RadioGroupItemProps as RadioGroupItemPrimitiveProps,
-} from '@/components/animate-ui/primitives/radix/radio-group';
+} from '@/components/primitives/radix/radio-group';
 import { cn } from '@/lib/utils';
 
 type RadioGroupProps = RadioGroupPrimitiveProps;

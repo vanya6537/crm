@@ -128,8 +128,8 @@ const isMobile = useMobile()
 
 #### 1. **Dialog** (Modal Dialog)
 **Files:**
-- `components/animate-ui/primitives/radix/dialog.tsx` - Low-level primitives
-- `components/animate-ui/components/radix/dialog.tsx` - High-level component
+- `resources/js/components/primitives/radix/dialog.tsx` - Low-level primitives
+- `resources/js/components/radix/dialog.tsx` - High-level component
 - `hooks/use-controlled-state.tsx` - State management
 - `lib/get-strict-context.tsx` - Context management
 
@@ -162,10 +162,10 @@ const isMobile = useMobile()
 
 #### 2. **Alert Dialog**
 **Files:**
-- `components/animate-ui/primitives/radix/alert-dialog.tsx`
-- `components/animate-ui/components/radix/alert-dialog.tsx`
-- `components/animate-ui/components/buttons/button.tsx` - For action buttons
-- `components/animate-ui/primitives/animate/slot.tsx` - Animation wrapper
+- `resources/js/components/primitives/radix/alert-dialog.tsx`
+- `resources/js/components/radix/alert-dialog.tsx`
+- `resources/js/components/buttons/button.tsx` - For action buttons
+- `resources/js/components/primitives/animate/slot.tsx` - Animation wrapper
 
 **State Management:**
 ```typescript
@@ -198,8 +198,8 @@ const isMobile = useMobile()
 
 #### 3. **Checkbox**
 **Files:**
-- `components/animate-ui/primitives/radix/checkbox.tsx`
-- `components/animate-ui/components/radix/checkbox.tsx`
+- `resources/js/components/primitives/radix/checkbox.tsx`
+- `resources/js/components/radix/checkbox.tsx`
 - `hooks/use-controlled-state.tsx`
 
 **State Management:**
@@ -229,8 +229,8 @@ const [checked, setChecked] = useControlledState({
 
 #### 4. **Radio Group**
 **Files:**
-- `components/animate-ui/primitives/radix/radio-group.tsx`
-- `components/animate-ui/components/radix/radio-group.tsx`
+- `resources/js/components/primitives/radix/radio-group.tsx`
+- `resources/js/components/radix/radio-group.tsx`
 - `hooks/use-controlled-state.tsx`
 
 **State Management:**
@@ -260,8 +260,8 @@ const [value, setValue] = useControlledState({
 
 #### 5. **Switch** (Toggle)
 **Files:**
-- `components/animate-ui/primitives/radix/switch.tsx`
-- `components/animate-ui/components/radix/switch.tsx`
+- `resources/js/components/primitives/radix/switch.tsx`
+- `resources/js/components/radix/switch.tsx`
 - `hooks/use-controlled-state.tsx`
 
 **State Management:**
@@ -291,8 +291,8 @@ const [enabled, setEnabled] = useControlledState({
 
 #### 6. **Toggle**
 **Files:**
-- `components/animate-ui/primitives/radix/toggle.tsx`
-- `components/animate-ui/components/radix/toggle.tsx`
+- `resources/js/components/primitives/radix/toggle.tsx`
+- `resources/js/components/radix/toggle.tsx`
 - `hooks/use-controlled-state.tsx`
 
 **State Management:**
@@ -325,8 +325,8 @@ const [pressed, setPressed] = useControlledState({
 
 #### 7. **Accordion**
 **Files:**
-- `components/animate-ui/primitives/radix/accordion.tsx`
-- `components/animate-ui/components/radix/accordion.tsx`
+- `resources/js/components/primitives/radix/accordion.tsx`
+- `resources/js/components/radix/accordion.tsx`
 - `hooks/use-controlled-state.tsx`
 - `hooks/use-auto-height.tsx` - For smooth animations
 
@@ -360,8 +360,8 @@ const [expandedItems, setExpandedItems] = useControlledState({
 
 #### 8. **Tabs**
 **Files:**
-- `components/animate-ui/primitives/radix/tabs.tsx`
-- `components/animate-ui/components/radix/tabs.tsx`
+- `resources/js/components/primitives/radix/tabs.tsx`
+- `resources/js/components/radix/tabs.tsx`
 - `hooks/use-controlled-state.tsx`
 - `hooks/use-auto-height.tsx` - For smooth content transitions
 
@@ -397,8 +397,8 @@ const [activeTab, setActiveTab] = useControlledState({
 
 #### 9. **Popover**
 **Files:**
-- `components/animate-ui/primitives/radix/popover.tsx`
-- `components/animate-ui/components/radix/popover.tsx`
+- `resources/js/components/primitives/radix/popover.tsx`
+- `resources/js/components/radix/popover.tsx`
 - `hooks/use-controlled-state.tsx`
 - `lib/get-strict-context.tsx`
 
@@ -432,8 +432,8 @@ const [open, setOpen] = useControlledState({
 
 #### 10. **Hover Card**
 **Files:**
-- `components/animate-ui/primitives/radix/hover-card.tsx`
-- `components/animate-ui/components/radix/hover-card.tsx`
+- `resources/js/components/primitives/radix/hover-card.tsx`
+- `resources/js/components/radix/hover-card.tsx`
 - `hooks/use-controlled-state.tsx`
 
 **State Management:**
@@ -460,8 +460,8 @@ const [open, setOpen] = useControlledState({
 
 #### 11. **Sheet** (Drawer)
 **Files:**
-- `components/animate-ui/primitives/radix/sheet.tsx`
-- `components/animate-ui/components/radix/sheet.tsx`
+- `resources/js/components/primitives/radix/sheet.tsx`
+- `resources/js/components/radix/sheet.tsx`
 - `hooks/use-controlled-state.tsx`
 - `hooks/use-mobile.ts` - Responsive behavior
 
@@ -496,8 +496,8 @@ const [open, setOpen] = useControlledState({
 
 #### 12. **Tooltip**
 **Files:**
-- `components/animate-ui/primitives/radix/tooltip.tsx`
-- `components/animate-ui/components/radix/tooltip.tsx`
+- `resources/js/components/primitives/radix/tooltip.tsx`
+- `resources/js/components/radix/tooltip.tsx`
 - `hooks/use-controlled-state.tsx`
 - `lib/get-strict-context.tsx`
 
@@ -531,10 +531,10 @@ const [open, setOpen] = useControlledState({
 
 #### 13. **Dropdown Menu**
 **Files:**
-- `components/animate-ui/primitives/radix/dropdown-menu.tsx`
-- `components/animate-ui/components/radix/dropdown-menu.tsx`
+- `resources/js/components/primitives/radix/dropdown-menu.tsx`
+- `resources/js/components/radix/dropdown-menu.tsx`
 - `hooks/use-data-state.tsx` - For menu items
-- `components/animate-ui/primitives/effects/highlight.tsx` - For hover highlight
+- `resources/js/components/primitives/effects/highlight.tsx` - For hover highlight
 
 **State Management:**
 ```typescript
@@ -571,7 +571,7 @@ const [data, setData] = useDataState(menuItems)
 
 #### 14. **Sidebar**
 **Files:**
-- `components/animate-ui/components/radix/sidebar.tsx`
+- `resources/js/components/radix/sidebar.tsx`
 - `hooks/use-mobile.ts` - Mobile responsiveness
 - Updated: `components/ui/button.tsx`
 - Updated: `components/ui/input.tsx`
@@ -611,8 +611,8 @@ const isMobile = useMobile()
 
 #### 15. **Progress**
 **Files:**
-- `components/animate-ui/primitives/radix/progress.tsx`
-- `components/animate-ui/components/radix/progress.tsx`
+- `resources/js/components/primitives/radix/progress.tsx`
+- `resources/js/components/radix/progress.tsx`
 - `lib/get-strict-context.tsx`
 
 **State Management:**

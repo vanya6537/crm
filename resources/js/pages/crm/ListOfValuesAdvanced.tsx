@@ -9,7 +9,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
+} from '@/components/radix/dialog'
 import CRMLayout from '@/layouts/crm-layout'
 
 interface LOVItem {

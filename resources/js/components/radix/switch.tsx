@@ -5,7 +5,7 @@ import {
   SwitchThumb as SwitchThumbPrimitive,
   SwitchIcon as SwitchIconPrimitive,
   type SwitchProps as SwitchPrimitiveProps,
-} from '@/components/animate-ui/primitives/radix/switch';
+} from '@/components/primitives/radix/switch';
 import { cn } from '@/lib/utils';
 
 type SwitchProps = SwitchPrimitiveProps & {

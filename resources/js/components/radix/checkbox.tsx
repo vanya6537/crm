@@ -4,7 +4,7 @@ import {
   Checkbox as CheckboxPrimitive,
   CheckboxIndicator as CheckboxIndicatorPrimitive,
   type CheckboxProps as CheckboxPrimitiveProps,
-} from '@/components/animate-ui/primitives/radix/checkbox';
+} from '@/components/primitives/radix/checkbox';
 import { cn } from '@/lib/utils';
 import { cva, type VariantProps } from 'class-variance-authority';
 

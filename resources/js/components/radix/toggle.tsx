@@ -7,7 +7,7 @@ import {
   ToggleHighlight as ToggleHighlightPrimitive,
   type ToggleProps as TogglePrimitiveProps,
   type ToggleItemProps as ToggleItemPrimitiveProps,
-} from '@/components/animate-ui/primitives/radix/toggle';
+} from '@/components/primitives/radix/toggle';
 import { cn } from '@/lib/utils';
 
 const toggleVariants = cva(
