@@ -34,7 +34,6 @@ return new class extends Migration {
             $table->json('features_json')->nullable();
             $table->timestamps();
             $table->index(['status', 'city']);
-            $table->fullText('address', 'description');
         });
 
         Schema::create('buyers', function (Blueprint $table) {
