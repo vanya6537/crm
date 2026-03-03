@@ -39,32 +39,32 @@ import type { NavItem } from '@/types';
 
 const crmNavItems: NavItem[] = [
     {
-        title: 'Dashboard',
+        title: 'Панель управления',
         href: '/dashboard',
         icon: Home,
     },
     {
-        title: 'Properties',
+        title: 'Объекты',
         href: '/properties',
         icon: Building,
     },
     {
-        title: 'Buyers',
+        title: 'Клиенты',
         href: '/buyers',
         icon: Users,
     },
     {
-        title: 'Agents',
+        title: 'Команда',
         href: '/agents',
         icon: TrendingUp,
     },
     {
-        title: 'Transactions',
+        title: 'Сделки',
         href: '/transactions',
         icon: FileText,
     },
     {
-        title: 'List of Values',
+        title: 'Справочники',
         href: '/list-of-values',
         icon: BarChart3,
     },
@@ -72,17 +72,17 @@ const crmNavItems: NavItem[] = [
 
 const automationNavItems: NavItem[] = [
     {
-        title: 'Process Modeler',
+        title: 'Конструктор процессов',
         href: '/process-modeler',
         icon: Workflow,
     },
     {
-        title: 'Triggers',
+        title: 'Триггеры',
         href: '/triggers',
         icon: Zap,
     },
     {
-        title: 'Orchestrator',
+        title: 'Оркестратор',
         href: '/orchestrator',
         icon: BarChart3,
     },
@@ -90,7 +90,7 @@ const automationNavItems: NavItem[] = [
 
 const settingsNavItems: NavItem[] = [
     {
-        title: 'Settings',
+        title: 'Настройки',
         href: '/settings',
         icon: Settings,
     },
@@ -111,7 +111,7 @@ export function CRMSidebar() {
                                     <div className="hidden group-data-[collapsible=icon]:hidden">
                                         <span className="font-bold">CRM</span>
                                         <p className="text-xs text-muted-foreground">
-                                            Real Estate
+                                            Недвижимость
                                         </p>
                                     </div>
                                 </div>
@@ -143,7 +143,7 @@ export function CRMSidebar() {
 
                 {/* Automation & Workflows */}
                 <SidebarGroup>
-                    <SidebarGroupLabel>Automation</SidebarGroupLabel>
+                    <SidebarGroupLabel>Автоматизация</SidebarGroupLabel>
                     <SidebarMenu>
                         {automationNavItems.map((item) => (
                             <SidebarMenuItem key={item.title}>

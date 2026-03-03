@@ -17,7 +17,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('agents', 'crm/Agents')->name('crm.agents');
     Route::inertia('transactions', 'crm/Transactions')->name('crm.transactions');
     Route::inertia('settings', 'crm/Settings')->name('crm.settings');
-    Route::inertia('list-of-values', 'crm/ListOfValues')->name('crm.list-of-values');
+    Route::inertia('list-of-values', 'crm/ListOfValuesAdvanced')->name('crm.list-of-values');
     
     // Process Modeler - with triggers
     Route::inertia('process-modeler', 'ProcessModeler')->name('process-modeler');
