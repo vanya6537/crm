@@ -32,17 +32,36 @@ export function useAppearance() {
 }
 
 export function initializeTheme() {
+    console.log('%c[initializeTheme] Starting theme initialization', 'color: #0088ff; font-weight: bold');
+    
     const saved = localStorage.getItem('appearance') as Appearance | null;
+    const htmlElement = document.documentElement;
     const appearance = saved || 'light';
+    
+    console.log('%c[initializeTheme] Settings:', 'color: #0088ff', {
+        saved,
+        defaultAppearance: appearance,
+        htmlClass: htmlElement.className,
+        body: document.body.style.cssText,
+    });
+    
     applyAppearance(appearance);
+    
+    console.log('%c[initializeTheme] After apply - htmlClass:', 'color: #0088ff', htmlElement.className);
 }
 
 function applyAppearance(appearance: Appearance) {
     const htmlElement = document.documentElement;
+    
+    console.log('%c[applyAppearance] Applying appearance:', 'color: #ff8800', {
+        appearance,
+        beforeClass: htmlElement.className,
+        computedBg: getComputedStyle(htmlElement).backgroundColor,
+    });
 
     if (appearance === 'system') {
-        // Use system preference
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        console.log('%c[applyAppearance] System preference:', 'color: #ff8800', { prefersDark });
         if (prefersDark) {
             htmlElement.classList.add('dark');
         } else {
@@ -53,4 +72,10 @@ function applyAppearance(appearance: Appearance) {
     } else {
         htmlElement.classList.remove('dark');
     }
+    
+    console.log('%c[applyAppearance] After change:', 'color: #ff8800', {
+        afterClass: htmlElement.className,
+        isDark: htmlElement.classList.contains('dark'),
+        computedBgAfter: getComputedStyle(htmlElement).backgroundColor,
+    });
 }

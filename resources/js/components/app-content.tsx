@@ -6,8 +6,15 @@ type Props = React.ComponentProps<'main'> & {
 };
 
 export function AppContent({ variant = 'header', children, ...props }: Props) {
+    console.log('%c[AppContent] Rendering:', 'color: #ff00ff; font-weight: bold', {
+        variant,
+        hasChildren: !!children,
+        childrenCount: Array.isArray(children) ? children.length : 1,
+    });
+
     if (variant === 'sidebar') {
-        return <SidebarInset {...props}>{children}</SidebarInset>;
+        console.log('%c[AppContent] Using SidebarInset variant', 'color: #ff0088');
+        return <SidebarInset {...props}>{children}</SidebarInset>
     }
 
     return (

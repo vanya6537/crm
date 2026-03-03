@@ -58,6 +58,16 @@ export default function CRMDashboard({
     transactions_trend = -2,
     recent_transactions = [],
 }: CRMDashboardProps) {
+    console.log('%c[CRMDashboard] Rendering with props:', 'color: #00ff00; font-weight: bold', {
+        properties_count,
+        buyers_count,
+        agents_count,
+        pending_transactions,
+        properties_trend,
+        transactions_trend,
+        recent_transactions: recent_transactions?.length || 0,
+    });
+
     return (
         <>
             <Head title="Панель управления CRM" />

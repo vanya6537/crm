@@ -33,6 +33,8 @@ export function StatCard({
     icon,
     color = 'blue',
 }: StatCardProps) {
+    console.log('%c[StatCard] Rendering:', 'color: #00dd00', { title, value, trend, color });
+
     const isPositive = trend ? trend >= 0 : false;
 
     return (

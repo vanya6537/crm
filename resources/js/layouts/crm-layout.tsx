@@ -14,6 +14,8 @@ export default function CRMLayout({
     title,
     description,
 }: CRMLayoutProps) {
+    console.log('%c[CRMLayout] Rendering:', 'color: #00ccff; font-weight: bold', { title, description });
+
     return (
         <AppShell variant="sidebar">
             <CRMSidebar />

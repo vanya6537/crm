@@ -11,6 +11,12 @@ export function AppShell({ children, variant = 'header' }: Props) {
     const { props } = usePage();
     const sidebarOpen = (props as any)?.sidebarOpen !== false;
 
+    console.log('%c[AppShell] Rendering:', 'color: #ffaa00; font-weight: bold', {
+        variant,
+        sidebarOpen,
+        htmlClass: document.documentElement.className,
+    });
+
     if (variant === 'header') {
         return (
             <div className="flex min-h-screen w-full flex-col">{children}</div>

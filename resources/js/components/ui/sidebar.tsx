@@ -68,6 +68,14 @@ function SidebarProvider({
   const isMobile = useIsMobile()
   const [openMobile, setOpenMobile] = React.useState(false)
 
+  React.useEffect(() => {
+    console.log('%c[SidebarProvider] Mounted with props:', 'color: #cc00cc; font-weight: bold', {
+      defaultOpen,
+      isMobile,
+      hasOpenProp: !!openProp,
+    });
+  }, []);
+
   // This is the internal state of the sidebar.
   // We use openProp and setOpenProp for control from outside the component.
   const [_open, _setOpen] = React.useState(defaultOpen)
@@ -75,6 +83,7 @@ function SidebarProvider({
   const setOpen = React.useCallback(
     (value: boolean | ((value: boolean) => boolean)) => {
       const openState = typeof value === "function" ? value(open) : value
+      console.log('%c[SidebarProvider] setOpen called:', 'color: #cc00cc', { openState });
       if (setOpenProp) {
         setOpenProp(openState)
       } else {
@@ -124,6 +133,8 @@ function SidebarProvider({
     }),
     [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
   )
+
+  console.log('%c[SidebarProvider] Rendering with state:', 'color: #cc00cc', { state, open });
 
   return (
     <SidebarContext.Provider value={contextValue}>
@@ -300,7 +311,13 @@ function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
   )
 }
 
-function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
+function SidebarInset({ className, children, ...props }: React.ComponentProps<"main"> & { children?: React.ReactNode }) {
+  console.log('%c[SidebarInset] Rendering:', 'color: #00dddd; font-weight: bold', {
+    hasChildren: !!children,
+    className,
+    propsKeys: Object.keys(props),
+  });
+
   return (
     <main
       data-slot="sidebar-inset"
@@ -311,7 +328,7 @@ function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
       )}
       {...props}
     >
-      {(props as any).children}
+      {children}
     </main>
   )
 }

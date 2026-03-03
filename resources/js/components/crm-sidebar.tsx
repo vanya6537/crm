@@ -97,6 +97,8 @@ const settingsNavItems: NavItem[] = [
 ];
 
 export function CRMSidebar() {
+    console.log('%c[CRMSidebar] Rendering', 'color: #ff6600; font-weight: bold');
+
     return (
         <Sidebar collapsible="icon" variant="inset" className="border-r">
             <SidebarHeader>
