@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Head } from '@inertiajs/react'
 import { Plus, Settings, BarChart3, Zap, Filter, Search, CheckCircle2, AlertCircle } from 'lucide-react'
+import CRMLayout from '@/layouts/crm-layout'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -161,22 +162,18 @@ export default function TriggersCatalog() {
   return (
     <>
       <Head title="Триггеры для агентов" />
-      <div className="space-y-6 p-6">
-        {/* Header */}
-        <div className="flex justify-between items-start">
-          <div>
-            <h1 className="text-3xl font-bold">⚡ Каталог триггеров</h1>
-            <p className="text-gray-600 mt-1">
-              Готовые триггеры для московского агентства недвижимости
-            </p>
+      <CRMLayout
+        title="⚡ Каталог триггеров"
+        description="Готовые триггеры для московского агентства недвижимости"
+      >
+        <div className="space-y-6 p-6">
+          {/* Toolbar */}
+          <div className="flex justify-between items-start">
+            <Button onClick={() => setShowStatsDialog(true)} variant="outline" size="sm">
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Статистика
+            </Button>
           </div>
-          <Button onClick={() => setShowStatsDialog(true)} variant="outline">
-            <BarChart3 className="h-4 w-4 mr-2" />
-            Статистика
-          </Button>
-        </div>
-
-        {/* Info Box */}
         <Card className="bg-blue-50 border-blue-200">
           <CardHeader>
             <CardTitle className="text-blue-900">💡 Почему триггеры?</CardTitle>
@@ -332,6 +329,7 @@ export default function TriggersCatalog() {
           </Card>
         )}
       </div>
+    </CRMLayout>
 
       {/* Setup Dialog */}
       <Dialog open={showSetupDialog} onOpenChange={setShowSetupDialog}>

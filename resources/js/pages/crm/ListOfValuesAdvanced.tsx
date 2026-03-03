@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import CRMLayout from '@/layouts/crm-layout'
 
 interface LOVItem {
   id?: number
@@ -189,6 +190,10 @@ export default function ListOfValuesAdvancedPage() {
   return (
     <>
       <Head title="Справочники: Списки значений" />
+                  <CRMLayout
+                      title="Справочники: Списки значений"
+                      description="Управление системными и пользовательскими списками значений для использования в сущностях CRM"
+                  >
       <div className="p-6 space-y-6">
         {/* Заголовок */}
         <div className="flex justify-between items-start">
@@ -579,6 +584,7 @@ export default function ListOfValuesAdvancedPage() {
           </DialogContent>
         )}
       </Dialog>
+      </CRMLayout>
     </>
   )
 }

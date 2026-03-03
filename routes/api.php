@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\FormController;
 use App\Http\Controllers\Api\ListOfValuesController;
 use App\Http\Controllers\API\TriggerController;
+use App\Http\Controllers\API\DiagnosticsController;
 use Illuminate\Support\Facades\Route;
 
 // API v1 prefix
@@ -88,4 +89,12 @@ Route::prefix('api/v1')->middleware('auth:sanctum')->group(function () {
 
     // Webhook for incoming messages (no auth required)
     Route::post('/messengers/webhook', [FormController::class, 'receiveMessage'])->withoutMiddleware('auth:sanctum');
+});
+
+// ===== Public Diagnostics Routes (No Auth Required) =====
+Route::prefix('api/v1/diagnostics')->group(function () {
+    Route::get('/health', [DiagnosticsController::class, 'health']);
+    Route::get('/triggers-sample', [DiagnosticsController::class, 'triggersSample']);
+    Route::get('/lov-sample', [DiagnosticsController::class, 'lovSample']);
+    Route::get('/detailed', [DiagnosticsController::class, 'detailed']);
 });

@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             LOVSeeder::class,
             RealEstateSeeder::class,
+            MoscowTriggerTemplatesSeeder::class,
         ]);
     }
 }
