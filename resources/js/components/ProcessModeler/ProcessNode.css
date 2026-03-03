@@ -1,0 +1,368 @@
+/* ProcessNode - Beautiful node components */
+
+:root {
+    --color-primary: #007aff;
+    --color-success: #34c759;
+    --color-danger: #ff3b30;
+    --color-warning: #ff9500;
+    --color-info: #30b0c0;
+    --color-purple: #af52de;
+    --color-dark: #333333;
+}
+
+.process-node-wrapper {
+    position: relative;
+    user-select: none;
+}
+
+.process-node {
+    position: relative;
+    width: 160px;
+    padding: 12px;
+    background: white;
+    border: 2px solid #e5e5e7;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: grab;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    user-select: none;
+}
+
+.process-node:hover {
+    border-color: var(--node-color);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+}
+
+.process-node.selected {
+    border-color: var(--node-color);
+    box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.1), 0 4px 16px rgba(0, 0, 0, 0.15);
+    background: rgba(0, 122, 255, 0.02);
+}
+
+/* Node types with rounded shapes */
+.process-node.start,
+.process-node.end {
+    border-radius: 20px;
+    width: 140px;
+    height: 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 12px;
+}
+
+.process-node.decision {
+    width: 100px;
+    height: 100px;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 0;
+    transform: rotate(45deg);
+}
+
+.process-node.decision > * {
+    transform: rotate(-45deg);
+}
+
+.process-node.parallel_fork,
+.process-node.parallel_join {
+    width: 140px;
+    height: 60px;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 12px;
+    border-radius: 4px;
+}
+
+/* Node icon */
+.node-icon {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 18px;
+    transition: all 0.2s ease;
+}
+
+.process-node:hover .node-icon {
+    transform: scale(1.1);
+}
+
+.process-node.decision .node-icon,
+.process-node.start .node-icon,
+.process-node.end .node-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+}
+
+/* Node content */
+.node-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.node-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1d1d1f;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.node-type {
+    font-size: 11px;
+    color: #86868b;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.process-node.start .node-content,
+.process-node.end .node-content {
+    text-align: center;
+    flex: 0;
+}
+
+.process-node.decision .node-content,
+.process-node.parallel_fork .node-content,
+.process-node.parallel_join .node-content {
+    display: none;
+}
+
+/* Delete button */
+.node-delete {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    border-radius: 6px;
+    border: none;
+    background: #fee2e2;
+    color: #dc2626;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    opacity: 0;
+}
+
+.process-node.selected .node-delete {
+    opacity: 1;
+}
+
+.node-delete:hover {
+    background: #fecaca;
+    transform: scale(1.1);
+}
+
+.node-delete:active {
+    transform: scale(0.95);
+}
+
+/* Connection points */
+.connection-point {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: white;
+    border: 2px solid var(--node-color);
+    cursor: crosshair;
+    opacity: 0;
+    transition: all 0.2s ease;
+    pointer-events: auto;
+}
+
+.process-node.selected .connection-point {
+    opacity: 1;
+}
+
+.connection-point:hover {
+    width: 14px;
+    height: 14px;
+    background: var(--node-color);
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2);
+}
+
+.connection-point-top {
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.connection-point-bottom {
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.connection-point-left {
+    top: 50%;
+    left: -8px;
+    transform: translateY(-50%);
+}
+
+.connection-point-right {
+    top: 50%;
+    right: -8px;
+    transform: translateY(-50%);
+}
+
+/* Diamond shape adjustments */
+.process-node.decision .connection-point-top {
+    top: -10px;
+    left: 50%;
+}
+
+.process-node.decision .connection-point-bottom {
+    bottom: -10px;
+    left: 50%;
+}
+
+.process-node.decision .connection-point-left {
+    top: 50%;
+    left: -10px;
+}
+
+.process-node.decision .connection-point-right {
+    top: 50%;
+    right: -10px;
+}
+
+/* Tooltip */
+.node-tooltip {
+    position: absolute;
+    bottom: -40px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1d1d1f;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    white-space: nowrap;
+    z-index: 100;
+    pointer-events: none;
+    opacity: 0;
+    animation: fadeInUp 0.2s ease forwards;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+/* State-specific colors */
+.process-node.start {
+    --node-color: var(--color-success);
+}
+
+.process-node.end {
+    --node-color: var(--color-danger);
+}
+
+.process-node.service_task {
+    --node-color: var(--color-primary);
+}
+
+.process-node.script_task {
+    --node-color: var(--color-info);
+}
+
+.process-node.decision {
+    --node-color: var(--color-warning);
+}
+
+.process-node.human_task {
+    --node-color: var(--color-purple);
+}
+
+.process-node.parallel_fork,
+.process-node.parallel_join {
+    --node-color: var(--color-dark);
+}
+
+/* Focus state for keyboard navigation */
+.process-node:focus-within {
+    outline: none;
+    border-color: var(--node-color);
+    box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.2);
+}
+
+/* Disabled state */
+.process-node:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .process-node {
+        background: #1d1d1f;
+        border-color: #424245;
+        color: #f5f5f7;
+    }
+
+    .process-node:hover {
+        border-color: var(--node-color);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    }
+
+    .process-node.selected {
+        background: rgba(0, 122, 255, 0.1);
+        box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.2), 0 4px 16px rgba(0, 0, 0, 0.4);
+    }
+
+    .node-label {
+        color: #f5f5f7;
+    }
+
+    .node-type {
+        color: #a1a1a6;
+    }
+
+    .node-tooltip {
+        background: #f5f5f7;
+        color: #1d1d1f;
+    }
+}
+
+/* Animations */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.process-node {
+    animation: slideIn 0.3s ease;
+}

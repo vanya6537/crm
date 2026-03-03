@@ -1,0 +1,365 @@
+/* Toolbar - Node palette with Apple-inspired design */
+
+.toolbar {
+    width: 240px;
+    background: #f5f5f7;
+    border-right: 1px solid #e5e5e7;
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+.toolbar-header {
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e5e5e7;
+}
+
+.toolbar-header h3 {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0 0 4px 0;
+    color: #1d1d1f;
+    letter-spacing: -0.3px;
+}
+
+.toolbar-header p {
+    font-size: 12px;
+    color: #86868b;
+    margin: 0;
+}
+
+/* Group section */
+.toolbar-group {
+    margin-bottom: 12px;
+}
+
+.toolbar-group-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: #1d1d1f;
+    transition: all 0.2s ease;
+    text-align: left;
+}
+
+.toolbar-group-header:hover {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.toolbar-group-header.expanded {
+    background: rgba(0, 0, 0, 0.06);
+}
+
+.group-toggle {
+    display: inline-block;
+    transition: transform 0.2s ease;
+    font-size: 11px;
+    color: #86868b;
+}
+
+.toolbar-group-header.expanded .group-toggle {
+    transform: rotate(90deg);
+}
+
+.group-name {
+    flex: 1;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #86868b;
+}
+
+.group-count {
+    font-size: 11px;
+    color: #a1a1a6;
+    background: rgba(0, 0, 0, 0.05);
+    padding: 2px 6px;
+    border-radius: 3px;
+    min-width: 20px;
+    text-align: center;
+}
+
+/* Nodes container */
+.toolbar-nodes {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 0 8px 0;
+    margin-bottom: 8px;
+}
+
+/* Individual node button */
+.toolbar-node-button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: white;
+    border: 1px solid #e5e5e7;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+    font-family: inherit;
+}
+
+.toolbar-node-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.4s ease;
+}
+
+.toolbar-node-button:hover::before {
+    left: 100%;
+}
+
+.toolbar-node-button:hover {
+    border-color: #007aff;
+    background: rgba(0, 122, 255, 0.02);
+    box-shadow: 0 2px 8px rgba(0, 122, 255, 0.1);
+    transform: translateX(2px);
+}
+
+.toolbar-node-button:active {
+    transform: scale(0.98) translateX(2px);
+}
+
+/* Node icon */
+.node-button-icon {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 600;
+    background: linear-gradient(135deg, #f5f5f7, #e8e8ed);
+    transition: all 0.2s ease;
+}
+
+.toolbar-node-button:hover .node-button-icon {
+    background: linear-gradient(135deg, #007aff, #0051d5);
+    color: white;
+    transform: scale(1.1);
+}
+
+/* Node content */
+.node-button-content {
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+}
+
+.node-button-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #1d1d1f;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.node-button-description {
+    font-size: 11px;
+    color: #86868b;
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Plus icon */
+.node-button-plus {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    background: rgba(0, 122, 255, 0.1);
+    color: #007aff;
+    font-size: 12px;
+    font-weight: 600;
+    opacity: 0;
+    transition: all 0.2s ease;
+}
+
+.toolbar-node-button:hover .node-button-plus {
+    opacity: 1;
+    background: #007aff;
+    color: white;
+    transform: scale(1.1);
+}
+
+/* Footer */
+.toolbar-footer {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid #e5e5e7;
+    font-size: 12px;
+    color: #86868b;
+    line-height: 1.5;
+}
+
+/* Scrollbar styling */
+.toolbar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.toolbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.toolbar::-webkit-scrollbar-thumb {
+    background: #d0d0d5;
+    border-radius: 3px;
+}
+
+.toolbar::-webkit-scrollbar-thumb:hover {
+    background: #b8b8b8;
+}
+
+/* Animations */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.toolbar-nodes {
+    animation: slideDown 0.2s ease;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .toolbar {
+        background: #1d1d1f;
+        border-right-color: #424245;
+    }
+
+    .toolbar-header {
+        border-bottom-color: #424245;
+    }
+
+    .toolbar-header h3 {
+        color: #f5f5f7;
+    }
+
+    .toolbar-header p {
+        color: #a1a1a6;
+    }
+
+    .toolbar-group-header {
+        color: #f5f5f7;
+    }
+
+    .toolbar-group-header:hover {
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .toolbar-group-header.expanded {
+        background: rgba(255, 255, 255, 0.12);
+    }
+
+    .group-name,
+    .group-count {
+        color: #a1a1a6;
+    }
+
+    .group-count {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .toolbar-node-button {
+        background: #2a2a2c;
+        border-color: #424245;
+    }
+
+    .toolbar-node-button:hover {
+        border-color: #0084ff;
+        background: rgba(0, 132, 255, 0.1);
+    }
+
+    .node-button-icon {
+        background: linear-gradient(135deg, #424245, #3a3a3c);
+    }
+
+    .toolbar-node-button:hover .node-button-icon {
+        background: linear-gradient(135deg, #0084ff, #0066cc);
+    }
+
+    .node-button-label {
+        color: #f5f5f7;
+    }
+
+    .node-button-description {
+        color: #a1a1a6;
+    }
+
+    .node-button-plus {
+        background: rgba(0, 132, 255, 0.2);
+        color: #0084ff;
+    }
+
+    .toolbar-footer {
+        border-top-color: #424245;
+        color: #a1a1a6;
+    }
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .toolbar {
+        width: 200px;
+        padding: 16px 12px;
+    }
+
+    .toolbar-node-button {
+        padding: 8px 10px;
+    }
+
+    .node-button-icon {
+        width: 28px;
+        height: 28px;
+        font-size: 14px;
+    }
+
+    .node-button-label {
+        font-size: 12px;
+    }
+
+    .node-button-description {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .toolbar {
+        display: none;
+    }
+}

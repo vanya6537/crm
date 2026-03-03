@@ -1,0 +1,360 @@
+/* PropertyPanel - Configuration panel with Apple design */
+
+.property-panel {
+    width: 280px;
+    background: #f5f5f7;
+    border-left: 1px solid #e5e5e7;
+    padding: 24px 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+.panel-header {
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e5e5e7;
+}
+
+.panel-header h3 {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0 0 4px 0;
+    color: #1d1d1f;
+    letter-spacing: -0.3px;
+}
+
+.panel-header p {
+    font-size: 12px;
+    color: #86868b;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+/* Property group */
+.property-group {
+    margin-bottom: 18px;
+}
+
+.property-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #1d1d1f;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.property-help {
+    font-size: 11px;
+    color: #86868b;
+    margin-top: 4px;
+    line-height: 1.4;
+}
+
+/* Inputs */
+.property-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #e5e5e7;
+    border-radius: 6px;
+    font-size: 13px;
+    background: white;
+    color: #1d1d1f;
+    transition: all 0.2s ease;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+.property-input:focus {
+    outline: none;
+    border-color: #007aff;
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+    background: rgba(0, 122, 255, 0.02);
+}
+
+.property-input:disabled {
+    background: #f5f5f7;
+    color: #86868b;
+    cursor: not-allowed;
+}
+
+.property-textarea {
+    min-height: 80px;
+    resize: vertical;
+    font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+    font-size: 12px;
+}
+
+/* Select */
+.property-select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #e5e5e7;
+    border-radius: 6px;
+    font-size: 13px;
+    background: white;
+    color: #1d1d1f;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s ease;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231d1d1f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 20px;
+    padding-right: 32px;
+}
+
+.property-select:focus {
+    outline: none;
+    border-color: #007aff;
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+    background-color: rgba(0, 122, 255, 0.02);
+}
+
+/* Checkbox */
+.property-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    width: 100%;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.property-checkbox:hover {
+    background: rgba(0, 122, 255, 0.05);
+}
+
+.property-checkbox input {
+    cursor: pointer;
+    accent-color: #007aff;
+    width: 16px;
+    height: 16px;
+}
+
+.property-checkbox label {
+    font-size: 13px;
+    color: #1d1d1f;
+    cursor: pointer;
+    user-select: none;
+    flex: 1;
+}
+
+/* Connect section */
+.connect-section {
+    display: flex;
+    gap: 8px;
+}
+
+.connect-section .property-select {
+    flex: 1;
+}
+
+.btn-connect {
+    flex-shrink: 0;
+    padding: 8px 12px;
+    background: #007aff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-connect:hover:not(:disabled) {
+    background: #0051d5;
+    box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+}
+
+.btn-connect:active:not(:disabled) {
+    background: #0040bb;
+    transform: scale(0.98);
+}
+
+.btn-connect:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Empty state */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 20px;
+    text-align: center;
+    color: #86868b;
+}
+
+.empty-state-icon {
+    font-size: 40px;
+    margin-bottom: 12px;
+    opacity: 0.6;
+}
+
+.empty-state-text {
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+/* Scrollbar styling */
+.property-panel::-webkit-scrollbar {
+    width: 6px;
+}
+
+.property-panel::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.property-panel::-webkit-scrollbar-thumb {
+    background: #d0d0d5;
+    border-radius: 3px;
+}
+
+.property-panel::-webkit-scrollbar-thumb:hover {
+    background: #b8b8b8;
+}
+
+/* Animations */
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.property-group {
+    animation: slideInRight 0.3s ease forwards;
+}
+
+.property-group:nth-child(1) { animation-delay: 0ms; }
+.property-group:nth-child(2) { animation-delay: 50ms; }
+.property-group:nth-child(3) { animation-delay: 100ms; }
+.property-group:nth-child(4) { animation-delay: 150ms; }
+.property-group:nth-child(5) { animation-delay: 200ms; }
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .property-panel {
+        background: #1d1d1f;
+        border-left-color: #424245;
+    }
+
+    .panel-header {
+        border-bottom-color: #424245;
+    }
+
+    .panel-header h3 {
+        color: #f5f5f7;
+    }
+
+    .panel-header p {
+        color: #a1a1a6;
+    }
+
+    .property-label {
+        color: #f5f5f7;
+    }
+
+    .property-help {
+        color: #a1a1a6;
+    }
+
+    .property-input,
+    .property-select {
+        background: #2a2a2c;
+        border-color: #424245;
+        color: #f5f5f7;
+    }
+
+    .property-input:focus,
+    .property-select:focus {
+        background: rgba(0, 132, 255, 0.1);
+        border-color: #0084ff;
+        box-shadow: 0 0 0 3px rgba(0, 132, 255, 0.2);
+    }
+
+    .property-input:disabled {
+        background: #1d1d1f;
+        color: #a1a1a6;
+    }
+
+    .property-input::placeholder {
+        color: #a1a1a6;
+    }
+
+    .property-select {
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f5f5f7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    }
+
+    .property-checkbox {
+        color: #f5f5f7;
+    }
+
+    .property-checkbox:hover {
+        background: rgba(0, 132, 255, 0.1);
+    }
+
+    .property-checkbox input {
+        accent-color: #0084ff;
+    }
+
+    .property-checkbox label {
+        color: #f5f5f7;
+    }
+
+    .btn-connect {
+        background: #0084ff;
+    }
+
+    .btn-connect:hover:not(:disabled) {
+        background: #0066cc;
+    }
+
+    .empty-state {
+        color: #a1a1a6;
+    }
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .property-panel {
+        width: 240px;
+        padding: 16px 12px;
+    }
+
+    .property-group {
+        margin-bottom: 14px;
+    }
+
+    .property-label {
+        font-size: 11px;
+    }
+
+    .property-input,
+    .property-select {
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+}
+
+@media (max-width: 768px) {
+    .property-panel {
+        display: none;
+    }
+}
