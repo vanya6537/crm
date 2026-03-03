@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 export type Appearance = 'light' | 'dark' | 'system';
 
 export function useAppearance() {
-    const [appearance, setAppearance] = useState<Appearance>('system');
+    const [appearance, setAppearance] = useState<Appearance>('light');
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
@@ -12,6 +12,9 @@ export function useAppearance() {
         if (saved) {
             setAppearance(saved);
             applyAppearance(saved);
+        } else {
+            // Default to light mode
+            applyAppearance('light');
         }
         setMounted(true);
     }, []);
@@ -23,14 +26,14 @@ export function useAppearance() {
     };
 
     return {
-        appearance: mounted ? appearance : 'system',
+        appearance: mounted ? appearance : 'light',
         updateAppearance,
     };
 }
 
 export function initializeTheme() {
     const saved = localStorage.getItem('appearance') as Appearance | null;
-    const appearance = saved || 'system';
+    const appearance = saved || 'light';
     applyAppearance(appearance);
 }
 

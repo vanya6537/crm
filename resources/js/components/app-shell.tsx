@@ -8,7 +8,8 @@ type Props = {
 };
 
 export function AppShell({ children, variant = 'header' }: Props) {
-    const isOpen = usePage().props.sidebarOpen;
+    const { props } = usePage();
+    const sidebarOpen = (props as any)?.sidebarOpen !== false;
 
     if (variant === 'header') {
         return (
@@ -16,5 +17,5 @@ export function AppShell({ children, variant = 'header' }: Props) {
         );
     }
 
-    return <SidebarProvider defaultOpen={isOpen}>{children}</SidebarProvider>;
+    return <SidebarProvider defaultOpen={sidebarOpen}>{children}</SidebarProvider>;
 }
