@@ -35,13 +35,12 @@ import {
     CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
-import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
 
 const crmNavItems: NavItem[] = [
     {
         title: 'Dashboard',
-        href: dashboard(),
+        href: '/dashboard',
         icon: Home,
     },
     {
@@ -63,6 +62,11 @@ const crmNavItems: NavItem[] = [
         title: 'Transactions',
         href: '/transactions',
         icon: FileText,
+    },
+    {
+        title: 'List of Values',
+        href: '/list-of-values',
+        icon: BarChart3,
     },
 ];
 
@@ -99,7 +103,7 @@ export function CRMSidebar() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href={dashboard()} prefetch>
+                            <Link href="/dashboard" prefetch>
                                 <div className="flex items-center gap-2">
                                     <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
                                         🏢

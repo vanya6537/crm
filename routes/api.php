@@ -1,10 +1,22 @@
 <?php
 
 use App\Http\Controllers\Api\FormController;
+use App\Http\Controllers\Api\ListOfValuesController;
 use Illuminate\Support\Facades\Route;
 
 // API v1 prefix
 Route::prefix('api/v1')->middleware('auth:sanctum')->group(function () {
+    
+    // ===== List of Values Routes =====
+    Route::get('/list-of-values', [ListOfValuesController::class, 'index']);
+    Route::post('/list-of-values', [ListOfValuesController::class, 'store']);
+    Route::get('/list-of-values/{id}', [ListOfValuesController::class, 'show']);
+    Route::put('/list-of-values/{id}', [ListOfValuesController::class, 'update']);
+    Route::delete('/list-of-values/{id}', [ListOfValuesController::class, 'destroy']);
+    Route::get('/list-of-values/key/{key}', [ListOfValuesController::class, 'getByKey']);
+    Route::post('/list-of-values/{lovId}/items', [ListOfValuesController::class, 'addItem']);
+    Route::put('/list-of-values/items/{itemId}', [ListOfValuesController::class, 'updateItem']);
+    Route::delete('/list-of-values/items/{itemId}', [ListOfValuesController::class, 'deleteItem']);
     
     // ===== Form Schema Routes =====
     Route::get('/forms', [FormController::class, 'index']);

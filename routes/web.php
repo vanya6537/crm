@@ -10,12 +10,14 @@ Route::inertia('/', 'welcome', [
 Route::middleware(['auth', 'verified'])->group(function () {
     // CRM Dashboard (main dashboard)
     Route::inertia('dashboard', 'CRMDashboard')->name('dashboard');
-    Route::inertia('crm/dashboard', 'CRMDashboard')->name('crm.dashboard'); // Keep for backwards compatibility
-    Route::inertia('crm/properties', 'crm/Properties')->name('crm.properties');
-    Route::inertia('crm/buyers', 'crm/Buyers')->name('crm.buyers');
-    Route::inertia('crm/agents', 'crm/Agents')->name('crm.agents');
-    Route::inertia('crm/transactions', 'crm/Transactions')->name('crm.transactions');
-    Route::inertia('crm/settings', 'crm/Settings')->name('crm.settings');
+    
+    // CRM Pages
+    Route::inertia('properties', 'crm/Properties')->name('crm.properties');
+    Route::inertia('buyers', 'crm/Buyers')->name('crm.buyers');
+    Route::inertia('agents', 'crm/Agents')->name('crm.agents');
+    Route::inertia('transactions', 'crm/Transactions')->name('crm.transactions');
+    Route::inertia('settings', 'crm/Settings')->name('crm.settings');
+    Route::inertia('list-of-values', 'crm/ListOfValues')->name('crm.list-of-values');
     
     // Process Modeler - with triggers
     Route::inertia('process-modeler', 'ProcessModeler')->name('process-modeler');
