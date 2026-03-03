@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Head } from '@inertiajs/react'
 import { Plus, Play, Copy, Edit2, Trash2, CheckCircle2, Clock, AlertCircle } from 'lucide-react'
+import CRMLayout from '@/layouts/crm-layout'
 
 interface ProcessTemplate {
   id: string
@@ -189,6 +190,7 @@ export default function ProcessModelerPage() {
   return (
     <>
       <Head title="Конструктор процессов" />
+      <CRMLayout>
       <div className="p-6 space-y-6">
         {/* Заголовок */}
         <div className="border-b pb-6">
@@ -436,6 +438,8 @@ export default function ProcessModelerPage() {
           </div>
         </div>
       )}
+      </div>
+      </CRMLayout>
     </>
   )
 }
