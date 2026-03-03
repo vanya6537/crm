@@ -10,6 +10,14 @@ Route::inertia('/', 'welcome', [
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('dashboard', 'dashboard')->name('dashboard');
     
+    // CRM Dashboard and Pages
+    Route::inertia('crm/dashboard', 'CRMDashboard')->name('crm.dashboard');
+    Route::inertia('crm/properties', 'crm/Properties')->name('crm.properties');
+    Route::inertia('crm/buyers', 'crm/Buyers')->name('crm.buyers');
+    Route::inertia('crm/agents', 'crm/Agents')->name('crm.agents');
+    Route::inertia('crm/transactions', 'crm/Transactions')->name('crm.transactions');
+    Route::inertia('crm/settings', 'crm/Settings')->name('crm.settings');
+    
     // Process Modeler - with triggers
     Route::inertia('process-modeler', 'ProcessModeler')->name('process-modeler');
     
