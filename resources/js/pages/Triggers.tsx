@@ -3,12 +3,6 @@ import { Head } from '@inertiajs/react'
 import { Plus, Settings, BarChart3, Zap, Filter, Search, CheckCircle2, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs'
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -211,93 +205,93 @@ export default function TriggersCatalog() {
           </Button>
         </div>
 
-        {/* Category Tabs */}
-        <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8">
-            {Object.entries(categoryLabels).map(([key, label]) => (
-              <TabsTrigger key={key} value={key} className="text-xs">
-                {categoryIcons[key]} {label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-
-          {Object.keys(categoryLabels).map((category) => (
-            <TabsContent key={category} value={category} className="space-y-4">
-              {loading ? (
-                <div className="text-center py-8 text-gray-500">Загрузка...</div>
-              ) : filteredTemplates.length > 0 ? (
-                <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
-                  {filteredTemplates.map((template) => {
-                    const isActive = isTemplateActive(template.id)
-                    return (
-                      <Card key={template.id} className={isActive ? 'border-green-500 bg-green-50' : ''}>
-                        <CardHeader>
-                          <div className="flex justify-between items-start gap-2">
-                            <div className="flex-1">
-                              <CardTitle className="text-lg">{template.name}</CardTitle>
-                              <CardDescription>{template.description}</CardDescription>
-                            </div>
-                            {isActive && (
-                              <Badge className="bg-green-600">Активен</Badge>
-                            )}
-                            {template.is_recommended && (
-                              <Badge variant="secondary">⭐ Рекомендуется</Badge>
-                            )}
-                          </div>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                          <div className="text-sm">
-                            <p className="font-semibold text-gray-700">Полезно для Москвы:</p>
-                            <p className="text-gray-600">{template.moscow_use_case}</p>
-                          </div>
-
-                          <div className="text-sm">
-                            <p className="font-semibold text-gray-700">Ожидаемый эффект:</p>
-                            <p className="text-green-700 font-medium">{template.expected_impact}</p>
-                          </div>
-
-                          <div className="flex gap-2 pt-3 border-t">
-                            <Badge variant="outline" className="text-xs">
-                              {template.event_type === 'time_based' ? '⏰' : '🔔'} {template.event_type}
-                            </Badge>
-                            <Badge variant="outline" className="text-xs">
-                              {template.entity_type}
-                            </Badge>
-                          </div>
-
-                          <div className="flex gap-2 pt-3">
-                            {!isActive && (
-                              <Button
-                                size="sm"
-                                onClick={() => handleActivateTrigger(template)}
-                                className="flex-1"
-                              >
-                                <Plus className="h-4 w-4 mr-1" />
-                                Активировать
-                              </Button>
-                            )}
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="flex-1"
-                            >
-                              <Settings className="h-4 w-4 mr-1" />
-                              Настроить
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )
-                  })}
-                </div>
-              ) : (
-                <div className="text-center py-12 text-gray-500">
-                  Триггеры в этой категории не найдены
-                </div>
-              )}
-            </TabsContent>
+        {/* Category Navigation */}
+        <div className="flex gap-2 overflow-x-auto pb-4">
+          {Object.entries(categoryLabels).map(([key, label]) => (
+            <Button
+              key={key}
+              variant={selectedCategory === key ? 'default' : 'outline'}
+              onClick={() => setSelectedCategory(key)}
+              className="shrink-0"
+            >
+              {categoryIcons[key]} {label}
+            </Button>
           ))}
-        </Tabs>
+        </div>
+
+        {/* Trigger Cards */}
+        {loading ? (
+          <div className="text-center py-8 text-gray-500">Загрузка...</div>
+        ) : filteredTemplates.length > 0 ? (
+          <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
+            {filteredTemplates.map((template) => {
+              const isActive = isTemplateActive(template.id)
+              return (
+                <Card key={template.id} className={isActive ? 'border-green-500 bg-green-50' : ''}>
+                  <CardHeader>
+                    <div className="flex justify-between items-start gap-2">
+                      <div className="flex-1">
+                        <CardTitle className="text-lg">{template.name}</CardTitle>
+                        <CardDescription>{template.description}</CardDescription>
+                      </div>
+                      {isActive && (
+                        <Badge className="bg-green-600">Активен</Badge>
+                      )}
+                      {template.is_recommended && (
+                        <Badge variant="secondary">⭐ Рекомендуется</Badge>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="text-sm">
+                      <p className="font-semibold text-gray-700">Полезно для Москвы:</p>
+                      <p className="text-gray-600">{template.moscow_use_case}</p>
+                    </div>
+
+                    <div className="text-sm">
+                      <p className="font-semibold text-gray-700">Ожидаемый эффект:</p>
+                      <p className="text-green-700 font-medium">{template.expected_impact}</p>
+                    </div>
+
+                    <div className="flex gap-2 pt-3 border-t">
+                      <Badge variant="outline" className="text-xs">
+                        {template.event_type === 'time_based' ? '⏰' : '🔔'} {template.event_type}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        {template.entity_type}
+                      </Badge>
+                    </div>
+
+                    <div className="flex gap-2 pt-3">
+                      {!isActive && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleActivateTrigger(template)}
+                          className="flex-1"
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Активировать
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="flex-1"
+                      >
+                        <Settings className="h-4 w-4 mr-1" />
+                        Настроить
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-12 text-gray-500">
+            Триггеры в этой категории не найдены
+          </div>
+        )}
 
         {/* Active Triggers Section */}
         {activeTriggers.length > 0 && (
