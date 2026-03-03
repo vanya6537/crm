@@ -4,9 +4,17 @@ import { SidebarInset } from '@/components/ui/sidebar';
 import type { ReactNode } from 'react';
 
 const AppContent = ({ variant = 'header', children, ...props }: React.ComponentProps<'main'> & { variant?: 'header' | 'sidebar' }) => {
+    console.log('[AppContent] Called with:', { variant, hasChildren: !!children, propsKeys: Object.keys(props) });
     if (variant === 'sidebar') {
-        return <SidebarInset {...props}>{children}</SidebarInset>;
+        console.log('[AppContent] Using SidebarInset');
+        try {
+            return <SidebarInset {...props}>{children}</SidebarInset>;
+        } catch (err) {
+            console.error('[AppContent] Error rendering SidebarInset:', err);
+            throw err;
+        }
     }
+    console.log('[AppContent] Using main element');
     return (
         <main className="mx-auto flex h-full w-full max-w-7xl flex-1 flex-col gap-4 rounded-xl" {...props}>
             {children}
