@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from 'react'
 import { Head } from '@inertiajs/react'
-import { Plus, Edit2, Trash2, Eye, Copy, Info } from 'lucide-react'
+import { Plus, Edit2, Trash2, Eye, Copy, Info, XIcon } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 
 interface LOVItem {
   id?: number
@@ -90,7 +99,14 @@ export default function ListOfValuesAdvancedPage() {
 
       if (response.ok) {
         await fetchListOfValues()
-        closeModal()
+        setShowModal(false)
+        setIsEditing(false)
+        setCurrentLOV({
+          name: '',
+          key: '',
+          description: '',
+          items: [{ label: '', value: '', sort_order: 1 }],
+        })
       } else {
         alert('Ошибка при сохранении справочника')
       }
@@ -125,22 +141,6 @@ export default function ListOfValuesAdvancedPage() {
   const viewLOVDetails = (lov: ListOfValue) => {
     setSelectedLOV(lov)
     setShowDetailsModal(true)
-  }
-
-  const closeModal = () => {
-    setShowModal(false)
-    setIsEditing(false)
-    setCurrentLOV({
-      name: '',
-      key: '',
-      description: '',
-      items: [{ label: '', value: '', sort_order: 1 }],
-    })
-  }
-
-  const closeDetailsModal = () => {
-    setShowDetailsModal(false)
-    setSelectedLOV(null)
   }
 
   const addItem = () => {
@@ -196,7 +196,7 @@ export default function ListOfValuesAdvancedPage() {
             <h1 className="text-3xl font-bold">📋 Справочники</h1>
             <p className="text-gray-600 mt-1">Управление системными и пользовательскими списками значений для использования в сущностях CRM</p>
           </div>
-          <button
+          <Button
             onClick={() => {
               setIsEditing(false)
               setCurrentLOV({
@@ -207,11 +207,11 @@ export default function ListOfValuesAdvancedPage() {
               })
               setShowModal(true)
             }}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-md"
+            className="gap-2"
           >
             <Plus className="h-5 w-5" />
             Новый справочник
-          </button>
+          </Button>
         </div>
 
         {/* Инфо блок */}
@@ -227,36 +227,24 @@ export default function ListOfValuesAdvancedPage() {
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
           <div className="flex items-center justify-between p-4 border-b border-gray-200 gap-4">
             <div className="flex gap-2">
-              <button
+              <Button
                 onClick={() => setActiveTab('all')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  activeTab === 'all'
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                variant={activeTab === 'all' ? 'default' : 'secondary'}
               >
                 Все ({listOfValues.length})
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => setActiveTab('system')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  activeTab === 'system'
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                variant={activeTab === 'system' ? 'default' : 'secondary'}
               >
                 Системные ({listOfValues.filter(l => l.is_system).length})
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => setActiveTab('custom')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  activeTab === 'custom'
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                variant={activeTab === 'custom' ? 'default' : 'secondary'}
               >
                 Мои ({listOfValues.filter(l => !l.is_system).length})
-              </button>
+              </Button>
             </div>
             <input
               type="text"
@@ -320,28 +308,31 @@ export default function ListOfValuesAdvancedPage() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex justify-end gap-1">
-                          <button
+                          <Button
+                            size="icon"
+                            variant="ghost"
                             onClick={() => viewLOVDetails(lov)}
-                            className="inline-flex items-center gap-1 p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
                             title="Просмотреть элементы"
                           >
                             <Eye className="h-4 w-4" />
-                          </button>
-                          <button
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
                             onClick={() => editLOV(lov)}
-                            className="inline-flex items-center gap-1 p-2 text-blue-600 hover:text-blue-900 hover:bg-blue-100 rounded transition-colors"
                             title="Редактировать"
                           >
                             <Edit2 className="h-4 w-4" />
-                          </button>
+                          </Button>
                           {!lov.is_system && (
-                            <button
+                            <Button
+                              size="icon"
+                              variant="ghost"
                               onClick={() => lov.id && deleteLOV(lov.id)}
-                              className="inline-flex items-center gap-1 p-2 text-red-600 hover:text-red-900 hover:bg-red-100 rounded transition-colors"
                               title="Удалить справочник"
                             >
                               <Trash2 className="h-4 w-4" />
-                            </button>
+                            </Button>
                           )}
                         </div>
                       </td>
@@ -375,156 +366,165 @@ export default function ListOfValuesAdvancedPage() {
       </div>
 
       {/* Модаль редактирования */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-xl">
-            <div className="sticky top-0 flex justify-between items-center p-6 border-b bg-white">
-              <h2 className="text-xl font-bold">
-                {isEditing ? '📝 Редактировать справочник' : '➕ Новый справочник'}
-              </h2>
-              <button
-                onClick={closeModal}
-                className="text-gray-500 hover:text-gray-700 text-2xl leading-none"
-              >
-                ×
-              </button>
-            </div>
+      <Dialog 
+        open={showModal} 
+        onOpenChange={(open) => {
+          setShowModal(open)
+          if (!open) {
+            setIsEditing(false)
+            setCurrentLOV({
+              name: '',
+              key: '',
+              description: '',
+              items: [{ label: '', value: '', sort_order: 1 }],
+            })
+          }
+        }}
+      >
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {isEditing ? '📝 Редактировать справочник' : '➕ Новый справочник'}
+            </DialogTitle>
+          </DialogHeader>
 
-            <div className="p-6 space-y-5">
-              {/* Основная информация */}
-              <div className="space-y-4">
-                <h3 className="font-semibold text-gray-900">Основная информация</h3>
+          <div className="space-y-5">
+            {/* Основная информация */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-gray-900">Основная информация</h3>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Название справочника *</label>
-                  <input
-                    type="text"
-                    value={currentLOV.name}
-                    onChange={(e) => setCurrentLOV({ ...currentLOV, name: e.target.value })}
-                    placeholder="Например: Статусы сделок"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Технический ключ (API) *</label>
-                  <input
-                    type="text"
-                    value={currentLOV.key}
-                    onChange={(e) => setCurrentLOV({ ...currentLOV, key: e.target.value })}
-                    disabled={isEditing}
-                    placeholder="Например: deal_statuses"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg disabled:bg-gray-100 focus:outline-none focus:border-blue-500"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Используется в API для обращения к справочнику. Не может быть изменён после создания.</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Описание</label>
-                  <textarea
-                    value={currentLOV.description || ''}
-                    onChange={(e) => setCurrentLOV({ ...currentLOV, description: e.target.value })}
-                    placeholder="Введите описание справочника"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                    rows={3}
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Название справочника *</label>
+                <input
+                  type="text"
+                  value={currentLOV.name}
+                  onChange={(e) => setCurrentLOV({ ...currentLOV, name: e.target.value })}
+                  placeholder="Например: Статусы сделок"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                />
               </div>
 
-              {/* Элементы справочника */}
-              <div className="space-y-3 pt-4 border-t">
-                <div className="flex justify-between items-center">
-                  <h3 className="font-semibold text-gray-900">Элементы справочника</h3>
-                  <button
-                    onClick={addItem}
-                    className="text-sm text-blue-600 hover:text-blue-800 font-medium px-3 py-1 hover:bg-blue-50 rounded"
-                  >
-                    + Добавить элемент
-                  </button>
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Технический ключ (API) *</label>
+                <input
+                  type="text"
+                  value={currentLOV.key}
+                  onChange={(e) => setCurrentLOV({ ...currentLOV, key: e.target.value })}
+                  disabled={isEditing}
+                  placeholder="Например: deal_statuses"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg disabled:bg-gray-100 focus:outline-none focus:border-blue-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">Используется в API для обращения к справочнику. Не может быть изменён после создания.</p>
+              </div>
 
-                <div className="space-y-2 max-h-72 overflow-y-auto">
-                  {currentLOV.items.map((item, idx) => (
-                    <div key={idx} className="flex gap-2 items-end bg-gray-50 p-3 rounded-lg">
-                      <div className="flex-1">
-                        <label className="text-xs text-gray-600 font-medium">Название</label>
-                        <input
-                          type="text"
-                          placeholder="Например: Согласование"
-                          value={item.label}
-                          onChange={(e) => updateItem(idx, 'label', e.target.value)}
-                          className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500"
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <label className="text-xs text-gray-600 font-medium">Значение (API)</label>
-                        <input
-                          type="text"
-                          placeholder="agreement"
-                          value={item.value}
-                          onChange={(e) => updateItem(idx, 'value', e.target.value)}
-                          className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm font-mono focus:outline-none focus:border-blue-500"
-                        />
-                      </div>
-                      <div className="w-20">
-                        <label className="text-xs text-gray-600 font-medium">Порядок</label>
-                        <input
-                          type="number"
-                          placeholder="0"
-                          value={item.sort_order || 0}
-                          onChange={(e) => updateItem(idx, 'sort_order', parseInt(e.target.value))}
-                          className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500"
-                        />
-                      </div>
-                      {currentLOV.items.length > 1 && (
-                        <button
-                          onClick={() => removeItem(idx)}
-                          className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-100 rounded transition-colors"
-                          title="Удалить элемент"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Описание</label>
+                <textarea
+                  value={currentLOV.description || ''}
+                  onChange={(e) => setCurrentLOV({ ...currentLOV, description: e.target.value })}
+                  placeholder="Введите описание справочника"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                  rows={3}
+                />
+              </div>
+            </div>
+
+            {/* Элементы справочника */}
+            <div className="space-y-3 pt-4 border-t">
+              <div className="flex justify-between items-center">
+                <h3 className="font-semibold text-gray-900">Элементы справочника</h3>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={addItem}
+                >
+                  + Добавить элемент
+                </Button>
+              </div>
+
+              <div className="space-y-2 max-h-72 overflow-y-auto">
+                {currentLOV.items.map((item, idx) => (
+                  <div key={idx} className="flex gap-2 items-end bg-gray-50 p-3 rounded-lg">
+                    <div className="flex-1">
+                      <label className="text-xs text-gray-600 font-medium">Название</label>
+                      <input
+                        type="text"
+                        placeholder="Например: Согласование"
+                        value={item.label}
+                        onChange={(e) => updateItem(idx, 'label', e.target.value)}
+                        className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500"
+                      />
                     </div>
-                  ))}
-                </div>
+                    <div className="flex-1">
+                      <label className="text-xs text-gray-600 font-medium">Значение (API)</label>
+                      <input
+                        type="text"
+                        placeholder="agreement"
+                        value={item.value}
+                        onChange={(e) => updateItem(idx, 'value', e.target.value)}
+                        className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm font-mono focus:outline-none focus:border-blue-500"
+                      />
+                    </div>
+                    <div className="w-20">
+                      <label className="text-xs text-gray-600 font-medium">Порядок</label>
+                      <input
+                        type="number"
+                        placeholder="0"
+                        value={item.sort_order || 0}
+                        onChange={(e) => updateItem(idx, 'sort_order', parseInt(e.target.value))}
+                        className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500"
+                      />
+                    </div>
+                    {currentLOV.items.length > 1 && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => removeItem(idx)}
+                        title="Удалить элемент"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
               </div>
-            </div>
-
-            {/* Кнопки действия */}
-            <div className="sticky bottom-0 flex gap-3 justify-end p-6 border-t bg-white">
-              <button
-                onClick={closeModal}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium"
-              >
-                Отмена
-              </button>
-              <button
-                onClick={saveLOV}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
-              >
-                {isEditing ? 'Сохранить изменения' : 'Создать справочник'}
-              </button>
             </div>
           </div>
-        </div>
-      )}
+
+          {/* Кнопки действия */}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowModal(false)}
+            >
+              Отмена
+            </Button>
+            <Button
+              onClick={saveLOV}
+            >
+              {isEditing ? 'Сохранить изменения' : 'Создать справочник'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Модаль просмотра деталей */}
-      {showDetailsModal && selectedLOV && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto shadow-xl">
-            <div className="sticky top-0 flex justify-between items-center p-6 border-b bg-white">
-              <h2 className="text-xl font-bold">👁️ {selectedLOV.name}</h2>
-              <button
-                onClick={closeDetailsModal}
-                className="text-gray-500 hover:text-gray-700 text-2xl leading-none"
-              >
-                ×
-              </button>
-            </div>
+      <Dialog 
+        open={showDetailsModal} 
+        onOpenChange={(open) => {
+          setShowDetailsModal(open)
+          if (!open) {
+            setSelectedLOV(null)
+          }
+        }}
+      >
+        {selectedLOV && (
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>👁️ {selectedLOV.name}</DialogTitle>
+            </DialogHeader>
 
-            <div className="p-6 space-y-4">
+            <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-xs font-semibold text-gray-600 uppercase">Ключ (API)</p>
@@ -532,9 +532,7 @@ export default function ListOfValuesAdvancedPage() {
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-gray-600 uppercase">Тип</p>
-                  <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${
-                    selectedLOV.is_system ? 'bg-blue-100 text-blue-800' : 'bg-emerald-100 text-emerald-800'
-                  }`}>
+                  <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${selectedLOV.is_system ? 'bg-blue-100 text-blue-800' : 'bg-emerald-100 text-emerald-800'}`}>
                     {selectedLOV.is_system ? '🔒 Система' : '✎ Пользовательский'}
                   </span>
                 </div>
@@ -570,17 +568,17 @@ export default function ListOfValuesAdvancedPage() {
               </div>
             </div>
 
-            <div className="sticky bottom-0 flex gap-3 justify-end p-6 border-t bg-white">
-              <button
-                onClick={closeDetailsModal}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium"
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowDetailsModal(false)}
               >
                 Закрыть
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        )}
+      </Dialog>
     </>
   )
 }
