@@ -134,7 +134,13 @@ function SidebarProvider({
     [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
   )
 
-  console.log('%c[SidebarProvider] Rendering with state:', 'color: #cc00cc', { state, open });
+  console.log('%c[SidebarProvider] Rendering with state:', 'color: #cc00cc', { 
+    state, 
+    open,
+    hasChildren: !!children,
+    childrenIsArray: Array.isArray(children),
+    childrenLength: Array.isArray(children) ? children.length : (children ? 1 : 0),
+  });
 
   return (
     <SidebarContext.Provider value={contextValue}>
@@ -312,25 +318,32 @@ function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
 }
 
 function SidebarInset({ className, children, ...props }: React.ComponentProps<"main"> & { children?: React.ReactNode }) {
-  console.log('%c[SidebarInset] Rendering:', 'color: #00dddd; font-weight: bold', {
-    hasChildren: !!children,
-    className,
-    propsKeys: Object.keys(props),
-  });
+  try {
+    console.log('%c[SidebarInset] Rendering:', 'color: #00dddd; font-weight: bold', {
+      hasChildren: !!children,
+      childrenType: typeof children,
+      className,
+      propsKeys: Object.keys(props),
+      classNameType: typeof className,
+    });
 
-  return (
-    <main
-      data-slot="sidebar-inset"
-      className={cn(
-        "bg-background relative flex max-w-full min-h-svh flex-1 flex-col",
-        "peer-data-[variant=inset]:min-h-[calc(100svh-(--spacing(4)))] md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-0",
-        className
-      )}
-      {...props}
-    >
-      {children}
-    </main>
-  )
+    return (
+      <main
+        data-slot="sidebar-inset"
+        className={cn(
+          "bg-background relative flex max-w-full min-h-svh flex-1 flex-col",
+          "peer-data-[variant=inset]:min-h-[calc(100svh-(--spacing(4)))] md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-0",
+          className
+        )}
+        {...props}
+      >
+        {children}
+      </main>
+    );
+  } catch (error) {
+    console.error('%c[SidebarInset] ERROR:', 'color: #dd0000; font-weight: bold', error);
+    throw error;
+  }
 }
 
 function SidebarInput({

@@ -8,20 +8,30 @@ type Props = {
 };
 
 export function AppShell({ children, variant = 'header' }: Props) {
-    const { props } = usePage();
-    const sidebarOpen = (props as any)?.sidebarOpen !== false;
+    try {
+        const { props } = usePage();
+        const sidebarOpen = (props as any)?.sidebarOpen !== false;
 
-    console.log('%c[AppShell] Rendering:', 'color: #ffaa00; font-weight: bold', {
-        variant,
-        sidebarOpen,
-        htmlClass: document.documentElement.className,
-    });
+        console.log('%c[AppShell] Rendering:', 'color: #ffaa00; font-weight: bold', {
+            variant,
+            sidebarOpen,
+            hasChildren: !!children,
+            childrenIsArray: Array.isArray(children),
+            childrenLength: Array.isArray(children) ? children.length : 1,
+            htmlClass: document.documentElement.className,
+        });
 
-    if (variant === 'header') {
-        return (
-            <div className="flex min-h-screen w-full flex-col">{children}</div>
-        );
+        if (variant === 'header') {
+            console.log('%c[AppShell] Using header variant', 'color: #ffaa00');
+            return (
+                <div className="flex min-h-screen w-full flex-col">{children}</div>
+            );
+        }
+
+        console.log('%c[AppShell] Using sidebar variant, passing to SidebarProvider', 'color: #ffaa00');
+        return <SidebarProvider defaultOpen={sidebarOpen}>{children}</SidebarProvider>;
+    } catch (error) {
+        console.error('[AppShell] ERROR:', error);
+        throw error;
     }
-
-    return <SidebarProvider defaultOpen={sidebarOpen}>{children}</SidebarProvider>;
 }
