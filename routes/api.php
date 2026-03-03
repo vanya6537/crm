@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\FormController;
 use App\Http\Controllers\Api\ListOfValuesController;
+use App\Http\Controllers\API\TriggerController;
 use Illuminate\Support\Facades\Route;
 
 // API v1 prefix
@@ -17,6 +18,32 @@ Route::prefix('api/v1')->middleware('auth:sanctum')->group(function () {
     Route::post('/list-of-values/{lovId}/items', [ListOfValuesController::class, 'addItem']);
     Route::put('/list-of-values/items/{itemId}', [ListOfValuesController::class, 'updateItem']);
     Route::delete('/list-of-values/items/{itemId}', [ListOfValuesController::class, 'deleteItem']);
+    
+    // ===== Trigger Routes =====
+    Route::prefix('triggers')->group(function () {
+        // Template operations
+        Route::get('/templates', [TriggerController::class, 'listTemplates']);
+        Route::get('/templates/category/{category}', [TriggerController::class, 'getByCategory']);
+        Route::get('/templates/recommended', [TriggerController::class, 'getRecommended']);
+        Route::get('/templates/{templateId}', [TriggerController::class, 'getTemplate']);
+
+        // Active triggers
+        Route::get('/', [TriggerController::class, 'getActiveTriggers']);
+        Route::post('/', [TriggerController::class, 'activateTrigger']);
+        Route::post('/{triggerId}', [TriggerController::class, 'updateTrigger']);
+        Route::delete('/{triggerId}', [TriggerController::class, 'deleteTrigger']);
+
+        // Control operations
+        Route::post('/{triggerId}/enable', [TriggerController::class, 'enableTrigger']);
+        Route::post('/{triggerId}/disable', [TriggerController::class, 'disableTrigger']);
+
+        // Bulk operations
+        Route::post('/agent/{agentId}/recommended-set', [TriggerController::class, 'activateRecommendedSet']);
+
+        // Analytics
+        Route::get('/logs/executions', [TriggerController::class, 'getExecutionLogs']);
+        Route::get('/stats', [TriggerController::class, 'getStatistics']);
+    });
     
     // ===== Form Schema Routes =====
     Route::get('/forms', [FormController::class, 'index']);
