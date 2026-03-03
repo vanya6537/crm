@@ -14,7 +14,7 @@ export default function TriggersPage({
 }: TriggersPageProps) {
     return (
         <>
-            <Head title="Process Triggers" />
+            <Head title="Триггеры для пюцессов" />
             <ProcessModelerNav />
             <div style={{ height: 'calc(100vh - 56px)', width: '100%', padding: '16px', overflowY: 'auto' }}>
                 <TriggerBuilder

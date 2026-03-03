@@ -17,16 +17,16 @@ import { Separator } from '@/components/ui/separator';
 export default function CRMSettings() {
     return (
         <>
-            <Head title="CRM Settings" />
+            <Head title="Настройки CRM" />
             <CRMLayout
-                title="Settings"
-                description="Manage your CRM preferences and configuration"
+                title="Настройки"
+                description="Онастрайвайте предпочтения и конфигурацию CRM"
             >
                 <div className="flex flex-col gap-6 p-4 md:p-6 max-w-2xl">
                     {/* Company Settings */}
                     <Card className="p-6 border-sidebar-border/70 dark:border-sidebar-border">
                         <h3 className="text-lg font-semibold text-foreground mb-4">
-                            Company Information
+                            Информация компании
                         </h3>
                         <Separator className="mb-4" />
                         <div className="space-y-4">
@@ -35,11 +35,11 @@ export default function CRMSettings() {
                                     htmlFor="company-name"
                                     className="text-sm font-medium"
                                 >
-                                    Company Name
+                                    Наименование компании
                                 </Label>
                                 <Input
                                     id="company-name"
-                                    placeholder="Your company name"
+                                    placeholder="Название вашей компании"
                                     className="mt-2"
                                 />
                             </div>
@@ -48,12 +48,12 @@ export default function CRMSettings() {
                                     htmlFor="company-email"
                                     className="text-sm font-medium"
                                 >
-                                    Company Email
+                                    Почта компании
                                 </Label>
                                 <Input
                                     id="company-email"
                                     type="email"
-                                    placeholder="company@example.com"
+                                    placeholder="info@company.ru"
                                     className="mt-2"
                                 />
                             </div>
@@ -62,11 +62,11 @@ export default function CRMSettings() {
                                     htmlFor="company-phone"
                                     className="text-sm font-medium"
                                 >
-                                    Company Phone
+                                    Телефон компании
                                 </Label>
                                 <Input
                                     id="company-phone"
-                                    placeholder="+1 (555) 000-0000"
+                                    placeholder="+7 (999) 999-99-99"
                                     className="mt-2"
                                 />
                             </div>
@@ -76,17 +76,17 @@ export default function CRMSettings() {
                     {/* Notification Settings */}
                     <Card className="p-6 border-sidebar-border/70 dark:border-sidebar-border">
                         <h3 className="text-lg font-semibold text-foreground mb-4">
-                            Notification Preferences
+                            Предпочтения уведомлений
                         </h3>
                         <Separator className="mb-4" />
                         <div className="space-y-4">
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="font-medium text-foreground">
-                                        Email Notifications
+                                        Уведомления по почте
                                     </p>
                                     <p className="text-sm text-muted-foreground">
-                                        Receive email updates about transactions
+                                        Получать обновления о сделках
                                     </p>
                                 </div>
                                 <input
@@ -99,10 +99,10 @@ export default function CRMSettings() {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="font-medium text-foreground">
-                                        Task Reminders
+                                        Напоминания о задачах
                                     </p>
                                     <p className="text-sm text-muted-foreground">
-                                        Get reminded about upcoming tasks
+                                        Получать напоминания о предстоящих моренях
                                     </p>
                                 </div>
                                 <input
@@ -115,10 +115,10 @@ export default function CRMSettings() {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="font-medium text-foreground">
-                                        Weekly Reports
+                                        Еженедельные отчёты
                                     </p>
                                     <p className="text-sm text-muted-foreground">
-                                        Receive weekly performance reports
+                                        Получать итоговые отчёты на неделю
                                     </p>
                                 </div>
                                 <input
@@ -133,15 +133,15 @@ export default function CRMSettings() {
                     {/* Display Settings */}
                     <Card className="p-6 border-sidebar-border/70 dark:border-sidebar-border">
                         <h3 className="text-lg font-semibold text-foreground mb-4">
-                            Display Settings
+                            Параметры отображения
                         </h3>
                         <Separator className="mb-4" />
                         <div className="space-y-4">
                             <div>
                                 <Label htmlFor="currency" className="text-sm font-medium">
-                                    Currency
+                                    Валюта
                                 </Label>
-                                <Select defaultValue="usd">
+                                <Select defaultValue="rub">
                                     <SelectTrigger
                                         id="currency"
                                         className="mt-2"
@@ -149,14 +149,14 @@ export default function CRMSettings() {
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
+                                        <SelectItem value="rub">
+                                            RUB (₽)
+                                        </SelectItem>
                                         <SelectItem value="usd">
                                             USD ($)
                                         </SelectItem>
                                         <SelectItem value="eur">
                                             EUR (€)
-                                        </SelectItem>
-                                        <SelectItem value="gbp">
-                                            GBP (£)
                                         </SelectItem>
                                     </SelectContent>
                                 </Select>
@@ -166,9 +166,9 @@ export default function CRMSettings() {
                                     htmlFor="date-format"
                                     className="text-sm font-medium"
                                 >
-                                    Date Format
+                                    Формат даты
                                 </Label>
-                                <Select defaultValue="mdy">
+                                <Select defaultValue="dmy">
                                     <SelectTrigger
                                         id="date-format"
                                         className="mt-2"
@@ -176,11 +176,11 @@ export default function CRMSettings() {
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
+                                        <SelectItem value="dmy">
+                                            DD.MM.YYYY
+                                        </SelectItem>
                                         <SelectItem value="mdy">
                                             MM/DD/YYYY
-                                        </SelectItem>
-                                        <SelectItem value="dmy">
-                                            DD/MM/YYYY
                                         </SelectItem>
                                         <SelectItem value="ymd">
                                             YYYY-MM-DD
@@ -194,7 +194,7 @@ export default function CRMSettings() {
                     {/* Save Button */}
                     <Button className="gap-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white w-full md:w-auto">
                         <Save className="h-4 w-4" />
-                        Save Settings
+                        Сохранить настройки
                     </Button>
                 </div>
             </CRMLayout>

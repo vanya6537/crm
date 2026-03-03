@@ -15,40 +15,40 @@ import {
 export default function Buyers() {
     return (
         <>
-            <Head title="Buyers" />
+            <Head title="клиенты и лиды" />
             <CRMLayout
-                title="Buyers"
-                description="Manage all your buyer contacts and leads"
+                title="Клиенты"
+                description="Управляйте контактами клиентов и лидами"
             >
                 <div className="flex flex-col gap-4 p-4 md:p-6">
                     {/* Toolbar */}
                     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                         <div className="flex flex-col gap-2 md:flex-row md:gap-3 flex-1">
                             <Input
-                                placeholder="Search buyers..."
+                                placeholder="Поиск клиентов..."
                                 className="md:w-80"
                             />
                             <Select>
                                 <SelectTrigger className="w-full md:w-40">
-                                    <SelectValue placeholder="Filter by status" />
+                                    <SelectValue placeholder="Фильтр по статусу" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">All</SelectItem>
+                                    <SelectItem value="all">Все</SelectItem>
                                     <SelectItem value="active">
-                                        Active
+                                        Активные
                                     </SelectItem>
                                     <SelectItem value="inactive">
-                                        Inactive
+                                        Неактивные
                                     </SelectItem>
                                     <SelectItem value="converted">
-                                        Converted
+                                        Конвертированные
                                     </SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
                         <Button className="gap-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white">
                             <Plus className="h-4 w-4" />
-                            Add Buyer
+                            Добавить клиента
                         </Button>
                     </div>
 
@@ -56,14 +56,14 @@ export default function Buyers() {
                     <Card className="flex flex-col items-center justify-center py-16 border-sidebar-border/70 dark:border-sidebar-border">
                         <Users className="h-12 w-12 text-muted-foreground mb-4" />
                         <h3 className="text-lg font-semibold text-foreground mb-2">
-                            No buyers yet
+                            Клиенты ещё не добавлены
                         </h3>
                         <p className="text-muted-foreground mb-6">
-                            Start by adding your first buyer to manage leads
+                            Начните с добавления первого клиента для управления лидами
                         </p>
                         <Button className="gap-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white">
                             <Plus className="h-4 w-4" />
-                            Add Your First Buyer
+                            Добавить первого клиента
                         </Button>
                     </Card>
                 </div>

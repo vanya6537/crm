@@ -10,7 +10,7 @@ interface DesignerPageProps {
 export default function DesignerPage({ processId }: DesignerPageProps) {
     return (
         <>
-            <Head title="Process Designer" />
+            <Head title="Дизайнер процессов" />
             <ProcessModelerNav />
             <div style={{ height: 'calc(100vh - 56px)', width: '100%' }}>
                 <ProcessCanvas />

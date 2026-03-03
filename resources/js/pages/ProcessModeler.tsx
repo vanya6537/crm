@@ -14,7 +14,7 @@ export default function ProcessModelerPage({
 }: ProcessModelerPageProps) {
     return (
         <>
-            <Head title="Process Modeler" />
+            <Head title="Конструктор процессов" />
             <ProcessModelerNav />
             <div style={{ height: 'calc(100vh - 56px)', width: '100%' }}>
                 <ProcessModelerWithTriggers

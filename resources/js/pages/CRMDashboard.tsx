@@ -38,9 +38,9 @@ const statusIcons = {
 };
 
 const statusLabels = {
-    pending: 'Pending',
-    in_progress: 'In Progress',
-    completed: 'Completed',
+    pending: 'Ожидание',
+    in_progress: 'В процессе',
+    completed: 'Завершено',
 };
 
 const statusColors = {
@@ -60,16 +60,16 @@ export default function CRMDashboard({
 }: CRMDashboardProps) {
     return (
         <>
-            <Head title="CRM Dashboard" />
+            <Head title="Панель управления CRM" />
             <CRMLayout
-                title="Dashboard"
-                description="Welcome back! Here's your CRM overview"
+                title="Панель управления"
+                description="Добро пожаловать! Обзор вашей CRM системы"
             >
                 <div className="flex flex-col gap-6 p-4 md:p-6">
                     {/* Stats Grid */}
                     <div className="grid gap-4 md:grid-cols-4">
                         <StatCard
-                            title="Total Properties"
+                            title="Всего объектов"
                             value={properties_count}
                             trend={properties_trend}
                             icon={
@@ -78,14 +78,14 @@ export default function CRMDashboard({
                             color="blue"
                         />
                         <StatCard
-                            title="Active Buyers"
+                            title="Активные клиенты"
                             value={buyers_count}
                             trend={3}
                             icon={<Users className="h-6 w-6 text-green-500" />}
                             color="green"
                         />
                         <StatCard
-                            title="Team Members"
+                            title="Агенты в команде"
                             value={agents_count}
                             trend={0}
                             icon={
@@ -94,7 +94,7 @@ export default function CRMDashboard({
                             color="purple"
                         />
                         <StatCard
-                            title="Pending Deals"
+                            title="Сделки в процессе"
                             value={pending_transactions}
                             trend={transactions_trend}
                             icon={
@@ -109,7 +109,7 @@ export default function CRMDashboard({
                         {/* Quick Actions */}
                         <Card className="p-6 border-sidebar-border/70 dark:border-sidebar-border md:col-span-1">
                             <h3 className="text-lg font-semibold text-foreground mb-4">
-                                Quick Actions
+                                Быстрые действия
                             </h3>
                             <div className="flex flex-col gap-3">
                                 <Button
@@ -117,28 +117,28 @@ export default function CRMDashboard({
                                     className="w-full justify-start text-left"
                                 >
                                     <Home className="mr-2 h-4 w-4" />
-                                    Add Property
+                                    Добавить объект
                                 </Button>
                                 <Button
                                     variant="outline"
                                     className="w-full justify-start text-left"
                                 >
                                     <Users className="mr-2 h-4 w-4" />
-                                    Add Buyer
+                                    Добавить клиента
                                 </Button>
                                 <Button
                                     variant="outline"
                                     className="w-full justify-start text-left"
                                 >
                                     <Calendar className="mr-2 h-4 w-4" />
-                                    New Transaction
+                                    Новая сделка
                                 </Button>
                                 <Button
                                     variant="outline"
                                     className="w-full justify-start text-left"
                                 >
                                     <TrendingUp className="mr-2 h-4 w-4" />
-                                    View Reports
+                                    Смотреть отчёты
                                 </Button>
                             </div>
                         </Card>
@@ -147,14 +147,14 @@ export default function CRMDashboard({
                         <Card className="p-6 border-sidebar-border/70 dark:border-sidebar-border md:col-span-2">
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="text-lg font-semibold text-foreground">
-                                    Recent Transactions
+                                    Недавние сделки
                                 </h3>
                                 <Button
                                     variant="ghost"
                                     size="sm"
                                     className="gap-2"
                                 >
-                                    View All
+                                    Все сделки
                                     <ArrowRight className="h-4 w-4" />
                                 </Button>
                             </div>
@@ -208,7 +208,7 @@ export default function CRMDashboard({
                             ) : (
                                 <div className="text-center py-8">
                                     <p className="text-muted-foreground">
-                                        No recent transactions
+                                        Нет недавних сделок
                                     </p>
                                 </div>
                             )}
@@ -218,12 +218,12 @@ export default function CRMDashboard({
                     {/* Performance Overview */}
                     <Card className="p-6 border-sidebar-border/70 dark:border-sidebar-border">
                         <h3 className="text-lg font-semibold text-foreground mb-4">
-                            Performance Metrics
+                            Ключевые показатели
                         </h3>
                         <div className="grid gap-6 md:grid-cols-3">
                             <div>
                                 <p className="text-sm font-medium text-muted-foreground">
-                                    Conversion Rate
+                                    Коэффициент конверсии
                                 </p>
                                 <div className="mt-2 flex items-baseline gap-2">
                                     <p className="text-2xl font-bold text-foreground">
@@ -239,11 +239,11 @@ export default function CRMDashboard({
                             </div>
                             <div>
                                 <p className="text-sm font-medium text-muted-foreground">
-                                    Avg. Deal Value
+                                    Средняя стоимость сделки
                                 </p>
                                 <div className="mt-2 flex items-baseline gap-2">
                                     <p className="text-2xl font-bold text-foreground">
-                                        $325K
+                                        ₽ 27M
                                     </p>
                                     <Badge variant="secondary" className="bg-blue-500/20 text-blue-700 dark:text-blue-200">
                                         +12%
@@ -255,7 +255,7 @@ export default function CRMDashboard({
                             </div>
                             <div>
                                 <p className="text-sm font-medium text-muted-foreground">
-                                    Closed Deals (Month)
+                                    Завершённые сделки (месяц)
                                 </p>
                                 <div className="mt-2 flex items-baseline gap-2">
                                     <p className="text-2xl font-bold text-foreground">
