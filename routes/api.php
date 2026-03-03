@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\FormController;
 use App\Http\Controllers\Api\ListOfValuesController;
+use App\Http\Controllers\Api\PropertyController;
 use App\Http\Controllers\API\TriggerController;
 use App\Http\Controllers\API\DiagnosticsController;
 use Illuminate\Support\Facades\Route;
@@ -45,6 +46,13 @@ Route::prefix('api/v1')->middleware('auth:sanctum')->group(function () {
         Route::get('/logs/executions', [TriggerController::class, 'getExecutionLogs']);
         Route::get('/stats', [TriggerController::class, 'getStatistics']);
     });
+
+    // ===== Property Routes =====
+    Route::get('/properties', [PropertyController::class, 'index']);
+    Route::post('/properties', [PropertyController::class, 'store']);
+    Route::get('/properties/{property}', [PropertyController::class, 'show']);
+    Route::put('/properties/{property}', [PropertyController::class, 'update']);
+    Route::delete('/properties/{property}', [PropertyController::class, 'destroy']);
     
     // ===== Form Schema Routes =====
     Route::get('/forms', [FormController::class, 'index']);

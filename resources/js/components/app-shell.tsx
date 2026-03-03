@@ -12,13 +12,15 @@ export function AppShell({ children, variant = 'header' }: Props) {
         const { props } = usePage();
         const sidebarOpen = (props as any)?.sidebarOpen !== false;
 
+        const htmlClass = typeof document === 'undefined' ? '' : document.documentElement.className;
+
         console.log('%c[AppShell] Rendering:', 'color: #ffaa00; font-weight: bold', {
             variant,
             sidebarOpen,
             hasChildren: !!children,
             childrenIsArray: Array.isArray(children),
             childrenLength: Array.isArray(children) ? children.length : 1,
-            htmlClass: document.documentElement.className,
+            htmlClass,
         });
 
         if (variant === 'header') {

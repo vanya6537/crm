@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\PropertyController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
@@ -10,18 +11,10 @@ Route::inertia('/', 'welcome', [
 
 Route::middleware(['auth', 'verified'])->group(function () {
     // CRM Dashboard (main dashboard)
-    Route::inertia('dashboard', 'CRMDashboard', [
-        'properties_count' => 0,
-        'buyers_count' => 0,
-        'agents_count' => 0,
-        'pending_transactions' => 0,
-        'properties_trend' => 0,
-        'transactions_trend' => 0,
-        'recent_transactions' => [],
-    ])->name('dashboard');
+    Route::get('dashboard', DashboardController::class)->name('dashboard');
     
     // CRM Pages
-    Route::inertia('properties', 'crm/Properties')->name('crm.properties');
+    Route::get('properties', [PropertyController::class, 'index'])->name('crm.properties');
     Route::inertia('buyers', 'crm/Buyers')->name('crm.buyers');
     Route::inertia('agents', 'crm/Agents')->name('crm.agents');
     Route::inertia('transactions', 'crm/Transactions')->name('crm.transactions');

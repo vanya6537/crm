@@ -1,15 +1,14 @@
-import { useMemo } from 'react';
+import { useCallback } from 'react';
 
-/**
- * Hook to extract initials from a name
- */
-export function useInitials(name?: string | null) {
-    return useMemo(() => {
-        if (!name) {
-            return 'UN'; // Unknown
+export type GetInitialsFn = (fullName: string) => string;
+
+export function useInitials(): GetInitialsFn {
+    return useCallback((fullName: string): string => {
+        if (!fullName) {
+            return 'UN';
         }
 
-        const parts = name.trim().split(/\s+/);
+        const parts = fullName.trim().split(/\s+/);
 
         if (parts.length === 0) {
             return 'UN';
@@ -20,5 +19,5 @@ export function useInitials(name?: string | null) {
         }
 
         return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-    }, [name]);
+    }, []);
 }
