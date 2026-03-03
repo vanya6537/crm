@@ -91,7 +91,18 @@ class Scheduler
             // End node
             elseif ($nodeType === 'end') {
                 $token->markCompleted();
-                $instance->update(['status' => 'completed', 'ended_at' => now()]);
+
+                // Check if all tokens are completed (instance is done)
+                $pendingTokens = $instance->tokens()
+                    ->whereIn('state', ['ready', 'running', 'waiting'])
+                    ->count();
+
+                if ($pendingTokens === 0) {
+                    $instance->update([
+                        'status' => 'completed',
+                        'ended_at' => now(),
+                    ]);
+                }
             }
             // External task: create job and enqueue
             elseif (in_array($nodeType, ['service_task', 'human_task', 'event_wait', 'subprocess'], true)) {

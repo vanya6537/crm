@@ -16,6 +16,7 @@ class AuditLog extends Model
         'changes',
         'description',
         'metadata',
+        'created_at',
     ];
 
     protected $casts = [
@@ -45,6 +46,7 @@ class AuditLog extends Model
             'changes' => $changes,
             'description' => $description,
             'metadata' => $metadata,
+            'created_at' => now(),
         ]);
     }
 }

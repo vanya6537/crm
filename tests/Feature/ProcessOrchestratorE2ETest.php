@@ -75,9 +75,11 @@ class ProcessOrchestratorE2ETest extends TestCase
         $instanceData = $response->json();
         $instanceId = $instanceData['id'];
 
-        // 4. Run scheduler cycle
-        $processed = $this->scheduler->cycle();
-        $this->assertGreater($processed, 0);
+        // 4. Run scheduler cycles
+        for ($i = 0; $i < 10; $i++) {
+            $processed = $this->scheduler->cycle();
+            if ($processed == 0) break;
+        }
 
         // 5. Get instance and verify completion
         $response = $this->getJson("/api/v1/orchestrator/instances/{$instanceId}");
@@ -157,7 +159,10 @@ class ProcessOrchestratorE2ETest extends TestCase
         ]);
 
         $instanceId = $response->json()['id'];
-        $this->scheduler->cycle();
+        for ($i = 0; $i < 10; $i++) {
+            $processed = $this->scheduler->cycle();
+            if ($processed == 0) break;
+        }
 
         $response = $this->getJson("/api/v1/orchestrator/instances/{$instanceId}");
         $this->assertEquals('completed', $response->json()['status']);

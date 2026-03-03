@@ -47,7 +47,7 @@ class OrchestratorController extends Controller
         // Create instance
         $instance = $definition->instances()->create([
             'process_version_id' => $version->id,
-            'business_key' => $validated['businessKey'],
+            'business_key' => $validated['businessKey'] ?? null,
             'status' => 'running',
             'variables_json' => json_encode($validated['initialVars'] ?? []),
             'started_at' => now(),

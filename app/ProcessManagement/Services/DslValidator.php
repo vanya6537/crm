@@ -265,7 +265,7 @@ class DslValidator
      */
     public static function checksum(array $graph): string
     {
-        $json = json_encode($graph, JSON_SORT_KEYS | JSON_UNESCAPED_SLASHES);
+        $json = json_encode($graph, JSON_UNESCAPED_SLASHES);
         return hash('sha256', $json);
     }
 }
