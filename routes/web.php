@@ -2,6 +2,9 @@
 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PropertyController;
+use App\Http\Controllers\AgentController;
+use App\Http\Controllers\BuyerController;
+use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
@@ -15,9 +18,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     // CRM Pages
     Route::get('properties', [PropertyController::class, 'index'])->name('crm.properties');
-    Route::inertia('buyers', 'crm/Buyers')->name('crm.buyers');
-    Route::inertia('agents', 'crm/Agents')->name('crm.agents');
-    Route::inertia('transactions', 'crm/Transactions')->name('crm.transactions');
+    Route::get('buyers', [BuyerController::class, 'index'])->name('crm.buyers');
+    Route::get('agents', [AgentController::class, 'index'])->name('crm.agents');
+    Route::get('transactions', [TransactionController::class, 'index'])->name('crm.transactions');
     Route::inertia('settings', 'crm/Settings')->name('crm.settings');
     Route::inertia('list-of-values', 'crm/ListOfValuesAdvanced')->name('crm.list-of-values');
     

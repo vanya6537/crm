@@ -1,0 +1,21 @@
+// Re-export from radix components
+export {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+  type AlertDialogProps,
+  type AlertDialogTriggerProps,
+  type AlertDialogContentProps,
+  type AlertDialogHeaderProps,
+  type AlertDialogFooterProps,
+  type AlertDialogTitleProps,
+  type AlertDialogDescriptionProps,
+  type AlertDialogActionProps,
+  type AlertDialogCancelProps,
+} from '@/components/radix/alert-dialog';

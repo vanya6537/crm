@@ -3,6 +3,9 @@
 use App\Http\Controllers\Api\FormController;
 use App\Http\Controllers\Api\ListOfValuesController;
 use App\Http\Controllers\Api\PropertyController;
+use App\Http\Controllers\Api\AgentController;
+use App\Http\Controllers\Api\BuyerController;
+use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\API\TriggerController;
 use App\Http\Controllers\API\DiagnosticsController;
 use Illuminate\Support\Facades\Route;
@@ -53,6 +56,27 @@ Route::prefix('api/v1')->middleware('auth:sanctum')->group(function () {
     Route::get('/properties/{property}', [PropertyController::class, 'show']);
     Route::put('/properties/{property}', [PropertyController::class, 'update']);
     Route::delete('/properties/{property}', [PropertyController::class, 'destroy']);
+
+    // ===== Agent Routes =====
+    Route::get('/agents', [AgentController::class, 'index']);
+    Route::post('/agents', [AgentController::class, 'store']);
+    Route::get('/agents/{agent}', [AgentController::class, 'show']);
+    Route::put('/agents/{agent}', [AgentController::class, 'update']);
+    Route::delete('/agents/{agent}', [AgentController::class, 'destroy']);
+
+    // ===== Buyer Routes =====
+    Route::get('/buyers', [BuyerController::class, 'index']);
+    Route::post('/buyers', [BuyerController::class, 'store']);
+    Route::get('/buyers/{buyer}', [BuyerController::class, 'show']);
+    Route::put('/buyers/{buyer}', [BuyerController::class, 'update']);
+    Route::delete('/buyers/{buyer}', [BuyerController::class, 'destroy']);
+
+    // ===== Transaction Routes =====
+    Route::get('/transactions', [TransactionController::class, 'index']);
+    Route::post('/transactions', [TransactionController::class, 'store']);
+    Route::get('/transactions/{transaction}', [TransactionController::class, 'show']);
+    Route::put('/transactions/{transaction}', [TransactionController::class, 'update']);
+    Route::delete('/transactions/{transaction}', [TransactionController::class, 'destroy']);
     
     // ===== Form Schema Routes =====
     Route::get('/forms', [FormController::class, 'index']);
