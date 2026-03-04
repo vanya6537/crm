@@ -1,10 +1,27 @@
-import { useCallback } from 'react';
+import { useState } from 'react';
 
-export type CleanupFn = () => void;
+/**
+ * Hook to manage mobile navigation state
+ */
+export function useMobileNavigation() {
+    const [isOpen, setIsOpen] = useState(false);
 
-export function useMobileNavigation(): CleanupFn {
-    return useCallback(() => {
-        // Remove pointer-events style from body...
-        document.body.style.removeProperty('pointer-events');
-    }, []);
+    const toggle = () => {
+        setIsOpen((prev) => !prev);
+    };
+
+    const close = () => {
+        setIsOpen(false);
+    };
+
+    const open = () => {
+        setIsOpen(true);
+    };
+
+    return {
+        isOpen,
+        toggle,
+        close,
+        open,
+    };
 }
