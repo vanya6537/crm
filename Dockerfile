@@ -34,7 +34,10 @@ RUN npm ci
 
 # 3) App source + build assets
 COPY . .
-RUN php artisan package:discover --ansi --no-interaction \
+RUN mkdir -p bootstrap/cache storage \
+  && chown -R www-data:www-data bootstrap/cache storage || true \
+  && chmod -R ug+rwX bootstrap/cache storage \
+  && php artisan package:discover --ansi --no-interaction \
   && npm run build \
   && rm -rf node_modules
 
