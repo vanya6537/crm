@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { SidebarInset } from '@/components/ui/sidebar';
+import { SidebarInset } from '@/components/radix/sidebar';
 
 console.log('[app-content.tsx] Module loading...');
 console.log('[app-content.tsx] SidebarInset imported:', typeof SidebarInset);

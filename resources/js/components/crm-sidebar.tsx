@@ -28,7 +28,7 @@ import {
     SidebarMenuSubItem,
     SidebarGroup,
     SidebarGroupLabel,
-} from '@/components/ui/sidebar';
+} from '@/components/radix/sidebar';
 import {
     Collapsible,
     CollapsibleContent,
