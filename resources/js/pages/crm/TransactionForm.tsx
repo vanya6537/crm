@@ -228,7 +228,7 @@ export function TransactionForm({
                             type="number"
                             placeholder="2500000"
                             min="0"
-                            step="100000"
+                            step="any"
                             value={formData.offer_price || ''}
                             onChange={(e) =>
                                 handleInputChange(
@@ -246,7 +246,7 @@ export function TransactionForm({
                             type="number"
                             placeholder="2400000"
                             min="0"
-                            step="100000"
+                            step="any"
                             value={formData.final_price || ''}
                             onChange={(e) =>
                                 handleInputChange(
@@ -283,7 +283,7 @@ export function TransactionForm({
                             type="number"
                             placeholder="120000"
                             min="0"
-                            step="10000"
+                            step="any"
                             value={formData.commission_amount || ''}
                             onChange={(e) =>
                                 handleInputChange(

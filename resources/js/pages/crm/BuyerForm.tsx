@@ -186,7 +186,7 @@ export function BuyerForm({
                             type="number"
                             placeholder="1000000"
                             min="0"
-                            step="100000"
+                            step="any"
                             value={formData.budget_min || ''}
                             onChange={(e) =>
                                 handleInputChange(
@@ -204,7 +204,7 @@ export function BuyerForm({
                             type="number"
                             placeholder="5000000"
                             min="0"
-                            step="100000"
+                            step="any"
                             value={formData.budget_max || ''}
                             onChange={(e) =>
                                 handleInputChange(
