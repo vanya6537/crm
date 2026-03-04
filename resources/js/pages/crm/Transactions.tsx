@@ -19,14 +19,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
+import { ResizableTable, type ResizableTableColumn } from '@/components/ui/resizable-table';
 import { TransactionForm } from './TransactionForm';
 import { DeleteConfirmationDialog } from '@/components/dialogs/DeleteConfirmationDialog';
 import { apiRequest } from '@/lib/csrf';
@@ -52,6 +45,9 @@ type Transaction = {
     property_id: number;
     buyer_id: number;
     agent_id: number;
+    property_address?: string;
+    buyer_name?: string;
+    agent_name?: string;
     property?: Property;
     buyer?: Buyer;
     agent?: Agent;
@@ -238,6 +234,114 @@ export default function Transactions({
         return labels[status] || status;
     };
 
+    const columns: Array<ResizableTableColumn<Transaction>> = [
+        {
+            key: 'property',
+            header: 'Объект',
+            width: 320,
+            cell: (transaction) => (
+                <span className="font-medium text-sm truncate">
+                    {transaction.property?.address
+                        ? `${transaction.property.address}${transaction.property.city ? `, ${transaction.property.city}` : ''}`
+                        : transaction.property_address || '-'}
+                </span>
+            ),
+        },
+        {
+            key: 'buyer',
+            header: 'Клиент',
+            width: 200,
+            cell: (transaction) => (
+                <span className="text-sm truncate">
+                    {transaction.buyer?.name || transaction.buyer_name || '-'}
+                </span>
+            ),
+        },
+        {
+            key: 'agent',
+            header: 'Агент',
+            width: 200,
+            cell: (transaction) => (
+                <span className="text-sm truncate">
+                    {transaction.agent?.name || transaction.agent_name || '-'}
+                </span>
+            ),
+        },
+        {
+            key: 'price',
+            header: 'Цена',
+            width: 130,
+            headerClassName: 'justify-end',
+            cellClassName: 'justify-end',
+            cell: (transaction) => (
+                <span className="text-sm whitespace-nowrap">
+                    {transaction.final_price > 0
+                        ? `${(transaction.final_price / 1000000).toFixed(1)}M ₽`
+                        : transaction.offer_price > 0
+                        ? `${(transaction.offer_price / 1000000).toFixed(1)}M ₽`
+                        : '-'}
+                </span>
+            ),
+        },
+        {
+            key: 'commission',
+            header: 'Комиссия',
+            width: 140,
+            headerClassName: 'justify-end',
+            cellClassName: 'justify-end',
+            cell: (transaction) => (
+                <span className="text-sm whitespace-nowrap">
+                    {transaction.commission_amount > 0
+                        ? `${(transaction.commission_amount / 1000).toFixed(0)}K ₽`
+                        : '-'}
+                </span>
+            ),
+        },
+        {
+            key: 'status',
+            header: 'Статус',
+            width: 160,
+            cell: (transaction) => (
+                <Badge className={getStatusColor(transaction.status)} variant="secondary">
+                    {getStatusLabel(transaction.status)}
+                </Badge>
+            ),
+        },
+        {
+            key: 'actions',
+            header: 'Действия',
+            width: 120,
+            minWidth: 110,
+            maxWidth: 220,
+            headerClassName: 'justify-end',
+            cellClassName: 'justify-end',
+            cell: (transaction) => (
+                <div className="flex items-center justify-end gap-2">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                            setSelectedTransaction(transaction);
+                            setIsEditOpen(true);
+                        }}
+                    >
+                        <Edit2 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                            setSelectedTransaction(transaction);
+                            setIsDeleteOpen(true);
+                        }}
+                    >
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
+                </div>
+            ),
+        },
+    ];
+
     return (
         <>
             <Head title="Реальные сделки" />
@@ -311,88 +415,13 @@ export default function Transactions({
                     </Card>
 
                     {/* Table */}
-                    <div className="border rounded-lg overflow-x-auto">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="min-w-[140px]">Объект</TableHead>
-                                    <TableHead>Клиент</TableHead>
-                                    <TableHead>Агент</TableHead>
-                                    <TableHead className="text-right min-w-[85px]">Цена</TableHead>
-                                    <TableHead className="text-right">Комиссия</TableHead>
-                                    <TableHead>Статус</TableHead>
-                                    <TableHead className="text-right">Действия</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {transactions.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                                            Нет сделок
-                                        </TableCell>
-                                    </TableRow>
-                                ) : (
-                                    transactions.map((transaction) => (
-                                        <TableRow key={transaction.id}>
-                                            <TableCell className="font-medium text-sm">
-                                                {transaction.property?.address
-                                                    ? `${transaction.property.address}${transaction.property.city ? `, ${transaction.property.city}` : ''}`
-                                                    : transaction.property_address || '-'}
-                                            </TableCell>
-                                            <TableCell className="text-sm">
-                                                {transaction.buyer?.name || transaction.buyer_name || '-'}
-                                            </TableCell>
-                                            <TableCell className="text-sm">
-                                                {transaction.agent?.name || transaction.agent_name || '-'}
-                                            </TableCell>
-                                            <TableCell className="text-right text-sm">
-                                                {transaction.final_price > 0
-                                                    ? `${(transaction.final_price / 1000000).toFixed(1)}M ₽`
-                                                    : transaction.offer_price > 0
-                                                    ? `${(transaction.offer_price / 1000000).toFixed(1)}M ₽`
-                                                    : '-'}
-                                            </TableCell>
-                                            <TableCell className="text-right text-sm">
-                                                {transaction.commission_amount > 0
-                                                    ? `${(transaction.commission_amount / 1000).toFixed(0)}K ₽`
-                                                    : '-'}
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge
-                                                    className={getStatusColor(transaction.status)}
-                                                    variant="secondary"
-                                                >
-                                                    {getStatusLabel(transaction.status)}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="text-right flex shrink-0 space-x-2">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => {
-                                                        setSelectedTransaction(transaction);
-                                                        setIsEditOpen(true);
-                                                    }}
-                                                >
-                                                    <Edit2 className="h-4 w-4" />
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => {
-                                                        setSelectedTransaction(transaction);
-                                                        setIsDeleteOpen(true);
-                                                    }}
-                                                >
-                                                    <Trash2 className="h-4 w-4 text-red-500" />
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
+                    <ResizableTable
+                        data={transactions}
+                        columns={columns}
+                        getRowId={(transaction) => String(transaction.id)}
+                        emptyState="Нет сделок"
+                        minTableWidth={1100}
+                    />
 
                     {/* Pagination Info */}
                     {transactions.length > 0 && (

@@ -32,7 +32,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/radix/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ResizableTable, type ResizableTableColumn } from '@/components/ui/resizable-table';
 import { Label } from '@/components/ui/label';
 import { PropertyForm } from './PropertyForm';
 import { DeleteConfirmationDialog } from '@/components/dialogs/DeleteConfirmationDialog';
@@ -223,6 +223,100 @@ export default function Properties({ properties, filters: initialFilters }: Prop
         }
     };
 
+    const columns = useMemo<Array<ResizableTableColumn<Property>>>(
+        () => [
+            {
+                key: 'address',
+                header: 'Адрес',
+                width: 320,
+                cell: (property) => (
+                    <div className="flex flex-col gap-1 min-w-0">
+                        <span className="font-medium truncate">{property.address}</span>
+                        <span className="text-xs text-muted-foreground truncate">{property.city}</span>
+                    </div>
+                ),
+            },
+            {
+                key: 'type',
+                header: 'Тип',
+                width: 150,
+                headerClassName: 'hidden sm:flex',
+                cellClassName: 'hidden sm:flex',
+                cell: (property) => <span className="text-sm">{typeLabels[property.type]}</span>,
+            },
+            {
+                key: 'area',
+                header: 'Площадь',
+                width: 140,
+                headerClassName: 'hidden md:flex',
+                cellClassName: 'hidden md:flex',
+                cell: (property) =>
+                    property.area ? (
+                        <span className="text-sm whitespace-nowrap">{property.area} м²</span>
+                    ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                    ),
+            },
+            {
+                key: 'price',
+                header: 'Цена',
+                width: 170,
+                headerClassName: 'hidden lg:flex justify-end',
+                cellClassName: 'hidden lg:flex justify-end',
+                cell: (property) => (
+                    <span className="font-semibold whitespace-nowrap">₽ {property.price.toLocaleString()}</span>
+                ),
+            },
+            {
+                key: 'status',
+                header: 'Статус',
+                width: 140,
+                cell: (property) => (
+                    <Badge
+                        variant="secondary"
+                        className={statusColors[property.status] || ''}
+                    >
+                        {statusLabels[property.status]}
+                    </Badge>
+                ),
+            },
+            {
+                key: 'actions',
+                header: 'Действия',
+                width: 120,
+                minWidth: 110,
+                maxWidth: 220,
+                headerClassName: 'justify-end',
+                cellClassName: 'justify-end',
+                cell: (property) => (
+                    <div className="flex items-center justify-end gap-2">
+                        <button
+                            onClick={() => {
+                                setSelectedProperty(property);
+                                setIsEditModalOpen(true);
+                            }}
+                            className="p-2 hover:bg-sidebar rounded-md transition-colors"
+                            title="Редактировать"
+                        >
+                            <Edit2 className="h-4 w-4 text-blue-500" />
+                        </button>
+                        <button
+                            onClick={() => {
+                                setSelectedProperty(property);
+                                setIsDeleteModalOpen(true);
+                            }}
+                            className="p-2 hover:bg-sidebar rounded-md transition-colors"
+                            title="Удалить"
+                        >
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                        </button>
+                    </div>
+                ),
+            },
+        ],
+        [setIsDeleteModalOpen, setIsEditModalOpen, setSelectedProperty]
+    );
+
     return (
         <>
             <Head title="Объекты недвижимости" />
@@ -360,85 +454,12 @@ export default function Properties({ properties, filters: initialFilters }: Prop
                             </Button>
                         </Card>
                     ) : (
-                        <Card className="border-sidebar-border/70 dark:border-sidebar-border overflow-hidden">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Адрес</TableHead>
-                                        <TableHead className="hidden sm:table-cell">Тип</TableHead>
-                                        <TableHead className="hidden md:table-cell">Площадь</TableHead>
-                                        <TableHead className="hidden lg:table-cell">Цена</TableHead>
-                                        <TableHead>Статус</TableHead>
-                                        <TableHead className="text-right">Действия</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {sortedProperties.map((property) => (
-                                        <TableRow key={property.id}>
-                                            <TableCell className="font-medium">
-                                                <div className="flex flex-col gap-1">
-                                                    <span>{property.address}</span>
-                                                    <span className="text-xs text-muted-foreground">
-                                                        {property.city}
-                                                    </span>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="hidden sm:table-cell">
-                                                <span className="text-sm">
-                                                    {typeLabels[property.type]}
-                                                </span>
-                                            </TableCell>
-                                            <TableCell className="hidden md:table-cell">
-                                                {property.area ? (
-                                                    <span className="text-sm">{property.area} м²</span>
-                                                ) : (
-                                                    <span className="text-xs text-muted-foreground">—</span>
-                                                )}
-                                            </TableCell>
-                                            <TableCell className="hidden lg:table-cell">
-                                                <span className="font-semibold">
-                                                    ₽ {(property.price).toLocaleString()}
-                                                </span>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge
-                                                    variant="secondary"
-                                                    className={
-                                                        statusColors[property.status] || ''
-                                                    }
-                                                >
-                                                    {statusLabels[property.status]}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <div className="flex items-center justify-end gap-2">
-                                                    <button
-                                                        onClick={() => {
-                                                            setSelectedProperty(property);
-                                                            setIsEditModalOpen(true);
-                                                        }}
-                                                        className="p-2 hover:bg-sidebar rounded-md transition-colors"
-                                                        title="Редактировать"
-                                                    >
-                                                        <Edit2 className="h-4 w-4 text-blue-500" />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => {
-                                                            setSelectedProperty(property);
-                                                            setIsDeleteModalOpen(true);
-                                                        }}
-                                                        className="p-2 hover:bg-sidebar rounded-md transition-colors"
-                                                        title="Удалить"
-                                                    >
-                                                        <Trash2 className="h-4 w-4 text-red-500" />
-                                                    </button>
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </Card>
+                        <ResizableTable
+                            data={sortedProperties}
+                            columns={columns}
+                            getRowId={(property) => String(property.id)}
+                            minTableWidth={980}
+                        />
                     )}
 
                     {/* Pagination Info */}

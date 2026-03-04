@@ -19,14 +19,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
+import { ResizableTable, type ResizableTableColumn } from '@/components/ui/resizable-table';
 import { BuyerForm } from './BuyerForm';
 import { DeleteConfirmationDialog } from '@/components/dialogs/DeleteConfirmationDialog';
 import { apiRequest } from '@/lib/csrf';
@@ -204,6 +197,94 @@ export default function Buyers({ buyers: initialBuyers, filters: initialFilters 
         return labels[source] || source;
     };
 
+    const columns: Array<ResizableTableColumn<Buyer>> = [
+        {
+            key: 'name',
+            header: 'Имя',
+            width: 220,
+            cell: (buyer) => <span className="font-medium text-sm truncate">{buyer.name}</span>,
+        },
+        {
+            key: 'email',
+            header: 'Email',
+            width: 240,
+            cell: (buyer) => (
+                <span className="text-sm text-muted-foreground truncate">{buyer.email}</span>
+            ),
+        },
+        {
+            key: 'phone',
+            header: 'Телефон',
+            width: 160,
+            cell: (buyer) => <span className="text-sm">{buyer.phone}</span>,
+        },
+        {
+            key: 'budget',
+            header: 'Бюджет',
+            width: 170,
+            cell: (buyer) => (
+                <span className="text-sm">
+                    {buyer.budget_min && buyer.budget_max
+                        ? `${(buyer.budget_min / 1000000).toFixed(1)} - ${(buyer.budget_max / 1000000).toFixed(1)}M ₽`
+                        : '-'}
+                </span>
+            ),
+        },
+        {
+            key: 'source',
+            header: 'Источник',
+            width: 170,
+            cell: (buyer) => <span className="text-sm">{getSourceLabel(buyer.source)}</span>,
+        },
+        {
+            key: 'status',
+            header: 'Статус',
+            width: 150,
+            cell: (buyer) => (
+                <Badge className={getStatusColor(buyer.status)} variant="secondary">
+                    {buyer.status === 'active'
+                        ? 'Активный'
+                        : buyer.status === 'converted'
+                        ? 'Конвертирован'
+                        : 'Потеряном'}
+                </Badge>
+            ),
+        },
+        {
+            key: 'actions',
+            header: 'Действия',
+            width: 120,
+            minWidth: 110,
+            maxWidth: 220,
+            headerClassName: 'justify-end',
+            cellClassName: 'justify-end',
+            cell: (buyer) => (
+                <div className="flex items-center justify-end gap-2">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                            setSelectedBuyer(buyer);
+                            setIsEditOpen(true);
+                        }}
+                    >
+                        <Edit2 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                            setSelectedBuyer(buyer);
+                            setIsDeleteOpen(true);
+                        }}
+                    >
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
+                </div>
+            ),
+        },
+    ];
+
     return (
         <>
             <Head title="клиенты и лиды" />
@@ -290,82 +371,12 @@ export default function Buyers({ buyers: initialBuyers, filters: initialFilters 
                     </Card>
 
                     {/* Table */}
-                    <div className="border rounded-lg overflow-hidden">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Имя</TableHead>
-                                    <TableHead>Email</TableHead>
-                                    <TableHead>Телефон</TableHead>
-                                    <TableHead>Бюджет</TableHead>
-                                    <TableHead>Источник</TableHead>
-                                    <TableHead>Статус</TableHead>
-                                    <TableHead className="text-right">Действия</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {buyers.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                                            Нет клиентов
-                                        </TableCell>
-                                    </TableRow>
-                                ) : (
-                                    buyers.map((buyer) => (
-                                        <TableRow key={buyer.id}>
-                                            <TableCell className="font-medium">{buyer.name}</TableCell>
-                                            <TableCell className="text-sm text-muted-foreground">
-                                                {buyer.email}
-                                            </TableCell>
-                                            <TableCell className="text-sm">{buyer.phone}</TableCell>
-                                            <TableCell className="text-sm">
-                                                {buyer.budget_min && buyer.budget_max
-                                                    ? `${(buyer.budget_min / 1000000).toFixed(1)} - ${(buyer.budget_max / 1000000).toFixed(1)}M ₽`
-                                                    : '-'}
-                                            </TableCell>
-                                            <TableCell className="text-sm">
-                                                {getSourceLabel(buyer.source)}
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge
-                                                    className={getStatusColor(buyer.status)}
-                                                    variant="secondary"
-                                                >
-                                                    {buyer.status === 'active'
-                                                        ? 'Активный'
-                                                        : buyer.status === 'converted'
-                                                        ? 'Конвертирован'
-                                                        : 'Потеряном'}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="text-right space-x-2">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => {
-                                                        setSelectedBuyer(buyer);
-                                                        setIsEditOpen(true);
-                                                    }}
-                                                >
-                                                    <Edit2 className="h-4 w-4" />
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => {
-                                                        setSelectedBuyer(buyer);
-                                                        setIsDeleteOpen(true);
-                                                    }}
-                                                >
-                                                    <Trash2 className="h-4 w-4 text-red-500" />
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
+                    <ResizableTable
+                        data={buyers}
+                        columns={columns}
+                        getRowId={(buyer) => String(buyer.id)}
+                        emptyState="Нет клиентов"
+                    />
 
                     {/* Pagination Info */}
                     {buyers.length > 0 && (

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Head } from '@inertiajs/react'
 import { Plus, Edit2, Trash2, Eye, Copy, Info, XIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { ResizableTable, type ResizableTableColumn } from '@/components/ui/resizable-table'
 import {
   Dialog,
   DialogContent,
@@ -187,6 +188,117 @@ export default function ListOfValuesAdvancedPage() {
 
   const filteredLOVs = getFilteredLOVs()
 
+  const columns: Array<ResizableTableColumn<ListOfValue>> = [
+    {
+      key: 'name',
+      header: 'Название',
+      width: 260,
+      cell: (lov) => <div className="font-medium text-foreground truncate">{lov.name}</div>,
+    },
+    {
+      key: 'key',
+      header: 'Ключ (API)',
+      width: 220,
+      cell: (lov) => (
+        <code className="bg-muted px-2.5 py-1 rounded text-xs font-mono text-foreground/80 border border-border/50">
+          {lov.key}
+        </code>
+      ),
+    },
+    {
+      key: 'type',
+      header: 'Тип',
+      width: 160,
+      cell: (lov) => (
+        <span
+          className={
+            "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold " +
+            (lov.is_system
+              ? 'bg-blue-100 text-blue-800'
+              : 'bg-emerald-100 text-emerald-800')
+          }
+        >
+          {lov.is_system ? '🔒 Система' : '✎ Пользовательский'}
+        </span>
+      ),
+    },
+    {
+      key: 'items',
+      header: 'Элементов',
+      width: 120,
+      headerClassName: 'justify-center',
+      cellClassName: 'justify-center',
+      cell: (lov) => (
+        <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-blue-100 font-semibold text-blue-700">
+          {lov.items?.length || 0}
+        </span>
+      ),
+    },
+    {
+      key: 'description',
+      header: 'Описание',
+      width: 260,
+      cell: (lov) => (
+        <span className="text-foreground/70 text-xs truncate">{lov.description || '—'}</span>
+      ),
+    },
+    {
+      key: 'updated_at',
+      header: 'Изменено',
+      width: 150,
+      cell: (lov) => (
+        <span className="text-xs text-muted-foreground whitespace-nowrap">
+          {lov.updated_at
+            ? new Date(lov.updated_at).toLocaleDateString('ru-RU', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+              })
+            : '—'}
+        </span>
+      ),
+    },
+    {
+      key: 'actions',
+      header: 'Действия',
+      width: 140,
+      minWidth: 130,
+      maxWidth: 260,
+      headerClassName: 'justify-end',
+      cellClassName: 'justify-end',
+      cell: (lov) => (
+        <div className="flex justify-end gap-1">
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => viewLOVDetails(lov)}
+            title="Просмотреть элементы"
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => editLOV(lov)}
+            title="Редактировать"
+          >
+            <Edit2 className="h-4 w-4" />
+          </Button>
+          {!lov.is_system && (
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => lov.id && deleteLOV(lov.id)}
+              title="Удалить справочник"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      ),
+    },
+  ]
+
   return (
     <>
       <Head title="Справочники: Списки значений" />
@@ -267,85 +379,12 @@ export default function ListOfValuesAdvancedPage() {
               <p className="mt-2">Загрузка справочников...</p>
             </div>
           ) : filteredLOVs.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="px-6 py-3 text-left font-semibold text-gray-700">Название</th>
-                    <th className="px-6 py-3 text-left font-semibold text-gray-700">Ключ (API)</th>
-                    <th className="px-6 py-3 text-left font-semibold text-gray-700">Тип</th>
-                    <th className="px-6 py-3 text-center font-semibold text-gray-700">Элементов</th>
-                    <th className="px-6 py-3 text-left font-semibold text-gray-700">Описание</th>
-                    <th className="px-6 py-3 text-left font-semibold text-gray-700">Изменено</th>
-                    <th className="px-6 py-3 text-right font-semibold text-gray-700">Действия</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {filteredLOVs.map((lov) => (
-                    <tr key={lov.id} className="hover:bg-gray-50 transition-colors cursor-pointer">
-                      <td className="px-6 py-4">
-                        <div className="font-medium text-gray-900">{lov.name}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <code className="bg-gray-100 px-2.5 py-1 rounded text-xs font-mono text-gray-700 border border-gray-200">
-                          {lov.key}
-                        </code>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
-                          lov.is_system
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-emerald-100 text-emerald-800'
-                        }`}>
-                          {lov.is_system ? '🔒 Система' : '✎ Пользовательский'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-blue-100 font-semibold text-blue-700">
-                          {lov.items?.length || 0}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-gray-600 text-xs max-w-xs truncate">
-                        {lov.description || '—'}
-                      </td>
-                      <td className="px-6 py-4 text-xs text-gray-500 whitespace-nowrap">
-                        {lov.updated_at ? new Date(lov.updated_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex justify-end gap-1">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => viewLOVDetails(lov)}
-                            title="Просмотреть элементы"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => editLOV(lov)}
-                            title="Редактировать"
-                          >
-                            <Edit2 className="h-4 w-4" />
-                          </Button>
-                          {!lov.is_system && (
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => lov.id && deleteLOV(lov.id)}
-                              title="Удалить справочник"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <ResizableTable
+              data={filteredLOVs}
+              columns={columns}
+              getRowId={(lov) => String(lov.id ?? lov.key)}
+              minTableWidth={1200}
+            />
           ) : (
             <div className="text-center py-12">
               <p className="text-gray-500">Справочники не найдены</p>
