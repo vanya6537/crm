@@ -5,6 +5,22 @@ import laravel from 'laravel-vite-plugin';
 import { defineConfig } from 'vite';
 import path from 'path';
 
+// Extract HMR host from APP_URL or use defaults
+function getHmrHost(): string {
+    if (process.env.VITE_HMR_HOST) {
+        return process.env.VITE_HMR_HOST;
+    }
+    if (process.env.APP_URL) {
+        try {
+            const url = new URL(process.env.APP_URL);
+            return url.hostname;
+        } catch {
+            // Invalid URL, fallback to localhost
+        }
+    }
+    return 'localhost';
+}
+
 export default defineConfig({
     resolve: {
         alias: {
@@ -18,12 +34,12 @@ export default defineConfig({
             '@': path.resolve(__dirname, './resources/js'),
         },
     },
-    server: {
+    server: process.env.NODE_ENV === 'development' ? {
         hmr: {
-            host: 'localhost',
-            port: 5173,
+            host: getHmrHost(),
+            port: process.env.VITE_HMR_PORT ? parseInt(process.env.VITE_HMR_PORT) : 5173,
         },
-    },
+    } : {},
     plugins: [
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.tsx'],
