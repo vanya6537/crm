@@ -65,26 +65,28 @@ function DialogContent({
 }: DialogContentProps) {
   return (
     <DialogPortalPrimitive>
-      <DialogOverlay />
-      <DialogContentPrimitive
-        className={cn(
-          'bg-background z-50 grid gap-4 p-6 shadow-lg overflow-y-auto',
-          // Mobile: Bottom sheet style
-          'fixed top-10 left-0 right-0 w-full rounded-t-lg border-t border max-h-[85vh]',
-          // Desktop: Centered modal
-          'sm:fixed sm:inset-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:max-w-lg sm:rounded-lg sm:border sm:max-h-none',
-          className,
-        )}
-        {...props}
-      >
-        {children}
-        {showCloseButton && (
-          <DialogClosePrimitive className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4">
-            <XIcon />
-            <span className="sr-only">Close</span>
-          </DialogClosePrimitive>
-        )}
-      </DialogContentPrimitive>
+      <div className="contents">
+        <DialogOverlay />
+        <DialogContentPrimitive
+          className={cn(
+            'bg-background z-50 grid gap-4 p-6 shadow-lg overflow-y-auto',
+            // Mobile: Bottom sheet style
+            'fixed top-10 left-0 right-0 w-full rounded-t-lg border-t border max-h-[85vh]',
+            // Desktop: Centered modal
+            'sm:fixed sm:inset-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:max-w-lg sm:rounded-lg sm:border sm:max-h-none',
+            className,
+          )}
+          {...props}
+        >
+          {children}
+          {showCloseButton && (
+            <DialogClosePrimitive className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4">
+              <XIcon />
+              <span className="sr-only">Close</span>
+            </DialogClosePrimitive>
+          )}
+        </DialogContentPrimitive>
+      </div>
     </DialogPortalPrimitive>
   );
 }
