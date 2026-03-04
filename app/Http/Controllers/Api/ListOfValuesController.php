@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Controller;
 use App\Models\ListOfValues;
 use App\Models\ListOfValuesItem;
 use Illuminate\Http\Request;

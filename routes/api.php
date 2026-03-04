@@ -10,8 +10,8 @@ use App\Http\Controllers\API\TriggerController;
 use App\Http\Controllers\API\DiagnosticsController;
 use Illuminate\Support\Facades\Route;
 
-// API v1 prefix
-Route::prefix('api/v1')->middleware('auth:sanctum')->group(function () {
+// API routes - automatically prefixed with /api by Laravel
+Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     
     // ===== List of Values Routes =====
     Route::get('/list-of-values', [ListOfValuesController::class, 'index']);
@@ -124,7 +124,7 @@ Route::prefix('api/v1')->middleware('auth:sanctum')->group(function () {
 });
 
 // ===== Public Diagnostics Routes (No Auth Required) =====
-Route::prefix('api/v1/diagnostics')->group(function () {
+Route::prefix('v1/diagnostics')->group(function () {
     Route::get('/health', [DiagnosticsController::class, 'health']);
     Route::get('/triggers-sample', [DiagnosticsController::class, 'triggersSample']);
     Route::get('/lov-sample', [DiagnosticsController::class, 'lovSample']);

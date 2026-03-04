@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Controller;
 use App\Models\FormSchema;
 use App\Models\FormField;
 use App\Models\FormResponse;
