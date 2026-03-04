@@ -1,4 +1,3 @@
-import js from '@eslint/js';
 import globals from 'globals';
 
 /** @type {import('eslint').Linter.Config[]} */
@@ -21,11 +20,12 @@ export default [
     {
         files: ['**/*.{js,jsx,ts,tsx}'],
         languageOptions: {
-            ecmaVersion: 'latest',
+            ecmaVersion: 2024,
             sourceType: 'module',
             globals: {
                 ...globals.browser,
                 ...globals.node,
+                structuredClone: 'readonly',
             },
             parserOptions: {
                 ecmaFeatures: {
@@ -33,8 +33,6 @@ export default [
                 },
             },
         },
-        rules: {
-            ...js.configs.recommended.rules,
-        },
+        rules: {},
     },
 ];
