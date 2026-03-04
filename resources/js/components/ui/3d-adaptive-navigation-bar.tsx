@@ -30,7 +30,7 @@ interface NavItem {
 export const CRMAdaptivePill: React.FC = () => {
   const [expanded, setExpanded] = useState(false)
   const [isTransitioning, setIsTransitioning] = useState(false)
-  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   
   const navItems: NavItem[] = [
     { label: 'Dashboard', id: 'dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -45,15 +45,48 @@ export const CRMAdaptivePill: React.FC = () => {
   const pillWidth = useSpring(56, { stiffness: 220, damping: 25, mass: 1 })
 
   useEffect(() => {
+    const updateWidth = () => {
+      if (expanded) {
+        // Use 89% of viewport width up to a reasonable max for large screens
+        const targetWidth = Math.min(window.innerWidth * 0.89, 450);
+        pillWidth.set(targetWidth);
+      } else {
+        pillWidth.set(56);
+      }
+    };
+
+    updateWidth();
+    window.addEventListener('resize', updateWidth);
+
+    // Close menu on click/touch outside
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+        if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+            setExpanded(false);
+        }
+    };
+
     if (expanded) {
-      pillWidth.set(340) // Expand to show items
-    } else {
-      pillWidth.set(56) // Contract to burger icon
+        document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('touchstart', handleClickOutside);
     }
+
+    return () => {
+        window.removeEventListener('resize', updateWidth);
+        document.removeEventListener('mousedown', handleClickOutside);
+        document.removeEventListener('touchstart', handleClickOutside);
+    };
   }, [expanded, pillWidth])
 
   const toggleExpand = () => {
     setExpanded(!expanded)
+  }
+
+  const handleNavigateTo = (href: string) => {
+    setExpanded(false);
+    // Wait for menu close animation (300-400ms)
+    setTimeout(() => {
+      router.visit(href);
+    }, 350);
   }
 
   const handleItemClick = (item: NavItem) => {
@@ -71,10 +104,15 @@ export const CRMAdaptivePill: React.FC = () => {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-[100] md:hidden">
+    <div className="fixed bottom-6 right-6 z-[100] md:hidden" ref={containerRef}>
         <motion.nav
-        onClick={expanded ? undefined : toggleExpand}
-        className="relative rounded-full flex items-center justify-center cursor-pointer"
+        onPointerDown={(e) => {
+          if (!expanded) {
+            e.preventDefault();
+            toggleExpand();
+          }
+        }}
+        className="relative rounded-full flex items-center justify-center cursor-pointer touch-none"
         style={{
             width: pillWidth,
             height: '56px',
@@ -131,21 +169,18 @@ export const CRMAdaptivePill: React.FC = () => {
                             transition={{ delay: index * 0.05 }}
                         >
                             {item.href ? (
-                                <Link
-                                    href={item.href}
-                                    className="flex flex-col items-center justify-center p-2 rounded-xl hover:bg-black/5 transition-colors"
-                                    onClick={() => setExpanded(false)}
+                                <button
+                                    onClick={() => handleNavigateTo(item.href!)}
+                                    className="flex flex-col items-center justify-center p-3 rounded-xl hover:bg-black/5 transition-colors cursor-pointer"
                                 >
-                                    {item.icon && <item.icon className="h-5 w-5 mb-1 text-slate-600" />}
-                                    <span className="text-[10px] font-semibold text-slate-700 uppercase tracking-tighter">{item.label}</span>
-                                </Link>
+                                    {item.icon && <item.icon className="h-6 w-6 text-slate-600" />}
+                                </button>
                             ) : (
                                 <button
                                     onClick={() => handleItemClick(item)}
-                                    className="flex flex-col items-center justify-center p-2 rounded-xl hover:bg-black/5 transition-colors"
+                                    className="flex flex-col items-center justify-center p-3 rounded-xl hover:bg-black/5 transition-colors"
                                 >
-                                    {item.icon && <item.icon className="h-5 w-5 mb-1 text-red-500" />}
-                                    <span className="text-[10px] font-semibold text-slate-700 uppercase tracking-tighter">{item.label}</span>
+                                    {item.icon && <item.icon className="h-6 w-6 text-red-500" />}
                                 </button>
                             )}
                         </motion.div>
