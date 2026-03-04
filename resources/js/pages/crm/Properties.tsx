@@ -96,7 +96,7 @@ const typeLabels: Record<string, string> = {
 export default function Properties({ properties, filters: initialFilters }: PropertiesProps) {
     const [search, setSearch] = useState(initialFilters.search || '');
     const [statusFilter, setStatusFilter] = useState(initialFilters.status || 'all');
-    const [typeFilter, setTypeFilter] = useState(initialFilters.type || '');
+    const [typeFilter, setTypeFilter] = useState(initialFilters.type || 'all');
     const [sortBy, setSortBy] = useState<'price' | 'rooms' | 'created'>('created');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
@@ -257,7 +257,7 @@ export default function Properties({ properties, filters: initialFilters }: Prop
                                         <SelectValue placeholder="Тип недвижимости" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="">Все типы</SelectItem>
+                                        <SelectItem value="all">Все типы</SelectItem>
                                         <SelectItem value="apartment">Квартира</SelectItem>
                                         <SelectItem value="house">Дом</SelectItem>
                                         <SelectItem value="commercial">Коммерческая</SelectItem>

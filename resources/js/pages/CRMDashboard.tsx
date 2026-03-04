@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { Building2, Home, TrendingUp, Users, Calendar } from 'lucide-react';
 import CRMLayout from '@/layouts/crm-layout';
 import { StatCard } from '@/components/stat-card';
@@ -125,6 +125,7 @@ export default function CRMDashboard({
                                 <Button
                                     variant="outline"
                                     className="w-full justify-start text-left"
+                                    onClick={() => router.visit('/properties')}
                                 >
                                     <Home className="mr-2 h-4 w-4" />
                                     Добавить объект
@@ -132,6 +133,7 @@ export default function CRMDashboard({
                                 <Button
                                     variant="outline"
                                     className="w-full justify-start text-left"
+                                    onClick={() => router.visit('/buyers')}
                                 >
                                     <Users className="mr-2 h-4 w-4" />
                                     Добавить клиента
@@ -139,6 +141,7 @@ export default function CRMDashboard({
                                 <Button
                                     variant="outline"
                                     className="w-full justify-start text-left"
+                                    onClick={() => router.visit('/transactions')}
                                 >
                                     <Calendar className="mr-2 h-4 w-4" />
                                     Новая сделка
@@ -146,6 +149,7 @@ export default function CRMDashboard({
                                 <Button
                                     variant="outline"
                                     className="w-full justify-start text-left"
+                                    onClick={() => router.visit('/dashboard')}
                                 >
                                     <TrendingUp className="mr-2 h-4 w-4" />
                                     Смотреть отчёты
@@ -163,6 +167,7 @@ export default function CRMDashboard({
                                     variant="ghost"
                                     size="sm"
                                     className="gap-2"
+                                    onClick={() => router.visit('/transactions')}
                                 >
                                     Все сделки
                                     <ArrowRight className="h-4 w-4" />
