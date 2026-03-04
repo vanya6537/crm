@@ -68,8 +68,11 @@ export default function ModelManager({
 
     const loadFieldTypes = async () => {
         try {
-            const response = await axios.get('/api/v1/model-fields/types');
-            setFieldTypes(response.data.data);
+            const response = await apiRequest('/api/v1/model-fields/types', {
+                method: 'GET',
+            });
+            const data = await response.json();
+            setFieldTypes(data.data);
         } catch (err) {
             console.error('Failed to load field types:', err);
         }
@@ -79,8 +82,11 @@ export default function ModelManager({
         setIsLoading(true);
         try {
             const url = `/api/v1/model-fields/${entityType}?status=${status}`;
-            const response = await axios.get(url);
-            setFields(response.data.data || []);
+            const response = await apiRequest(url, {
+                method: 'GET',
+            });
+            const data = await response.json();
+            setFields(data.data || []);
             setError(null);
         } catch (err) {
             console.error('Failed to load fields:', err);
@@ -114,21 +120,35 @@ export default function ModelManager({
         try {
             if (selectedField) {
                 // Update existing field
-                await axios.put(
+                const response = await apiRequest(
                     `/api/v1/model-fields/${entityType}/${selectedField.uuid}`,
-                    fieldData
+                    {
+                        method: 'PUT',
+                        body: JSON.stringify(fieldData),
+                    }
                 );
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Ошибка при сохранении поля');
+                }
                 setSuccess('Поле успешно обновлено');
             } else {
                 // Create new field
-                await axios.post(`/api/v1/model-fields/${entityType}`, fieldData);
+                const response = await apiRequest(`/api/v1/model-fields/${entityType}`, {
+                    method: 'POST',
+                    body: JSON.stringify(fieldData),
+                });
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Ошибка при сохранении поля');
+                }
                 setSuccess('Поле успешно добавлено');
             }
             setTimeout(() => setSuccess(null), 3000);
             await loadFields();
             handleCloseModal();
         } catch (err: any) {
-            const message = err.response?.data?.error || 'Ошибка при сохранении поля';
+            const message = err.message || 'Ошибка при сохранении поля';
             setError(message);
             throw err;
         }
@@ -137,7 +157,16 @@ export default function ModelManager({
     const handleDeleteField = async (field: ModelField) => {
         if (window.confirm(`Удалить поле "${field.label}"?`)) {
             try {
-                await axios.delete(`/api/v1/model-fields/${entityType}/${field.uuid}`);
+                const response = await apiRequest(
+                    `/api/v1/model-fields/${entityType}/${field.uuid}`,
+                    {
+                        method: 'DELETE',
+                    }
+                );
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Ошибка при удалении поля');
+                }
                 setSuccess('Поле успешно удалено');
                 setTimeout(() => setSuccess(null), 3000);
                 await loadFields();
@@ -150,9 +179,16 @@ export default function ModelManager({
 
     const handleToggleActive = async (field: ModelField) => {
         try {
-            await axios.put(`/api/v1/model-fields/${entityType}/${field.uuid}`, {
-                is_active: !field.is_active,
-            });
+            const response = await apiRequest(
+                `/api/v1/model-fields/${entityType}/${field.uuid}`,
+                {
+                    method: 'PUT',
+                    body: JSON.stringify({ is_active: !field.is_active }),
+                }
+            );
+            if (!response.ok) {
+                throw new Error('Ошибка при изменении статуса поля');
+            }
             setSuccess(field.is_active ? 'Поле архивировано' : 'Поле восстановлено');
             setTimeout(() => setSuccess(null), 3000);
             await loadFields();
@@ -170,9 +206,16 @@ export default function ModelManager({
                 sort_order: idx,
             }));
 
-            await axios.post(`/api/v1/model-fields/${entityType}/reorder`, {
-                fields: orderData,
-            });
+            const response = await apiRequest(
+                `/api/v1/model-fields/${entityType}/reorder`,
+                {
+                    method: 'POST',
+                    body: JSON.stringify({ fields: orderData }),
+                }
+            );
+            if (!response.ok) {
+                throw new Error('Ошибка при сохранении порядка');
+            }
 
             setFields(reorderedFields);
             setSuccess('Порядок полей сохранён');
