@@ -44,6 +44,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Label } from '@/components/ui/label';
 import { PropertyForm } from './PropertyForm';
+import { apiRequest } from '@/lib/csrf';
 
 type Property = {
     id: number;
@@ -137,9 +138,8 @@ export default function Properties({ properties, filters: initialFilters }: Prop
         setIsLoading(true);
         setError(null);
         try {
-            const response = await fetch('/api/v1/properties', {
+            const response = await apiRequest('/api/v1/properties', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),
             });
 
@@ -150,7 +150,6 @@ export default function Properties({ properties, filters: initialFilters }: Prop
             }
 
             setIsCreateModalOpen(false);
-            // Reload properties would happen via Inertia in production
             window.location.reload();
         } catch (err) {
             const msg = err instanceof Error ? err.message : 'Unknown error';
@@ -169,9 +168,8 @@ export default function Properties({ properties, filters: initialFilters }: Prop
         try {
             console.log('Updating property:', selectedProperty.id, 'with data:', data);
             
-            const response = await fetch(`/api/v1/properties/${selectedProperty.id}`, {
+            const response = await apiRequest(`/api/v1/properties/${selectedProperty.id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),
             });
 
@@ -199,7 +197,7 @@ export default function Properties({ properties, filters: initialFilters }: Prop
         setIsLoading(true);
         setError(null);
         try {
-            const response = await fetch(`/api/v1/properties/${selectedProperty.id}`, {
+            const response = await apiRequest(`/api/v1/properties/${selectedProperty.id}`, {
                 method: 'DELETE',
             });
 

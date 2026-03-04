@@ -29,6 +29,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { TransactionForm } from './TransactionForm';
+import { apiRequest } from '@/lib/csrf';
 
 type Agent = {
     id: number;
@@ -111,7 +112,9 @@ export default function Transactions({
             if (search) params.append('search', search);
             if (statusFilter) params.append('status', statusFilter);
 
-            const response = await fetch(`/api/v1/transactions?${params.toString()}`);
+            const response = await apiRequest(`/api/v1/transactions?${params.toString()}`, {
+                method: 'GET',
+            });
             const data = await response.json();
             setTransactions(data.data);
             setPagination(data);
@@ -132,9 +135,8 @@ export default function Transactions({
         setError('');
 
         try {
-            const response = await fetch('/api/v1/transactions', {
+            const response = await apiRequest('/api/v1/transactions', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),
             });
 
@@ -159,9 +161,8 @@ export default function Transactions({
         setError('');
 
         try {
-            const response = await fetch(`/api/v1/transactions/${selectedTransaction.id}`, {
+            const response = await apiRequest(`/api/v1/transactions/${selectedTransaction.id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),
             });
 
@@ -187,7 +188,7 @@ export default function Transactions({
         setError('');
 
         try {
-            const response = await fetch(`/api/v1/transactions/${selectedTransaction.id}`, {
+            const response = await apiRequest(`/api/v1/transactions/${selectedTransaction.id}`, {
                 method: 'DELETE',
             });
 

@@ -8,10 +8,11 @@ use App\Http\Controllers\Api\BuyerController;
 use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\API\TriggerController;
 use App\Http\Controllers\API\DiagnosticsController;
+use App\Http\Middleware\EnsureApiAuthenticated;
 use Illuminate\Support\Facades\Route;
 
 // API routes - automatically prefixed with /api by Laravel
-Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
+Route::prefix('v1')->middleware(EnsureApiAuthenticated::class)->group(function () {
     
     // ===== List of Values Routes =====
     Route::get('/list-of-values', [ListOfValuesController::class, 'index']);
@@ -120,7 +121,7 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::post('/messages/{message}/retry', [FormController::class, 'retryMessage']);
 
     // Webhook for incoming messages (no auth required)
-    Route::post('/messengers/webhook', [FormController::class, 'receiveMessage'])->withoutMiddleware('auth:sanctum');
+    Route::post('/messengers/webhook', [FormController::class, 'receiveMessage'])->withoutMiddleware(EnsureApiAuthenticated::class);
 });
 
 // ===== Public Diagnostics Routes (No Auth Required) =====

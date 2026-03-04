@@ -29,6 +29,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { BuyerForm } from './BuyerForm';
+import { apiRequest } from '@/lib/csrf';
 
 type Buyer = {
     id: number;
@@ -84,7 +85,9 @@ export default function Buyers({ buyers: initialBuyers, filters: initialFilters 
             if (statusFilter) params.append('status', statusFilter);
             if (sourceFilter) params.append('source', sourceFilter);
 
-            const response = await fetch(`/api/v1/buyers?${params.toString()}`);
+            const response = await apiRequest(`/api/v1/buyers?${params.toString()}`, {
+                method: 'GET',
+            });
             const data = await response.json();
             setBuyers(data.data);
             setPagination(data);
@@ -106,9 +109,8 @@ export default function Buyers({ buyers: initialBuyers, filters: initialFilters 
         setError('');
 
         try {
-            const response = await fetch('/api/v1/buyers', {
+            const response = await apiRequest('/api/v1/buyers', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),
             });
 
@@ -133,9 +135,8 @@ export default function Buyers({ buyers: initialBuyers, filters: initialFilters 
         setError('');
 
         try {
-            const response = await fetch(`/api/v1/buyers/${selectedBuyer.id}`, {
+            const response = await apiRequest(`/api/v1/buyers/${selectedBuyer.id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),
             });
 
@@ -161,7 +162,7 @@ export default function Buyers({ buyers: initialBuyers, filters: initialFilters 
         setError('');
 
         try {
-            const response = await fetch(`/api/v1/buyers/${selectedBuyer.id}`, {
+            const response = await apiRequest(`/api/v1/buyers/${selectedBuyer.id}`, {
                 method: 'DELETE',
             });
 

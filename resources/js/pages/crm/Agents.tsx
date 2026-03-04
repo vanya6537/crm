@@ -29,6 +29,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { AgentForm } from './AgentForm';
+import { apiRequest } from '@/lib/csrf';
 
 type Agent = {
     id: number;
@@ -84,7 +85,9 @@ export default function Agents({ agents: initialAgents, filters: initialFilters 
             if (statusFilter) params.append('status', statusFilter);
             if (specializationFilter) params.append('specialization', specializationFilter);
 
-            const response = await fetch(`/api/v1/agents?${params.toString()}`);
+            const response = await apiRequest(`/api/v1/agents?${params.toString()}`, {
+                method: 'GET',
+            });
             const data = await response.json();
             setAgents(data.data);
             setPagination(data);
@@ -106,9 +109,8 @@ export default function Agents({ agents: initialAgents, filters: initialFilters 
         setError('');
 
         try {
-            const response = await fetch('/api/v1/agents', {
+            const response = await apiRequest('/api/v1/agents', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),
             });
 
@@ -133,9 +135,8 @@ export default function Agents({ agents: initialAgents, filters: initialFilters 
         setError('');
 
         try {
-            const response = await fetch(`/api/v1/agents/${selectedAgent.id}`, {
+            const response = await apiRequest(`/api/v1/agents/${selectedAgent.id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),
             });
 
@@ -161,7 +162,7 @@ export default function Agents({ agents: initialAgents, filters: initialFilters 
         setError('');
 
         try {
-            const response = await fetch(`/api/v1/agents/${selectedAgent.id}`, {
+            const response = await apiRequest(`/api/v1/agents/${selectedAgent.id}`, {
                 method: 'DELETE',
             });
 

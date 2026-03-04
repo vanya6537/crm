@@ -12,7 +12,7 @@ export default defineConfig({
             '@/pages': path.resolve(__dirname, './resources/js/pages'),
             '@/layouts': path.resolve(__dirname, './resources/js/layouts'),
             '@/hooks': path.resolve(__dirname, './hooks'),
-            '@/lib': path.resolve(__dirname, './lib'),
+            '@/lib': path.resolve(__dirname, './resources/js/lib'),
             '@/routes': path.resolve(__dirname, './resources/js/routes'),
             '@/types': path.resolve(__dirname, './resources/js/types'),
             '@': path.resolve(__dirname, './resources/js'),

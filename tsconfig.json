@@ -113,7 +113,7 @@
             "@/pages/*": ["./resources/js/pages/*"],
             "@/layouts/*": ["./resources/js/layouts/*"],
             "@/hooks/*": ["./hooks/*"],
-            "@/lib/*": ["./lib/*"],
+            "@/lib/*": ["./resources/js/lib/*"],
             "@/routes/*": ["./resources/js/routes/*"],
             "@/types/*": ["./resources/js/types/*"],
             "@/*": ["./resources/js/*", "./*"]
