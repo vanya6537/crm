@@ -11,6 +11,20 @@ mkdir -p storage bootstrap/cache
 chown -R www-data:www-data storage bootstrap/cache || true
 chmod -R ug+rwX storage bootstrap/cache || true
 
+# SQLite database file (optional, for DB_CONNECTION=sqlite)
+if [[ "${DB_CONNECTION:-}" == "sqlite" || "${DATABASE_URL:-}" == sqlite:* ]]; then
+  db_path="${DB_DATABASE:-database/database.sqlite}"
+  if [[ "${db_path}" != ":memory:" ]]; then
+    if [[ "${db_path}" != /* ]]; then
+      db_path="/var/www/html/${db_path}"
+    fi
+    mkdir -p "$(dirname "${db_path}")"
+    touch "${db_path}"
+    chown www-data:www-data "${db_path}" || true
+    chmod ug+rw "${db_path}" || true
+  fi
+fi
+
 # Laravel optimizations (only if APP_KEY is set)
 if [[ -n "${APP_KEY:-}" ]]; then
   # If enabled, run DB migrations at container start (DB must be configured).

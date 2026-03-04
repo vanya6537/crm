@@ -11,8 +11,8 @@ WORKDIR /var/www/html
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
     git curl unzip ca-certificates gnupg \
-    libzip-dev libpq-dev \
-  && docker-php-ext-install -j$(nproc) zip pdo pdo_pgsql \
+    libzip-dev \
+  && docker-php-ext-install -j$(nproc) zip \
   && rm -rf /var/lib/apt/lists/*
 
 # Install Composer
@@ -48,11 +48,12 @@ WORKDIR /var/www/html
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
     nginx supervisor gettext-base \
-    libzip4 libpq5 \
+    libzip4 \
+    libsqlite3-0 libsqlite3-dev \
   && rm -rf /var/lib/apt/lists/*
 
 # PHP extensions needed at runtime
-RUN docker-php-ext-install -j$(nproc) pdo pdo_pgsql
+RUN docker-php-ext-install -j$(nproc) pdo_sqlite sqlite3
 
 # Use a unix socket for nginx -> php-fpm
 RUN { \
