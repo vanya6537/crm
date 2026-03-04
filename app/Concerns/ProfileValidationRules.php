@@ -17,6 +17,12 @@ trait ProfileValidationRules
         return [
             'name' => $this->nameRules(),
             'email' => $this->emailRules($userId),
+            'phone' => ['nullable', 'string', 'max:50'],
+            'license_number' => ['nullable', 'string', 'max:100'],
+            'specialization' => ['nullable', 'string', 'max:255'],
+            'bio' => ['nullable', 'string'],
+            'avatar_url' => ['nullable', 'url', 'max:2048'],
+            'social_links' => ['nullable', 'array'],
         ];
     }
 

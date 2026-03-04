@@ -22,6 +22,12 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'phone',
+        'license_number',
+        'specialization',
+        'bio',
+        'avatar_url',
+        'social_links',
     ];
 
     /**
@@ -47,6 +53,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
+            'social_links' => 'array',
         ];
     }
 }
