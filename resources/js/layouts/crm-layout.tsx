@@ -1,6 +1,7 @@
 import { CRMSidebar } from '@/components/crm-sidebar';
 import { AppShell } from '@/components/app-shell';
 import { SidebarInset, SidebarProvider } from '@/components/radix/sidebar';
+import { CRMAdaptivePill } from '@/components/ui/3d-adaptive-navigation-bar';
 import type { ReactNode } from 'react';
 
 const AppContent = ({ variant = 'header', children, ...props }: React.ComponentProps<'main'> & { variant?: 'header' | 'sidebar' }) => {
@@ -55,6 +56,7 @@ export default function CRMLayout({
                         </div>
                     )}
                     {children}
+                    <CRMAdaptivePill />
                 </AppContent>
             </AppShell>
         );

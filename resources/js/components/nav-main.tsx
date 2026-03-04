@@ -6,7 +6,7 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/radix/sidebar';
-import { useCurrentUrl } from '@/hooks/use-current-url';
+import { useCurrentUrl } from '@/resources/js/hooks/use-current-url';
 import type { NavItem } from '@/types';
 
 export function NavMain({ items = [] }: { items: NavItem[] }) {
