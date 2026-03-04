@@ -3,11 +3,22 @@ set -euo pipefail
 
 : "${PORT:=10000}"
 
+# php-fpm socket directory
+mkdir -p /var/run/php
+chown -R www-data:www-data /var/run/php || true
+chmod -R ug+rwX /var/run/php || true
+
 # Render nginx config with PORT
 envsubst '$PORT' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf
 
 # Ensure writable dirs
-mkdir -p storage bootstrap/cache
+mkdir -p \
+  storage \
+  storage/framework/views \
+  storage/framework/cache \
+  storage/framework/sessions \
+  storage/logs \
+  bootstrap/cache
 chown -R www-data:www-data storage bootstrap/cache || true
 chmod -R ug+rwX storage bootstrap/cache || true
 
@@ -27,6 +38,11 @@ fi
 
 # Laravel optimizations (only if APP_KEY is set)
 if [[ -n "${APP_KEY:-}" ]]; then
+  php artisan package:discover --ansi --no-interaction || {
+    echo "[entrypoint] package:discover failed" >&2
+    exit 1
+  }
+
   # If enabled, run DB migrations at container start (DB must be configured).
   if [[ "${RUN_MIGRATIONS:-}" == "true" || "${RUN_MIGRATIONS:-}" == "1" ]]; then
     php artisan migrate --force --no-interaction || {

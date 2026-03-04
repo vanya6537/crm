@@ -34,12 +34,17 @@ RUN npm ci
 
 # 3) App source + build assets
 COPY . .
-RUN mkdir -p bootstrap/cache storage \
-  && chown -R www-data:www-data bootstrap/cache storage || true \
-  && chmod -R ug+rwX bootstrap/cache storage \
-  && php artisan package:discover --ansi --no-interaction \
-  && npm run build \
-  && rm -rf node_modules
+RUN set -eu; \
+  mkdir -p bootstrap/cache storage database \
+    storage/framework/views storage/framework/cache storage/framework/sessions storage/logs; \
+  touch database/database.sqlite; \
+  chmod -R ug+rwX bootstrap/cache storage database; \
+  APP_KEY="$(php -r 'echo "base64:".base64_encode(random_bytes(32));')"; \
+  APP_ENV=production APP_DEBUG=false \
+  DB_CONNECTION=sqlite DB_DATABASE=/var/www/html/database/database.sqlite \
+  APP_KEY="$APP_KEY" \
+  npm run build; \
+  rm -rf node_modules
 
 ############################
 # Runtime stage (nginx + php-fpm)
