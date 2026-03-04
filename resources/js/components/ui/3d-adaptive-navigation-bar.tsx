@@ -10,7 +10,9 @@ import {
     Settings,
     UserCircle,
     Building2,
-    LayoutDashboard
+    LayoutDashboard,
+    Zap,
+    GitBranch
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { logout } from '@/routes'
@@ -37,6 +39,8 @@ export const CRMAdaptivePill: React.FC = () => {
     { label: 'Agents', id: 'agents', href: '/agents', icon: Users },
     { label: 'Buyers', id: 'buyers', href: '/buyers', icon: UserCircle },
     { label: 'Transactions', id: 'transactions', href: '/transactions', icon: Briefcase },
+    { label: 'Processes', id: 'processes', href: '/process-modeler', icon: GitBranch },
+    { label: 'Settings', id: 'settings', href: '/settings', icon: Settings },
     { label: 'Log out', id: 'logout', action: () => router.post(logout()), icon: LogOut },
   ]
 
@@ -47,8 +51,8 @@ export const CRMAdaptivePill: React.FC = () => {
   useEffect(() => {
     const updateWidth = () => {
       if (expanded) {
-        // Use 89% of viewport width up to a reasonable max for large screens
-        const targetWidth = Math.min(window.innerWidth * 0.89, 450);
+        // Use larger width for grid layout with small icons
+        const targetWidth = Math.min(window.innerWidth * 0.92, 340);
         pillWidth.set(targetWidth);
       } else {
         pillWidth.set(56);
@@ -116,6 +120,7 @@ export const CRMAdaptivePill: React.FC = () => {
         style={{
             width: pillWidth,
             height: '56px',
+            minHeight: '56px',
             background: `
             linear-gradient(135deg, 
                 #fcfcfd 0%, 
@@ -160,27 +165,29 @@ export const CRMAdaptivePill: React.FC = () => {
                     <Menu className="h-6 w-6 text-slate-700" />
                 </div>
             ) : (
-                <div className="flex items-center justify-around w-full gap-2 overflow-x-auto no-scrollbar">
+                <div className="flex items-center justify-center w-full gap-1 flex-wrap px-2">
                     {navItems.map((item, index) => (
                         <motion.div
                             key={item.id}
-                            initial={{ opacity: 0, scale: 0.8 }}
+                            initial={{ opacity: 0, scale: 0.6 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: index * 0.05 }}
+                            transition={{ delay: index * 0.04 }}
                         >
                             {item.href ? (
                                 <button
                                     onClick={() => handleNavigateTo(item.href!)}
-                                    className="flex flex-col items-center justify-center p-3 rounded-xl hover:bg-black/5 transition-colors cursor-pointer"
+                                    className="flex flex-col items-center justify-center p-2 rounded-lg hover:bg-black/5 transition-colors cursor-pointer"
+                                    title={item.label}
                                 >
-                                    {item.icon && <item.icon className="h-6 w-6 text-slate-600" />}
+                                    {item.icon && <item.icon className="h-4 w-4 text-slate-600" />}
                                 </button>
                             ) : (
                                 <button
                                     onClick={() => handleItemClick(item)}
-                                    className="flex flex-col items-center justify-center p-3 rounded-xl hover:bg-black/5 transition-colors"
+                                    className="flex flex-col items-center justify-center p-2 rounded-lg hover:bg-black/5 transition-colors"
+                                    title={item.label}
                                 >
-                                    {item.icon && <item.icon className="h-6 w-6 text-red-500" />}
+                                    {item.icon && <item.icon className="h-4 w-4 text-red-500" />}
                                 </button>
                             )}
                         </motion.div>
@@ -188,9 +195,10 @@ export const CRMAdaptivePill: React.FC = () => {
                     {/* Close button inside expanded view */}
                     <button 
                         onClick={(e) => { e.stopPropagation(); setExpanded(false); }}
-                        className="p-2 ml-2 rounded-full bg-slate-200/50"
+                        className="p-2 rounded-lg bg-slate-200/50"
+                        title="Close"
                     >
-                        <Menu className="h-4 w-4 rotate-90 text-slate-500" />
+                        <Menu className="h-3 w-3 rotate-90 text-slate-500" />
                     </button>
                 </div>
             )}
