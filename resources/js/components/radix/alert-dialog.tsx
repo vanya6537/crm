@@ -120,8 +120,18 @@ type AlertDialogActionProps = AlertDialogActionPrimitiveProps;
 
 function AlertDialogAction({
   className,
+  asChild,
   ...props
 }: AlertDialogActionPrimitiveProps) {
+  if (asChild) {
+    return (
+      <AlertDialogActionPrimitive
+        className={cn(buttonVariants(), className)}
+        {...props}
+        asChild
+      />
+    );
+  }
   return (
     <AlertDialogActionPrimitive
       className={cn(buttonVariants(), className)}
@@ -134,8 +144,18 @@ type AlertDialogCancelProps = AlertDialogCancelPrimitiveProps;
 
 function AlertDialogCancel({
   className,
+  asChild,
   ...props
 }: AlertDialogCancelPrimitiveProps) {
+  if (asChild) {
+    return (
+      <AlertDialogCancelPrimitive
+        className={cn(buttonVariants({ variant: 'outline' }), className)}
+        {...props}
+        asChild
+      />
+    );
+  }
   return (
     <AlertDialogCancelPrimitive
       className={cn(buttonVariants({ variant: 'outline' }), className)}

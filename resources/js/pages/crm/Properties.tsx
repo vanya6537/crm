@@ -32,18 +32,10 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/radix/dialog';
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from '@/components/radix/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Label } from '@/components/ui/label';
 import { PropertyForm } from './PropertyForm';
+import { DeleteConfirmationDialog } from '@/components/dialogs/DeleteConfirmationDialog';
 import { apiRequest } from '@/lib/csrf';
 
 type Property = {
@@ -497,37 +489,15 @@ export default function Properties({ properties, filters: initialFilters }: Prop
                 )}
 
                 {/* Delete Confirmation */}
-                <AlertDialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>Удалить объект?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                Вы уверены, что хотите удалить объект{' '}
-                                <span className="font-semibold">
-                                    {selectedProperty?.address}
-                                </span>
-                                ? Это действие нельзя отменить.
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <div className="flex gap-2 justify-end">
-                            <AlertDialogCancel>Отмена</AlertDialogCancel>
-                            <AlertDialogAction
-                                onClick={handleDelete}
-                                disabled={isLoading}
-                                className="bg-red-500 hover:bg-red-600"
-                            >
-                                {isLoading ? (
-                                    <span className="flex items-center gap-2">
-                                        <Spinner className="h-4 w-4" />
-                                        Удаление...
-                                    </span>
-                                ) : (
-                                    'Удалить'
-                                )}
-                            </AlertDialogAction>
-                        </div>
-                    </AlertDialogContent>
-                </AlertDialog>
+                <DeleteConfirmationDialog
+                    open={isDeleteModalOpen}
+                    onOpenChange={setIsDeleteModalOpen}
+                    title="Удалить объект?"
+                    description="Вы уверены, что хотите удалить объект"
+                    itemName={selectedProperty?.address}
+                    isLoading={isLoading}
+                    onConfirm={handleDelete}
+                />
             </CRMLayout>
         </>
     );

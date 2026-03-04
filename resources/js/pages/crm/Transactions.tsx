@@ -5,7 +5,6 @@ import { useState } from 'react';
 import { AlertCircle, Edit2, Trash2, Plus } from 'lucide-react';
 import CRMLayout from '@/layouts/crm-layout';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/radix/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/radix/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -29,6 +28,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { TransactionForm } from './TransactionForm';
+import { DeleteConfirmationDialog } from '@/components/dialogs/DeleteConfirmationDialog';
 import { apiRequest } from '@/lib/csrf';
 
 type Agent = {
@@ -440,27 +440,14 @@ export default function Transactions({
                     </Dialog>
 
                     {/* Delete Confirmation Dialog */}
-                    <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Удалить сделку</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    Вы уверены, что хотите удалить эту сделку? Это действие невозможно
-                                    отменить.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <div className="flex gap-2 justify-end">
-                                <AlertDialogCancel disabled={isLoading}>Отмена</AlertDialogCancel>
-                                <AlertDialogAction
-                                    onClick={handleDelete}
-                                    disabled={isLoading}
-                                    className="bg-red-500 hover:bg-red-600 text-white"
-                                >
-                                    {isLoading ? <Spinner className="h-4 w-4" /> : 'Удалить'}
-                                </AlertDialogAction>
-                            </div>
-                        </AlertDialogContent>
-                    </AlertDialog>
+                    <DeleteConfirmationDialog
+                        open={isDeleteOpen}
+                        onOpenChange={setIsDeleteOpen}
+                        title="Удалить сделку"
+                        description="Вы уверены, что хотите удалить эту сделку"
+                        isLoading={isLoading}
+                        onConfirm={handleDelete}
+                    />
                 </div>
             </CRMLayout>
         </>
