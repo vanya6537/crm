@@ -5,6 +5,7 @@ use App\Http\Controllers\PropertyController;
 use App\Http\Controllers\AgentController;
 use App\Http\Controllers\BuyerController;
 use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\ModelManagerController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
@@ -23,6 +24,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('transactions', [TransactionController::class, 'index'])->name('crm.transactions');
     Route::inertia('settings', 'crm/Settings')->name('crm.settings');
     Route::inertia('list-of-values', 'crm/ListOfValuesAdvanced')->name('crm.list-of-values');
+    Route::get('model-manager', [ModelManagerController::class, 'index'])->name('crm.model-manager');
     
     // Process Modeler - with triggers
     Route::inertia('process-modeler', 'ProcessModeler')->name('process-modeler');

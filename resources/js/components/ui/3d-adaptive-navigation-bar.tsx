@@ -165,19 +165,15 @@ export const CRMAdaptivePill: React.FC = () => {
                     <Menu className="h-6 w-6 text-slate-700" />
                 </div>
             ) : (
-                <div className="flex items-center justify-center w-full gap-1 flex-wrap px-2">
+                <div className="flex items-center justify-center w-full gap-1 px-2">
                     {navItems.map((item, index) => (
                         <motion.div
                             key={item.id}
-                            initial={{ opacity: 0, scale: 0.5, y: 10 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
                             transition={{ 
-                                delay: index * 0.08,
-                                duration: 0.3,
-                                type: "spring",
-                                stiffness: 400,
-                                damping: 30,
-                                mass: 0.5
+                                delay: index * 0.05,
+                                duration: 0.2
                             }}
                         >
                             {item.href ? (
@@ -204,15 +200,11 @@ export const CRMAdaptivePill: React.FC = () => {
                         onClick={(e) => { e.stopPropagation(); setExpanded(false); }}
                         className="p-2 rounded-lg bg-slate-200/50"
                         title="Close"
-                        initial={{ opacity: 0, scale: 0.5, y: 10 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
                         transition={{ 
-                            delay: navItems.length * 0.08,
-                            duration: 0.3,
-                            type: "spring",
-                            stiffness: 400,
-                            damping: 30,
-                            mass: 0.5
+                            delay: navItems.length * 0.05,
+                            duration: 0.2
                         }}
                     >
                         <Menu className="h-3 w-3 rotate-90 text-slate-500" />

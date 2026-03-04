@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\PropertyController;
 use App\Http\Controllers\Api\AgentController;
 use App\Http\Controllers\Api\BuyerController;
 use App\Http\Controllers\Api\TransactionController;
+use App\Http\Controllers\Api\ModelFieldController;
 use App\Http\Controllers\API\TriggerController;
 use App\Http\Controllers\API\DiagnosticsController;
 use App\Http\Middleware\EnsureApiAuthenticated;
@@ -24,6 +25,18 @@ Route::prefix('v1')->middleware(EnsureApiAuthenticated::class)->group(function (
     Route::post('/list-of-values/{lovId}/items', [ListOfValuesController::class, 'addItem']);
     Route::put('/list-of-values/items/{itemId}', [ListOfValuesController::class, 'updateItem']);
     Route::delete('/list-of-values/items/{itemId}', [ListOfValuesController::class, 'deleteItem']);
+    
+    // ===== Model Field Routes =====
+    Route::get('/model-fields/types', [ModelFieldController::class, 'getFieldTypes']);
+    Route::get('/model-fields/entity-types', [ModelFieldController::class, 'getEntityTypes']);
+    Route::prefix('model-fields/{entityType}')->group(function () {
+        Route::get('/', [ModelFieldController::class, 'index']);
+        Route::post('/', [ModelFieldController::class, 'store']);
+        Route::get('/{field}', [ModelFieldController::class, 'show']);
+        Route::put('/{field}', [ModelFieldController::class, 'update']);
+        Route::delete('/{field}', [ModelFieldController::class, 'destroy']);
+        Route::post('/reorder', [ModelFieldController::class, 'updateSortOrder']);
+    });
     
     // ===== Trigger Routes =====
     Route::prefix('triggers')->group(function () {
