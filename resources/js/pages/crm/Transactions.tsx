@@ -315,10 +315,10 @@ export default function Transactions({
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Объект</TableHead>
+                                    <TableHead className="min-w-[140px]">Объект</TableHead>
                                     <TableHead>Клиент</TableHead>
                                     <TableHead>Агент</TableHead>
-                                    <TableHead className="text-right">Цена</TableHead>
+                                    <TableHead className="text-right min-w-[85px]">Цена</TableHead>
                                     <TableHead className="text-right">Комиссия</TableHead>
                                     <TableHead>Статус</TableHead>
                                     <TableHead className="text-right">Действия</TableHead>
@@ -365,7 +365,7 @@ export default function Transactions({
                                                     {getStatusLabel(transaction.status)}
                                                 </Badge>
                                             </TableCell>
-                                            <TableCell className="text-right space-x-2">
+                                            <TableCell className="text-right flex shrink-0 space-x-2">
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
