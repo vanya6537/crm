@@ -242,7 +242,7 @@ export function PropertyForm({
                             type="number"
                             placeholder="1000000"
                             min="0"
-                            step="100000"
+                            step="any"
                             value={formData.price || ''}
                             onChange={(e) =>
                                 handleInputChange(

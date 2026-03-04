@@ -20,6 +20,7 @@ export async function apiRequest(
     const method = options.method?.toUpperCase() || 'GET';
     const headers: HeadersInit = {
         'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
         ...options.headers,
     };
 
