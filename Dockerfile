@@ -1,0 +1,89 @@
+# syntax=docker/dockerfile:1
+
+############################
+# Build stage (PHP + Composer + Node)
+############################
+FROM php:8.3-cli-bookworm AS build
+
+WORKDIR /var/www/html
+
+# System deps
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+    git curl unzip ca-certificates gnupg \
+    libzip-dev libpq-dev \
+  && docker-php-ext-install -j$(nproc) zip pdo pdo_pgsql \
+  && rm -rf /var/lib/apt/lists/*
+
+# Install Composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+# Install Node.js 20
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends nodejs \
+  && rm -rf /var/lib/apt/lists/*
+
+# 1) Composer deps
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --prefer-dist --no-interaction --no-progress --optimize-autoloader
+
+# 2) Node deps
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# 3) App source + build assets
+COPY . .
+RUN npm run build \
+  && rm -rf node_modules
+
+############################
+# Runtime stage (nginx + php-fpm)
+############################
+FROM php:8.3-fpm-bookworm AS runtime
+
+WORKDIR /var/www/html
+
+# System deps
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+    nginx supervisor gettext-base \
+    libzip4 libpq5 \
+  && rm -rf /var/lib/apt/lists/*
+
+# PHP extensions needed at runtime
+RUN docker-php-ext-install -j$(nproc) pdo pdo_pgsql
+
+# Use a unix socket for nginx -> php-fpm
+RUN { \
+      echo "[global]"; \
+      echo "daemonize = no"; \
+      echo ""; \
+      echo "[www]"; \
+      echo "listen = /var/run/php/php-fpm.sock"; \
+      echo "listen.owner = www-data"; \
+      echo "listen.group = www-data"; \
+      echo "listen.mode = 0660"; \
+      echo "user = www-data"; \
+      echo "group = www-data"; \
+    } > /usr/local/etc/php-fpm.d/zz-render.conf
+
+# Copy built application
+COPY --from=build /var/www/html /var/www/html
+
+# Nginx + Supervisor config
+RUN rm -f /etc/nginx/sites-enabled/default
+COPY docker/nginx.conf.template /etc/nginx/conf.d/default.conf.template
+COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY docker/entrypoint.sh /entrypoint.sh
+
+RUN chmod +x /entrypoint.sh
+
+# Ensure permissions
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache || true
+
+ENV PORT=10000
+
+EXPOSE 10000
+
+ENTRYPOINT ["/entrypoint.sh"]

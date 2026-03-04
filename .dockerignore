@@ -1,0 +1,18 @@
+node_modules
+vendor
+public/build
+public/hot
+storage
+bootstrap/cache
+.git
+.github
+.vscode
+.idea
+.DS_Store
+.env
+.prod.env
+.env.*
+
+# Logs
+npm-debug.log
+yarn-error.log

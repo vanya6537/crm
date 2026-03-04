@@ -15,9 +15,16 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Trust ngrok & proxies - needed for HTTPS forwarding
-        // TODO: remove this in production and set proper trusted proxies
-        // $middleware->trustProxies(at: '*');
+        // Trust proxies (Render/Cloudflare/etc) for correct HTTPS detection.
+        // Set TRUSTED_PROXIES=* in production.
+        $trustedProxies = env('TRUSTED_PROXIES');
+        if ($trustedProxies) {
+            $middleware->trustProxies(
+                at: $trustedProxies === '*'
+                    ? '*'
+                    : array_values(array_filter(array_map('trim', explode(',', $trustedProxies))))
+            );
+        }
 
         $middleware->api(prepend: [
              \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
