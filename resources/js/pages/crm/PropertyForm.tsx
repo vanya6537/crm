@@ -82,6 +82,7 @@ export function PropertyForm({
         if (!validateForm()) return;
 
         try {
+            console.log('Submitting form data:', formData);
             await onSubmit(formData);
         } catch (err) {
             console.error('Form submission error:', err);

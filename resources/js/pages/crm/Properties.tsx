@@ -143,13 +143,19 @@ export default function Properties({ properties, filters: initialFilters }: Prop
                 body: JSON.stringify(data),
             });
 
-            if (!response.ok) throw new Error('Failed to create property');
+            if (!response.ok) {
+                const errorData = await response.json();
+                const errorMsg = errorData.message || errorData.error || 'Failed to create property';
+                throw new Error(errorMsg);
+            }
 
             setIsCreateModalOpen(false);
             // Reload properties would happen via Inertia in production
             window.location.reload();
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Unknown error');
+            const msg = err instanceof Error ? err.message : 'Unknown error';
+            console.error('Create error:', msg);
+            setError(msg);
         } finally {
             setIsLoading(false);
         }
@@ -161,19 +167,27 @@ export default function Properties({ properties, filters: initialFilters }: Prop
         setIsLoading(true);
         setError(null);
         try {
+            console.log('Updating property:', selectedProperty.id, 'with data:', data);
+            
             const response = await fetch(`/api/v1/properties/${selectedProperty.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),
             });
 
-            if (!response.ok) throw new Error('Failed to update property');
+            if (!response.ok) {
+                const errorData = await response.json();
+                const errorMsg = errorData.message || errorData.error || `Failed to update property (${response.status})`;
+                throw new Error(errorMsg);
+            }
 
             setIsEditModalOpen(false);
             setSelectedProperty(null);
             window.location.reload();
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Unknown error');
+            const msg = err instanceof Error ? err.message : 'Unknown error';
+            console.error('Update error:', msg);
+            setError(msg);
         } finally {
             setIsLoading(false);
         }
@@ -189,13 +203,19 @@ export default function Properties({ properties, filters: initialFilters }: Prop
                 method: 'DELETE',
             });
 
-            if (!response.ok) throw new Error('Failed to delete property');
+            if (!response.ok) {
+                const errorData = await response.json();
+                const errorMsg = errorData.message || errorData.error || 'Failed to delete property';
+                throw new Error(errorMsg);
+            }
 
             setIsDeleteModalOpen(false);
             setSelectedProperty(null);
             window.location.reload();
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Unknown error');
+            const msg = err instanceof Error ? err.message : 'Unknown error';
+            console.error('Delete error:', msg);
+            setError(msg);
         } finally {
             setIsLoading(false);
         }
