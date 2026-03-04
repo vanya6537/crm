@@ -1,6 +1,7 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import { dashboard, login, register } from '@/routes';
-import { CelestialOrrery } from '@/components/ui/celestial-orrery';
+import { InteractiveGlobe } from '@/components/ui/interactive-globe';
+import { CRMAdaptivePill } from '@/components/ui/3d-adaptive-navigation-bar';
 import { Building2, TrendingUp, Shield, Zap } from 'lucide-react';
 
 export default function Welcome({
@@ -19,12 +20,23 @@ export default function Welcome({
                     rel="stylesheet"
                 />
             </Head>
-            <div className="relative min-h-screen bg-white dark:bg-[#0a0a0a] overflow-hidden">
-                {/* Background */}
-                <div className="fixed inset-0 w-full h-full opacity-30 dark:opacity-20 pointer-events-none">
-                    <CelestialOrrery />
-                </div>
+            <style>{`
+                @keyframes fade-in {
+                    from {
+                        opacity: 0;
+                        transform: translateY(10px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
 
+                main {
+                    animation: fade-in 0.6s ease-out;
+                }
+            `}</style>
+            <div className="relative min-h-screen bg-white dark:bg-[#0a0a0a] overflow-hidden">
                 {/* Header Navigation */}
                 <header className="relative z-50 flex items-center justify-between px-6 py-6 lg:px-12 lg:py-8 text-sm">
                     <div className="flex items-center gap-2">
@@ -34,7 +46,8 @@ export default function Welcome({
                         <span className="text-lg font-semibold text-slate-900 dark:text-white">CRM</span>
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    {/* Desktop Navigation */}
+                    <div className="hidden md:flex items-center gap-4">
                         {auth.user ? (
                             <Link
                                 href={dashboard()}
@@ -61,114 +74,101 @@ export default function Welcome({
                             </>
                         )}
                     </div>
+
+                    {/* Mobile Navigation */}
+                    <div className="md:hidden">
+                        <CRMAdaptivePill auth={auth} />
+                    </div>
                 </header>
 
-                {/* Hero Section */}
-                <main className="relative z-20 flex flex-col items-center justify-center min-h-[calc(100vh-120px)] px-6 py-12">
-                    <div className="max-w-3xl text-center space-y-8">
-                        {/* Tagline */}
-                        <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 dark:bg-slate-800 px-4 py-2">
-                            <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                            <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
-                                Luxury CRM для профессионалов
-                            </span>
-                        </div>
+                {/* Main Content Card */}
+                <main className="relative z-20 flex items-center justify-center min-h-[calc(100vh-120px)] px-4 py-8 lg:px-8">
+                    <div className="w-full max-w-6xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 overflow-hidden relative">
+                        {/* Ambient Glow */}
+                        <div className="absolute top-0 right-1/4 w-96 h-96 rounded-full bg-blue-500/5 blur-3xl pointer-events-none" />
 
-                        {/* Main Heading */}
-                        <h1 className="text-4xl lg:text-6xl font-bold text-slate-900 dark:text-white leading-tight">
-                            Управляйте недвижимостью с
-                            <span className="block bg-gradient-to-r from-slate-900 to-slate-700 dark:from-slate-100 dark:to-slate-300 bg-clip-text text-transparent">
-                                элегантностью
-                            </span>
-                        </h1>
+                        {/* Content Flex Layout */}
+                        <div className="flex flex-col md:flex-row min-h-[550px]">
+                            {/* Left Content Section */}
+                            <div className="flex-1 flex flex-col justify-center p-8 md:p-12 lg:p-16 relative z-10">
+                                {/* Status Badge */}
+                                <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-1 text-xs text-slate-600 dark:text-slate-400 mb-6 w-fit">
+                                    <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                    <span>Все системы активны</span>
+                                </div>
 
-                        {/* Subheading */}
-                        <p className="text-lg lg:text-xl text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed">
-                            Современная CRM-система для агентств недвижимости. Автоматизируйте продажи, управляйте клиентами и восходите на вершину успеха.
-                        </p>
+                                {/* Main Heading */}
+                                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-slate-900 dark:text-white leading-[1.1] mb-4">
+                                    Управляйте недвижимостью с
+                                    <span className="block bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">
+                                        элегантностью
+                                    </span>
+                                </h1>
 
-                        {/* CTA Buttons */}
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
-                            {auth.user ? (
-                                <Link
-                                    href={dashboard()}
-                                    className="px-8 py-3 text-base font-semibold text-white bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 rounded-lg transition-all duration-200 hover:shadow-lg"
-                                >
-                                    Перейти в панель
-                                </Link>
-                            ) : (
-                                <>
-                                    <Link
-                                        href={login()}
-                                        className="px-8 py-3 text-base font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-lg transition-all duration-200 hover:shadow-lg"
-                                    >
-                                        Войти
-                                    </Link>
-                                    {canRegister && (
+                                {/* Subheading */}
+                                <p className="text-sm md:text-base text-slate-600 dark:text-slate-400 max-w-md leading-relaxed mb-8">
+                                    Современная CRM-система для агентств недвижимости. Автоматизируйте продажи, управляйте клиентами и восходите на вершину успеха.
+                                </p>
+
+                                {/* CTA Buttons */}
+                                <div className="flex flex-col sm:flex-row gap-3 mb-12">
+                                    {auth.user ? (
                                         <Link
-                                            href={register()}
-                                            className="px-8 py-3 text-base font-semibold text-slate-900 dark:text-white border-2 border-slate-900 dark:border-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all duration-200"
+                                            href={dashboard()}
+                                            className="px-6 py-2.5 text-sm font-semibold text-white bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 rounded-lg transition-all duration-200 hover:shadow-lg text-center"
                                         >
-                                            Начать бесплатно
+                                            Перейти в панель
                                         </Link>
+                                    ) : (
+                                        <>
+                                            <Link
+                                                href={login()}
+                                                className="px-6 py-2.5 text-sm font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-lg transition-all duration-200 hover:shadow-lg text-center"
+                                            >
+                                                Войти
+                                            </Link>
+                                            {canRegister && (
+                                                <Link
+                                                    href={register()}
+                                                    className="px-6 py-2.5 text-sm font-semibold text-slate-900 dark:text-white border-2 border-slate-900 dark:border-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all duration-200 text-center"
+                                                >
+                                                    Начать бесплатно
+                                                </Link>
+                                            )}
+                                        </>
                                     )}
-                                </>
-                            )}
-                        </div>
-                    </div>
+                                </div>
 
-                    {/* Features Grid */}
-                    <div className="mt-20 w-full max-w-5xl">
-                        <div className="grid md:grid-cols-3 gap-8">
-                            {/* Feature 1 */}
-                            <div className="text-center space-y-4 p-6 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
-                                <div className="flex justify-center">
-                                    <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                                        <TrendingUp className="h-6 w-6 text-blue-600 dark:text-blue-300" />
+                                {/* Stats Section */}
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-8">
+                                    <div>
+                                        <p className="text-2xl font-bold text-slate-900 dark:text-white">1000+</p>
+                                        <p className="text-xs text-slate-600 dark:text-slate-400">Активных агентств</p>
+                                    </div>
+                                    <div className="w-px h-8 bg-slate-200 dark:bg-slate-700 hidden sm:block" />
+                                    <div>
+                                        <p className="text-2xl font-bold text-slate-900 dark:text-white">50K+</p>
+                                        <p className="text-xs text-slate-600 dark:text-slate-400">Объектов в системе</p>
+                                    </div>
+                                    <div className="w-px h-8 bg-slate-200 dark:bg-slate-700 hidden sm:block" />
+                                    <div>
+                                        <p className="text-2xl font-bold text-slate-900 dark:text-white">24/7</p>
+                                        <p className="text-xs text-slate-600 dark:text-slate-400">Техническая поддержка</p>
                                     </div>
                                 </div>
-                                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Аналитика</h3>
-                                <p className="text-sm text-slate-600 dark:text-slate-400">
-                                    Отследите все транзакции, графики продаж и метрики в реальном времени.
-                                </p>
                             </div>
 
-                            {/* Feature 2 */}
-                            <div className="text-center space-y-4 p-6 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
-                                <div className="flex justify-center">
-                                    <div className="p-3 bg-emerald-100 dark:bg-emerald-900 rounded-lg">
-                                        <Zap className="h-6 w-6 text-emerald-600 dark:text-emerald-300" />
-                                    </div>
-                                </div>
-                                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Автоматизация</h3>
-                                <p className="text-sm text-slate-600 dark:text-slate-400">
-                                    Сокращайте время на рутинные задачи и focusируйте внимание на развитие бизнеса.
-                                </p>
-                            </div>
-
-                            {/* Feature 3 */}
-                            <div className="text-center space-y-4 p-6 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
-                                <div className="flex justify-center">
-                                    <div className="p-3 bg-purple-100 dark:bg-purple-900 rounded-lg">
-                                        <Shield className="h-6 w-6 text-purple-600 dark:text-purple-300" />
-                                    </div>
-                                </div>
-                                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Безопасность</h3>
-                                <p className="text-sm text-slate-600 dark:text-slate-400">
-                                    Ваши данные защищены высочайшими стандартами шифрования и безопасности.
-                                </p>
+                            {/* Right Globe Section */}
+                            <div className="flex-1 flex items-center justify-center p-6 md:p-0 min-h-[400px] md:min-h-auto">
+                                <InteractiveGlobe 
+                                    size={520} 
+                                    autoRotateSpeed={0.0025}
+                                    dotColor="rgba(100, 180, 255, ALPHA)"
+                                    arcColor="rgba(100, 180, 255, 0.5)"
+                                    markerColor="rgba(100, 220, 255, 1)"
+                                />
                             </div>
                         </div>
-                    </div>
-
-                    {/* Footer Text */}
-                    <div className="mt-20 text-center space-y-2">
-                        <p className="text-sm text-slate-600 dark:text-slate-400">
-                            Присоединитесь к десяткам агентств по всей России
-                        </p>
-                        <p className="text-xs text-slate-500 dark:text-slate-500">
-                            Быстрая регистрация. Никаких скрытых платежей.
-                        </p>
                     </div>
                 </main>
             </div>

@@ -169,9 +169,16 @@ export const CRMAdaptivePill: React.FC = () => {
                     {navItems.map((item, index) => (
                         <motion.div
                             key={item.id}
-                            initial={{ opacity: 0, scale: 0.6 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: index * 0.04 }}
+                            initial={{ opacity: 0, scale: 0.5, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            transition={{ 
+                                delay: index * 0.08,
+                                duration: 0.3,
+                                type: "spring",
+                                stiffness: 400,
+                                damping: 30,
+                                mass: 0.5
+                            }}
                         >
                             {item.href ? (
                                 <button
@@ -193,13 +200,23 @@ export const CRMAdaptivePill: React.FC = () => {
                         </motion.div>
                     ))}
                     {/* Close button inside expanded view */}
-                    <button 
+                    <motion.button 
                         onClick={(e) => { e.stopPropagation(); setExpanded(false); }}
                         className="p-2 rounded-lg bg-slate-200/50"
                         title="Close"
+                        initial={{ opacity: 0, scale: 0.5, y: 10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        transition={{ 
+                            delay: navItems.length * 0.08,
+                            duration: 0.3,
+                            type: "spring",
+                            stiffness: 400,
+                            damping: 30,
+                            mass: 0.5
+                        }}
                     >
                         <Menu className="h-3 w-3 rotate-90 text-slate-500" />
-                    </button>
+                    </motion.button>
                 </div>
             )}
         </div>
