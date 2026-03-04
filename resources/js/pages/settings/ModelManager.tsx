@@ -4,6 +4,7 @@ import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
 import FieldModal from '@/components/model-manager/FieldModal';
 import DragDropFieldsList from '@/components/model-manager/DragDropFieldsList';
+import FormBuilderModal from '@/components/model-manager/FormBuilderModal';
 import { apiRequest } from '@/lib/csrf';
 
 interface ModelField {
@@ -55,6 +56,7 @@ export default function ModelManager({
     const [success, setSuccess] = useState<string | null>(null);
     const [fieldTypes, setFieldTypes] = useState<Record<string, any>>({});
     const [isSavingOrder, setIsSavingOrder] = useState(false);
+    const [isBuilderOpen, setIsBuilderOpen] = useState(false);
 
     // Load field types on mount
     useEffect(() => {
@@ -114,6 +116,14 @@ export default function ModelManager({
     const handleCloseModal = () => {
         setIsModalOpen(false);
         setSelectedField(null);
+    };
+
+    const handleOpenBuilder = () => {
+        setIsBuilderOpen(true);
+    };
+
+    const handleCloseBuilder = () => {
+        setIsBuilderOpen(false);
     };
 
     const handleSaveField = async (fieldData: Partial<ModelField>) => {
@@ -195,6 +205,25 @@ export default function ModelManager({
         } catch (err) {
             console.error('Failed to toggle field status:', err);
             setError('Ошибка при изменении статуса поля');
+        }
+    };
+
+    const handlePatchField = async (field: Pick<ModelField, 'uuid'>, patch: Partial<ModelField>) => {
+        const response = await apiRequest(`/api/v1/model-fields/${entityType}/${field.uuid}`, {
+            method: 'PUT',
+            body: JSON.stringify(patch),
+        });
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => null);
+            throw new Error(error?.error || 'Ошибка при сохранении');
+        }
+
+        setFields((prev) => prev.map((f) => (f.uuid === field.uuid ? ({ ...f, ...patch } as ModelField) : f)));
+
+        // If status/filters could change, reload for correctness.
+        if (patch.is_active !== undefined) {
+            await loadFields();
         }
     };
 
@@ -311,6 +340,13 @@ export default function ModelManager({
                                     >
                                         + Новое поле
                                     </Button>
+                                    <Button
+                                        onClick={handleOpenBuilder}
+                                        variant="outline"
+                                        className="ml-2"
+                                    >
+                                        Конструктор формы
+                                    </Button>
                                 </div>
 
                                 {/* Status Toggle */}
@@ -373,6 +409,21 @@ export default function ModelManager({
                             onClose={handleCloseModal}
                         />
                     )}
+
+                    <FormBuilderModal
+                        open={isBuilderOpen}
+                        onClose={handleCloseBuilder}
+                        entityType={entityType}
+                        entityTypes={entityTypes}
+                        onEntityTypeChange={handleEntityTypeChange}
+                        fields={displayFields}
+                        isLoading={isLoading || isSavingOrder}
+                        fieldTypes={fieldTypes}
+                        onReorder={handleReorderFields}
+                        onPatchField={handlePatchField}
+                        onRequestAddField={handleAddField}
+                        onRequestEditField={handleEditField}
+                    />
                 </div>
             </div>
         </AppLayout>
