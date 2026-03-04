@@ -1,6 +1,6 @@
 import { CRMSidebar } from '@/components/crm-sidebar';
 import { AppShell } from '@/components/app-shell';
-import { SidebarInset } from '@/components/ui/sidebar';
+import { SidebarInset, SidebarProvider } from '@/components/radix/sidebar';
 import type { ReactNode } from 'react';
 
 const AppContent = ({ variant = 'header', children, ...props }: React.ComponentProps<'main'> & { variant?: 'header' | 'sidebar' }) => {

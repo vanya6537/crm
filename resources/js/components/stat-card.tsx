@@ -39,7 +39,7 @@ export function StatCard({
 
     return (
         <Card className="p-6 border-sidebar-border/70 dark:border-sidebar-border hover:border-sidebar-border transition-colors hover:shadow-md dark:hover:shadow-lg/20">
-            <div className="flex items-start justify-between">
+            <div className="flex md:flex-col lg:flex-row items-start justify-between">
                 <div>
                     <p className="text-sm font-medium text-muted-foreground">
                         {title}
@@ -64,7 +64,7 @@ export function StatCard({
                     </div>
                 </div>
                 <div
-                    className={`rounded-lg p-3 bg-gradient-to-br ${colorClasses[color]}`}
+                    className={`md:mx-auto md:mt-4 lg:mt-0 lg:mx-0 rounded-lg p-3 bg-gradient-to-br ${colorClasses[color]}`}
                 >
                     {icon}
                 </div>

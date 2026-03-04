@@ -31,7 +31,7 @@ import {
     DialogDescription,
     DialogHeader,
     DialogTitle,
-} from '@/components/ui/dialog';
+} from '@/components/radix/dialog';
 import {
     AlertDialog,
     AlertDialogAction,

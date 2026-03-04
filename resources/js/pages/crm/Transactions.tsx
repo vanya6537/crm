@@ -4,8 +4,8 @@ import { Head } from '@inertiajs/react';
 import { useState } from 'react';
 import { AlertCircle, Edit2, Trash2, Plus } from 'lucide-react';
 import CRMLayout from '@/layouts/crm-layout';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/radix/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/radix/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -335,15 +335,15 @@ export default function Transactions({
                                     transactions.map((transaction) => (
                                         <TableRow key={transaction.id}>
                                             <TableCell className="font-medium text-sm">
-                                                {transaction.property?.address && transaction.property?.city
-                                                    ? `${transaction.property.address}, ${transaction.property.city}`
-                                                    : '-'}
+                                                {transaction.property?.address
+                                                    ? `${transaction.property.address}${transaction.property.city ? `, ${transaction.property.city}` : ''}`
+                                                    : transaction.property_address || '-'}
                                             </TableCell>
                                             <TableCell className="text-sm">
-                                                {transaction.buyer?.name || '-'}
+                                                {transaction.buyer?.name || transaction.buyer_name || '-'}
                                             </TableCell>
                                             <TableCell className="text-sm">
-                                                {transaction.agent?.name || '-'}
+                                                {transaction.agent?.name || transaction.agent_name || '-'}
                                             </TableCell>
                                             <TableCell className="text-right text-sm">
                                                 {transaction.final_price > 0

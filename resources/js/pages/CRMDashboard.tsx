@@ -115,7 +115,7 @@ export default function CRMDashboard({
                     </div>
 
                     {/* Quick Actions & Recent Activity */}
-                    <div className="grid gap-4 md:grid-cols-3">
+                    <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
                         {/* Quick Actions */}
                         <Card className="p-6 border-sidebar-border/70 dark:border-sidebar-border md:col-span-1">
                             <h3 className="text-lg font-semibold text-foreground mb-4">
