@@ -257,6 +257,7 @@ export default function ModelManager({
     const activeFields = fields.filter((f) => f.is_active);
     const archivedFields = fields.filter((f) => !f.is_active);
     const displayFields = status === 'active' ? activeFields : archivedFields;
+    const reorderDisabled = status !== 'active';
 
     return (
         <CRMLayout title="Конструктор моделей" description="Управление полями моделей данных">
@@ -332,6 +333,8 @@ export default function ModelManager({
                                             type="button"
                                             variant="outline"
                                             onClick={() => setIsBuilderOpen(true)}
+                                            disabled={status !== 'active'}
+                                            title={status !== 'active' ? 'Конструктор доступен только для активных полей' : undefined}
                                         >
                                             Конструктор формы
                                         </Button>
@@ -369,6 +372,7 @@ export default function ModelManager({
                                 onToggleActive={handleToggleActive}
                                 onReorder={handleReorderFields}
                                 fieldTypes={fieldTypes}
+                                reorderDisabled={reorderDisabled}
                             />
                         ) : (
                             <Card>

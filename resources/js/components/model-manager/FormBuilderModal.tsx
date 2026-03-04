@@ -83,6 +83,18 @@ export default function FormBuilderModal(props: FormBuilderModalProps) {
     const [rowErrors, setRowErrors] = React.useState<Record<string, string | undefined>>({});
     const [validationDrafts, setValidationDrafts] = React.useState<Record<string, string>>({});
 
+    const entityTypeLabels = React.useMemo(
+        () => ({
+            agent: "Агенты",
+            property: "Недвижимость",
+            buyer: "Покупатели",
+            transaction: "Транзакции",
+            property_showing: "Показы недвижимости",
+            communication: "Коммуникации",
+        } as const),
+        []
+    );
+
     React.useEffect(() => {
         setLocalFields(fields);
     }, [fields]);
@@ -180,7 +192,7 @@ export default function FormBuilderModal(props: FormBuilderModalProps) {
 
     return (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg w-full sm:max-w-6xl h-[100dvh] sm:h-auto sm:max-h-[90vh] overflow-hidden shadow-xl">
+            <div className="bg-white rounded-lg w-full sm:max-w-6xl h-dvh sm:h-auto sm:max-h-[90vh] overflow-hidden shadow-xl">
                 {/* Header */}
                 <div className="flex items-center justify-between gap-3 p-4 border-b sticky top-0 bg-white z-10">
                     <div className="min-w-0">
@@ -423,17 +435,18 @@ function FieldRow(props: {
                                                 className="w-full h-9 px-3 border border-gray-300 rounded-lg bg-white text-sm"
                                             >
                                                 <option value="">-- Выберите --</option>
-                                                {[
-                                                    "agent",
-                                                    "property",
-                                                    "buyer",
-                                                    "transaction",
-                                                    "deal",
-                                                    "property_showing",
-                                                    "communication",
-                                                ].map((t) => (
+                                                {(
+                                                    [
+                                                        "agent",
+                                                        "property",
+                                                        "buyer",
+                                                        "transaction",
+                                                        "property_showing",
+                                                        "communication",
+                                                    ] as const
+                                                ).map((t) => (
                                                     <option key={t} value={t}>
-                                                        {t}
+                                                        {entityTypeLabels[t] ?? t}
                                                     </option>
                                                 ))}
                                             </select>

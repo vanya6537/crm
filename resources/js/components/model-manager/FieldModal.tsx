@@ -37,6 +37,14 @@ const FieldModal: React.FC<FieldModalProps> = ({
     onSave,
     onClose,
 }) => {
+    const entityTypeLabels: Record<string, string> = {
+        agent: 'Агенты',
+        property: 'Недвижимость',
+        buyer: 'Покупатели',
+        transaction: 'Транзакции',
+        property_showing: 'Показы недвижимости',
+        communication: 'Коммуникации',
+    };
     const [formData, setFormData] = useState({
         name: field?.name || '',
         label: field?.label || '',
@@ -159,7 +167,7 @@ const FieldModal: React.FC<FieldModalProps> = ({
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg w-full sm:max-w-5xl h-[100dvh] sm:h-auto sm:max-h-[90vh] overflow-hidden shadow-xl">
+            <div className="bg-white rounded-lg w-full sm:max-w-5xl h-screen sm:h-auto sm:max-h-[90vh] overflow-hidden shadow-xl">
                 {/* Header */}
                 <div className="flex justify-between items-center p-6 border-b">
                     <h2 className="text-2xl font-bold text-gray-900">
@@ -181,7 +189,7 @@ const FieldModal: React.FC<FieldModalProps> = ({
                 )}
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="h-[calc(100dvh-88px)] sm:h-auto sm:max-h-[calc(90vh-88px)] overflow-y-auto p-6">
+                <form onSubmit={handleSubmit} className="h-[calc(100vh-88px)] sm:h-auto sm:max-h-[calc(90vh-88px)] overflow-y-auto p-6">
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                         {/* Left: Type cards */}
                         <div className="lg:col-span-7">
@@ -286,7 +294,7 @@ const FieldModal: React.FC<FieldModalProps> = ({
                                                     <option value="">-- Выберите --</option>
                                                     {['agent', 'property', 'buyer', 'transaction', 'property_showing', 'communication'].map((type) => (
                                                         <option key={type} value={type}>
-                                                            {type}
+                                                            {entityTypeLabels[type] ?? type}
                                                         </option>
                                                     ))}
                                                 </select>

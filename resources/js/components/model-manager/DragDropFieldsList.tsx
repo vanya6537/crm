@@ -28,6 +28,7 @@ interface DragDropFieldsListProps {
     onToggleActive: (field: Field) => void | Promise<void>;
     onReorder: (fields: Field[]) => void | Promise<void>;
     fieldTypes: Record<string, any>;
+    reorderDisabled?: boolean;
 }
 
 const DragDropFieldsList: React.FC<DragDropFieldsListProps> = ({
@@ -38,6 +39,7 @@ const DragDropFieldsList: React.FC<DragDropFieldsListProps> = ({
     onToggleActive,
     onReorder,
     fieldTypes,
+    reorderDisabled = false,
 }) => {
     const [localFields, setLocalFields] = React.useState<Field[]>(fields);
 
@@ -98,7 +100,9 @@ const DragDropFieldsList: React.FC<DragDropFieldsListProps> = ({
             <div className="p-4 bg-blue-50 border-b border-blue-200">
                 <p className="text-sm text-blue-800 flex items-start gap-2">
                     <Info className="h-4 w-4 mt-0.5 shrink-0" />
-                    Перетаскивайте поля за ручку слева для изменения порядка
+                    {reorderDisabled
+                        ? 'Перетаскивание отключено в архиве'
+                        : 'Перетаскивайте поля за ручку слева для изменения порядка'}
                 </p>
             </div>
 
@@ -126,6 +130,7 @@ const DragDropFieldsList: React.FC<DragDropFieldsListProps> = ({
                             onEdit={onEdit}
                             onDelete={onDelete}
                             onToggleActive={onToggleActive}
+                            reorderDisabled={reorderDisabled}
                         />
                     ))}
                 </div>
@@ -141,8 +146,9 @@ const SortableFieldRow: React.FC<{
     onEdit: (field: Field) => void;
     onDelete: (field: Field) => void;
     onToggleActive: (field: Field) => void;
-}> = ({ field, getFieldTypeLabel, getFieldTypeIcon, onEdit, onDelete, onToggleActive }) => {
-    const draggable = useDraggable(field.uuid);
+    reorderDisabled: boolean;
+}> = ({ field, getFieldTypeLabel, getFieldTypeIcon, onEdit, onDelete, onToggleActive, reorderDisabled }) => {
+    const draggable = useDraggable(field.uuid, { disabled: reorderDisabled });
 
     return (
         <div
@@ -154,10 +160,14 @@ const SortableFieldRow: React.FC<{
                 {/* Drag Handle */}
                 <button
                     type="button"
-                    className="mt-1 shrink-0 h-9 w-9 inline-flex items-center justify-center rounded-md border border-gray-200 text-gray-500 hover:text-gray-900 hover:bg-gray-50 cursor-grab active:cursor-grabbing"
-                    {...draggable.attributes}
-                    {...draggable.listeners}
+                    className={
+                        "mt-1 shrink-0 h-9 w-9 inline-flex items-center justify-center rounded-md border border-gray-200 text-gray-500 hover:text-gray-900 hover:bg-gray-50 " +
+                        (reorderDisabled ? "cursor-not-allowed opacity-50" : "cursor-grab active:cursor-grabbing")
+                    }
+                    {...(reorderDisabled ? {} : draggable.attributes)}
+                    {...(reorderDisabled ? {} : draggable.listeners)}
                     aria-label="Перетащить"
+                    disabled={reorderDisabled}
                 >
                     <GripVertical className="h-4 w-4" />
                 </button>
