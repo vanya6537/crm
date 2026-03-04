@@ -31,6 +31,7 @@ type Property = {
 interface PropertyFormProps {
     initialData?: Property;
     onSubmit: (data: Partial<Property>) => Promise<void>;
+    onCancel?: () => void;
     isLoading: boolean;
     mode: 'create' | 'edit';
 }
@@ -45,6 +46,7 @@ const MOCK_AGENTS = [
 export function PropertyForm({
     initialData,
     onSubmit,
+    onCancel,
     isLoading,
     mode,
 }: PropertyFormProps) {
@@ -317,7 +319,12 @@ export function PropertyForm({
 
             {/* Form Actions */}
             <div className="flex gap-2 justify-end pt-4 border-t">
-                <Button type="button" variant="outline" disabled={isLoading}>
+                <Button
+                    type="button"
+                    variant="outline"
+                    disabled={isLoading}
+                    onClick={onCancel}
+                >
                     Отмена
                 </Button>
                 <Button

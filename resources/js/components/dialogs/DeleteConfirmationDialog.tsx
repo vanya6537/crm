@@ -34,6 +34,17 @@ export const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> =
     cancelText = 'Отмена',
     confirmText = 'Удалить',
 }) => {
+    const handleCancel = () => {
+        if (isLoading) return;
+        onOpenChange(false);
+    };
+
+    const handleConfirm = async () => {
+        if (isLoading) return;
+        await onConfirm();
+        onOpenChange(false);
+    };
+
     return (
         <AlertDialog open={open} onOpenChange={onOpenChange}>
             <AlertDialogContent>
@@ -50,14 +61,16 @@ export const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> =
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                    <AlertDialogCancel disabled={isLoading}>
+                    <AlertDialogCancel
+                        type="button"
+                        disabled={isLoading}
+                        onClick={handleCancel}
+                    >
                         {cancelText}
                     </AlertDialogCancel>
                     <AlertDialogAction
-                        onClick={(e) => {
-                            e.preventDefault();
-                            onConfirm();
-                        }}
+                        type="button"
+                        onClick={handleConfirm}
                         disabled={isLoading}
                         className="bg-red-500 hover:bg-red-600 text-white"
                     >

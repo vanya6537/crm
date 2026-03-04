@@ -382,6 +382,7 @@ export default function Agents({ agents: initialAgents, filters: initialFilters 
                             </DialogHeader>
                             <AgentForm
                                 onSubmit={handleCreate}
+                                onCancel={() => setIsCreateOpen(false)}
                                 isLoading={isLoading}
                                 mode="create"
                             />
@@ -398,6 +399,7 @@ export default function Agents({ agents: initialAgents, filters: initialFilters 
                                 <AgentForm
                                     initialData={selectedAgent}
                                     onSubmit={handleEdit}
+                                    onCancel={() => setIsEditOpen(false)}
                                     isLoading={isLoading}
                                     mode="edit"
                                 />

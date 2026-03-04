@@ -28,6 +28,7 @@ type Agent = {
 interface AgentFormProps {
     initialData?: Agent;
     onSubmit: (data: Partial<Agent>) => Promise<void>;
+    onCancel?: () => void;
     isLoading: boolean;
     mode: 'create' | 'edit';
 }
@@ -35,6 +36,7 @@ interface AgentFormProps {
 export function AgentForm({
     initialData,
     onSubmit,
+    onCancel,
     isLoading,
     mode,
 }: AgentFormProps) {
@@ -209,7 +211,12 @@ export function AgentForm({
 
             {/* Form Actions */}
             <div className="flex gap-2 justify-end pt-4 border-t">
-                <Button type="button" variant="outline" disabled={isLoading}>
+                <Button
+                    type="button"
+                    variant="outline"
+                    disabled={isLoading}
+                    onClick={onCancel}
+                >
                     Отмена
                 </Button>
                 <Button

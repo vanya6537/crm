@@ -462,6 +462,7 @@ export default function Properties({ properties, filters: initialFilters }: Prop
                         </DialogHeader>
                         <PropertyForm
                             onSubmit={handleCreate}
+                            onCancel={() => setIsCreateModalOpen(false)}
                             isLoading={isLoading}
                             mode="create"
                         />
@@ -481,6 +482,7 @@ export default function Properties({ properties, filters: initialFilters }: Prop
                             <PropertyForm
                                 initialData={selectedProperty}
                                 onSubmit={handleUpdate}
+                                onCancel={() => setIsEditModalOpen(false)}
                                 isLoading={isLoading}
                                 mode="edit"
                             />

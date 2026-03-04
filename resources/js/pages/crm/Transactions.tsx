@@ -410,6 +410,7 @@ export default function Transactions({
                             </DialogHeader>
                             <TransactionForm
                                 onSubmit={handleCreate}
+                                onCancel={() => setIsCreateOpen(false)}
                                 isLoading={isLoading}
                                 mode="create"
                                 agents={agents}
@@ -429,6 +430,7 @@ export default function Transactions({
                                 <TransactionForm
                                     initialData={selectedTransaction}
                                     onSubmit={handleEdit}
+                                    onCancel={() => setIsEditOpen(false)}
                                     isLoading={isLoading}
                                     mode="edit"
                                     agents={agents}

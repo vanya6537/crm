@@ -36,6 +36,7 @@ type Transaction = {
 interface TransactionFormProps {
     initialData?: Transaction;
     onSubmit: (data: Partial<Transaction>) => Promise<void>;
+    onCancel?: () => void;
     isLoading: boolean;
     mode: 'create' | 'edit';
     agents: Agent[];
@@ -46,6 +47,7 @@ interface TransactionFormProps {
 export function TransactionForm({
     initialData,
     onSubmit,
+    onCancel,
     isLoading,
     mode,
     agents,
@@ -353,7 +355,12 @@ export function TransactionForm({
 
             {/* Form Actions */}
             <div className="flex gap-2 justify-end pt-4 border-t">
-                <Button type="button" variant="outline" disabled={isLoading}>
+                <Button
+                    type="button"
+                    variant="outline"
+                    disabled={isLoading}
+                    onClick={onCancel}
+                >
                     Отмена
                 </Button>
                 <Button

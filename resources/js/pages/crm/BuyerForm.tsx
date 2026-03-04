@@ -29,6 +29,7 @@ type Buyer = {
 interface BuyerFormProps {
     initialData?: Buyer;
     onSubmit: (data: Partial<Buyer>) => Promise<void>;
+    onCancel?: () => void;
     isLoading: boolean;
     mode: 'create' | 'edit';
 }
@@ -36,6 +37,7 @@ interface BuyerFormProps {
 export function BuyerForm({
     initialData,
     onSubmit,
+    onCancel,
     isLoading,
     mode,
 }: BuyerFormProps) {
@@ -260,7 +262,12 @@ export function BuyerForm({
 
             {/* Form Actions */}
             <div className="flex gap-2 justify-end pt-4 border-t">
-                <Button type="button" variant="outline" disabled={isLoading}>
+                <Button
+                    type="button"
+                    variant="outline"
+                    disabled={isLoading}
+                    onClick={onCancel}
+                >
                     Отмена
                 </Button>
                 <Button

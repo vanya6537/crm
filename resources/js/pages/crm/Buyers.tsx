@@ -383,6 +383,7 @@ export default function Buyers({ buyers: initialBuyers, filters: initialFilters 
                             </DialogHeader>
                             <BuyerForm
                                 onSubmit={handleCreate}
+                                onCancel={() => setIsCreateOpen(false)}
                                 isLoading={isLoading}
                                 mode="create"
                             />
@@ -399,6 +400,7 @@ export default function Buyers({ buyers: initialBuyers, filters: initialFilters 
                                 <BuyerForm
                                     initialData={selectedBuyer}
                                     onSubmit={handleEdit}
+                                    onCancel={() => setIsEditOpen(false)}
                                     isLoading={isLoading}
                                     mode="edit"
                                 />
