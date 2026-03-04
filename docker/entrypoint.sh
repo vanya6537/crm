@@ -51,6 +51,14 @@ if [[ -n "${APP_KEY:-}" ]]; then
     }
   fi
 
+  # If enabled, run DB seeding after migrations.
+  if [[ "${RUN_SEEDING:-}" == "true" || "${RUN_SEEDING:-}" == "1" ]]; then
+    php artisan db:seed --force --no-interaction || {
+      echo "[entrypoint] Seeding failed" >&2
+      exit 1
+    }
+  fi
+
   php artisan storage:link || true
   php artisan config:cache || true
   php artisan route:cache || true
