@@ -65,7 +65,7 @@ class ModelFieldController extends \App\Http\Controllers\Controller
 
         if ($existing) {
             return response()->json([
-                'error' => 'Field name already exists for this entity type',
+                'error' => 'Поле с таким именем уже существует для этой модели',
             ], 422);
         }
 
@@ -73,7 +73,7 @@ class ModelFieldController extends \App\Http\Controllers\Controller
         if ($validated['reference_table'] ?? null) {
             if (!$this->isValidEntityType($validated['reference_table'])) {
                 return response()->json([
-                    'error' => 'Invalid reference table',
+                    'error' => 'Некорректная связанная таблица',
                 ], 422);
             }
         }
@@ -93,7 +93,7 @@ class ModelFieldController extends \App\Http\Controllers\Controller
 
         return response()->json([
             'data' => $field,
-            'message' => 'Field created successfully',
+            'message' => 'Поле успешно создано',
         ], 201);
     }
 
@@ -141,7 +141,7 @@ class ModelFieldController extends \App\Http\Controllers\Controller
         // Validate reference_table if provided
         if (isset($validated['reference_table']) && $validated['reference_table']) {
             if (!$this->isValidEntityType($validated['reference_table'])) {
-                return response()->json(['error' => 'Invalid reference table'], 422);
+                return response()->json(['error' => 'Некорректная связанная таблица'], 422);
             }
         }
 
@@ -158,7 +158,7 @@ class ModelFieldController extends \App\Http\Controllers\Controller
 
         return response()->json([
             'data' => $field,
-            'message' => 'Field updated successfully',
+            'message' => 'Поле успешно обновлено',
         ]);
     }
 
@@ -179,7 +179,7 @@ class ModelFieldController extends \App\Http\Controllers\Controller
 
         $field->delete();
 
-        return response()->json(['message' => 'Field deleted successfully']);
+        return response()->json(['message' => 'Поле успешно удалено']);
     }
 
     /**
@@ -203,7 +203,7 @@ class ModelFieldController extends \App\Http\Controllers\Controller
 
         return response()->json([
             'data' => $fields,
-            'message' => 'Sort order updated successfully',
+            'message' => 'Порядок успешно обновлён',
         ]);
     }
 
@@ -232,154 +232,154 @@ class ModelFieldController extends \App\Http\Controllers\Controller
         return response()->json([
             'data' => [
                 'text' => [
-                    'label' => 'Short Text',
+                    'label' => 'Короткий текст',
                     'icon' => 'fa-heading',
                     'category' => 'text',
-                    'description' => 'Single line text field',
+                    'description' => 'Однострочное текстовое поле',
                 ],
                 'short_text' => [
-                    'label' => 'Short Text',
+                    'label' => 'Короткий текст',
                     'icon' => 'fa-heading',
                     'category' => 'text',
-                    'description' => 'Single line text field',
+                    'description' => 'Однострочное текстовое поле',
                 ],
                 'long_text' => [
-                    'label' => 'Long Text',
+                    'label' => 'Длинный текст',
                     'icon' => 'fa-align-left',
                     'category' => 'text',
-                    'description' => 'Multi-line text field',
+                    'description' => 'Многострочное текстовое поле',
                 ],
                 'textarea' => [
-                    'label' => 'Text Area',
+                    'label' => 'Текстовая область',
                     'icon' => 'fa-align-left',
                     'category' => 'text',
-                    'description' => 'Multi-line text field',
+                    'description' => 'Многострочное текстовое поле',
                 ],
                 'big_text' => [
-                    'label' => 'Big Text',
+                    'label' => 'Большой текст',
                     'icon' => 'fa-file-text',
                     'category' => 'text',
-                    'description' => 'Extended text area',
+                    'description' => 'Расширенное многострочное поле',
                 ],
                 'number' => [
-                    'label' => 'Number',
+                    'label' => 'Число',
                     'icon' => 'fa-hashtag',
                     'category' => 'numbers',
-                    'description' => 'Numeric field',
+                    'description' => 'Числовое поле',
                 ],
                 'integer' => [
-                    'label' => 'Integer',
+                    'label' => 'Целое число',
                     'icon' => 'fa-hashtag',
                     'category' => 'numbers',
-                    'description' => 'Whole number field',
+                    'description' => 'Поле для целых чисел',
                 ],
                 'decimal' => [
-                    'label' => 'Decimal',
+                    'label' => 'Десятичное число',
                     'icon' => 'fa-percent',
                     'category' => 'numbers',
-                    'description' => 'Number with decimal places',
+                    'description' => 'Число с дробной частью',
                 ],
                 'date' => [
-                    'label' => 'Date',
+                    'label' => 'Дата',
                     'icon' => 'fa-calendar',
                     'category' => 'datetime',
-                    'description' => 'Date field (DD.MM.YYYY)',
+                    'description' => 'Дата (ДД.ММ.ГГГГ)',
                 ],
                 'datetime' => [
-                    'label' => 'Date & Time',
+                    'label' => 'Дата и время',
                     'icon' => 'fa-calendar-alt',
                     'category' => 'datetime',
-                    'description' => 'Date and time field',
+                    'description' => 'Дата и время (ДД.ММ.ГГГГ чч:мм)',
                 ],
                 'time' => [
-                    'label' => 'Time',
+                    'label' => 'Время',
                     'icon' => 'fa-clock',
                     'category' => 'datetime',
-                    'description' => 'Time field',
+                    'description' => 'Поле времени',
                 ],
                 'duration' => [
-                    'label' => 'Duration',
+                    'label' => 'Продолжительность',
                     'icon' => 'fa-hourglass-half',
                     'category' => 'datetime',
-                    'description' => 'Duration field (0 дн. 0 ч. 0 мин.)',
+                    'description' => 'Продолжительность (0 дн. 0 ч. 0 мин.)',
                 ],
                 'select' => [
-                    'label' => 'Select',
+                    'label' => 'Справочник',
                     'icon' => 'fa-list',
                     'category' => 'select',
-                    'description' => 'Dropdown selection',
+                    'description' => 'Выбор одного значения из списка',
                 ],
                 'radio' => [
-                    'label' => 'Radio',
+                    'label' => 'Выберите вариант',
                     'icon' => 'fa-circle',
                     'category' => 'select',
-                    'description' => 'Radio button selection',
+                    'description' => 'Выбор одного значения (радио-кнопки)',
                 ],
                 'checkbox' => [
-                    'label' => 'Checkbox',
+                    'label' => 'Чекбоксы',
                     'icon' => 'fa-check-square',
                     'category' => 'select',
-                    'description' => 'Multiple selection',
+                    'description' => 'Выбор нескольких значений',
                 ],
                 'reference' => [
-                    'label' => 'Reference',
+                    'label' => 'Ссылка на объект',
                     'icon' => 'fa-link',
                     'category' => 'relations',
-                    'description' => 'Link to another object',
+                    'description' => 'Связь с записью другого объекта',
                 ],
                 'relation' => [
-                    'label' => 'Relation',
+                    'label' => 'Связь',
                     'icon' => 'fa-arrows-h',
                     'category' => 'relations',
-                    'description' => 'One-to-many relationship',
+                    'description' => 'Связь с другим объектом',
                 ],
                 'master_relation' => [
-                    'label' => 'Master Relation',
+                    'label' => 'Мастер-связь',
                     'icon' => 'fa-arrows-h',
                     'category' => 'relations',
-                    'description' => 'Master relationship with cascade delete',
+                    'description' => 'Связь с каскадным удалением связанных записей',
                 ],
                 'many_to_many' => [
-                    'label' => 'Many to Many',
+                    'label' => 'Связь множественного выбора',
                     'icon' => 'fa-network-wired',
                     'category' => 'relations',
-                    'description' => 'Multiple relationships',
+                    'description' => 'Выбор/создание нескольких связанных объектов (до 50 за раз)',
                 ],
                 'phone' => [
-                    'label' => 'Phone',
+                    'label' => 'Телефон',
                     'icon' => 'fa-phone',
                     'category' => 'special',
-                    'description' => 'Phone number field',
+                    'description' => 'Поле телефонного номера',
                 ],
                 'email' => [
-                    'label' => 'Email',
+                    'label' => 'E-mail',
                     'icon' => 'fa-envelope',
                     'category' => 'special',
-                    'description' => 'Email address field',
+                    'description' => 'Поле email-адреса',
                 ],
                 'url' => [
-                    'label' => 'URL',
+                    'label' => 'Ссылка (URL)',
                     'icon' => 'fa-link',
                     'category' => 'special',
-                    'description' => 'Website URL field',
+                    'description' => 'Поле ссылки на сайт',
                 ],
                 'autonumber' => [
-                    'label' => 'Auto Number',
+                    'label' => 'Нумератор',
                     'icon' => 'fa-calculator',
                     'category' => 'special',
-                    'description' => 'Auto-incrementing number',
+                    'description' => 'Автоматическая нумерация',
                 ],
                 'file' => [
-                    'label' => 'File',
+                    'label' => 'Файл',
                     'icon' => 'fa-file-upload',
                     'category' => 'special',
-                    'description' => 'File upload field',
+                    'description' => 'Загрузка файла',
                 ],
                 'checklist' => [
-                    'label' => 'Checklist',
+                    'label' => 'Чек-лист',
                     'icon' => 'fa-tasks',
                     'category' => 'special',
-                    'description' => 'Checklist with sub-items',
+                    'description' => 'Чек-лист с подзадачами',
                 ],
             ],
         ]);

@@ -1,5 +1,5 @@
 import React from 'react';
-import { GripVertical, Pencil, Trash2, Archive, RotateCcw, Info } from 'lucide-react';
+import { GripVertical, Pencil, Trash2, Archive, RotateCcw, Info, Inbox } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 import { DragDropProvider, useDraggable } from '@/components/dnd/drag-drop';
@@ -30,6 +30,15 @@ interface DragDropFieldsListProps {
     fieldTypes: Record<string, any>;
     reorderDisabled?: boolean;
 }
+
+const ENTITY_TYPE_LABELS: Record<string, string> = {
+    agent: 'Агенты',
+    property: 'Недвижимость',
+    buyer: 'Покупатели',
+    transaction: 'Транзакции',
+    property_showing: 'Показы недвижимости',
+    communication: 'Коммуникации',
+};
 
 const DragDropFieldsList: React.FC<DragDropFieldsListProps> = ({
     fields,
@@ -78,7 +87,7 @@ const DragDropFieldsList: React.FC<DragDropFieldsListProps> = ({
         return (
             <div className="bg-white rounded-lg shadow p-8 text-center">
                 <div className="inline-block">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-400"></div>
                 </div>
                 <p className="text-gray-600 mt-4">Загрузка полей...</p>
             </div>
@@ -88,7 +97,7 @@ const DragDropFieldsList: React.FC<DragDropFieldsListProps> = ({
     if (localFields.length === 0) {
         return (
             <div className="bg-white rounded-lg shadow p-12 text-center">
-                <i className="fas fa-inbox text-5xl text-gray-300 mb-4 block"></i>
+                <Inbox className="h-14 w-14 text-gray-300 mb-4 mx-auto" />
                 <p className="text-gray-600 text-lg">Поля не найдены</p>
                 <p className="text-gray-500 mt-2">Создайте первое поле с помощью кнопки выше</p>
             </div>
@@ -97,12 +106,12 @@ const DragDropFieldsList: React.FC<DragDropFieldsListProps> = ({
 
     return (
         <div className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="p-4 bg-blue-50 border-b border-blue-200">
-                <p className="text-sm text-blue-800 flex items-start gap-2">
+            <div className="p-4 bg-gray-50 border-b border-gray-200">
+                <p className="text-sm text-gray-700 flex items-start gap-2">
                     <Info className="h-4 w-4 mt-0.5 shrink-0" />
                     {reorderDisabled
-                        ? 'Перетаскивание отключено в архиве'
-                        : 'Перетаскивайте поля за ручку слева для изменения порядка'}
+                        ? 'В архиве порядок менять нельзя'
+                        : 'Перетаскивайте поля за ручку слева, чтобы изменить порядок'}
                 </p>
             </div>
 
@@ -183,25 +192,25 @@ const SortableFieldRow: React.FC<{
 
                     {/* Mobile chips */}
                     <div className="mt-3 flex flex-wrap gap-2 lg:hidden">
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
                             {getFieldTypeLabel(field.field_type)}
                         </span>
                         {field.is_master_relation && (
                             <span
-                                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-300"
-                                title="Мастер-связь: каскадное удаление"
+                                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200"
+                                title="Мастер-связь: при удалении основного объекта будет удалён связанный"
                             >
                                 Мастер
                             </span>
                         )}
                         {field.allow_multiple && (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                Множество
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
+                                Множественный выбор
                             </span>
                         )}
                         {field.reference_table && (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                                {field.reference_table}
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
+                                {ENTITY_TYPE_LABELS[field.reference_table] ?? field.reference_table}
                             </span>
                         )}
                     </div>
@@ -209,7 +218,7 @@ const SortableFieldRow: React.FC<{
 
                 {/* Field Type Badge */}
                 <div className="shrink-0 hidden lg:block">
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
                         {getFieldTypeLabel(field.field_type)}
                     </span>
                 </div>
@@ -218,20 +227,20 @@ const SortableFieldRow: React.FC<{
                 <div className="shrink-0 hidden lg:flex flex-wrap gap-2 w-32">
                     {field.is_master_relation && (
                         <span
-                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-300"
-                            title="Мастер-связь: каскадное удаление"
+                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200"
+                            title="Мастер-связь: при удалении основного объекта будет удалён связанный"
                         >
                             Мастер
                         </span>
                     )}
                     {field.allow_multiple && (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            Множество
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
+                            Множественный выбор
                         </span>
                     )}
                     {field.reference_table && (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                            {field.reference_table}
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
+                            {ENTITY_TYPE_LABELS[field.reference_table] ?? field.reference_table}
                         </span>
                     )}
                 </div>

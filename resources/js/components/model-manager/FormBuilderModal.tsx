@@ -128,6 +128,19 @@ export default function FormBuilderModal(props: FormBuilderModalProps) {
             });
     }, [fieldTypes]);
 
+    const categoryLabels = React.useMemo(
+        () =>
+            ({
+                text: "Текст",
+                select: "Справочники",
+                numbers: "Числа",
+                datetime: "Дата/время",
+                relations: "Связи",
+                special: "Специальные",
+            } as Record<string, string>),
+        []
+    );
+
     const toggleExpanded = React.useCallback((id: string) => {
         setExpandedIds((prev) => {
             const next = new Set(prev);
@@ -219,7 +232,6 @@ export default function FormBuilderModal(props: FormBuilderModalProps) {
                                 onClose();
                                 onRequestAddField();
                             }}
-                            className="bg-blue-600 hover:bg-blue-700 text-white"
                         >
                             + Поле
                         </Button>
@@ -323,6 +335,8 @@ function FieldRow(props: {
     }, [field.label]);
 
     const relation = isRelationType(field.field_type);
+    const isManyToMany = field.field_type === "many_to_many";
+    const isMasterType = field.field_type === "master_relation";
 
     const applyValidation = React.useCallback(async () => {
         try {
@@ -369,12 +383,29 @@ function FieldRow(props: {
                                 <label className="block text-xs text-gray-600 mb-1">Тип</label>
                                 <select
                                     value={field.field_type}
-                                    onChange={(e) => void onPatch(field, { field_type: e.target.value })}
+                                    onChange={(e) => {
+                                        const nextType = e.target.value;
+                                        const patch: Partial<ModelManagerField> = { field_type: nextType };
+
+                                        if (nextType === "master_relation") {
+                                            patch.is_master_relation = true;
+                                        } else if (field.field_type === "master_relation") {
+                                            patch.is_master_relation = false;
+                                        }
+
+                                        if (nextType === "many_to_many") {
+                                            patch.allow_multiple = true;
+                                            const current = Number(field.max_items ?? 50);
+                                            patch.max_items = Number.isFinite(current) ? Math.min(current, 50) : 50;
+                                        }
+
+                                        void onPatch(field, patch);
+                                    }}
                                     className="w-full h-9 px-3 border border-gray-300 rounded-lg bg-white text-sm"
                                 >
                                     {typeOptions.map((t) => (
                                         <option key={t.key} value={t.key}>
-                                            {t.category ? `${t.category}: ` : ""}{t.label}
+                                            {t.category ? `${categoryLabels[t.category] ?? t.category}: ` : ""}{t.label}
                                         </option>
                                     ))}
                                 </select>
@@ -411,7 +442,7 @@ function FieldRow(props: {
                             <button
                                 type="button"
                                 onClick={onToggleExpanded}
-                                className="text-xs text-blue-700 hover:text-blue-900"
+                                className="text-xs text-gray-700 hover:text-gray-900"
                             >
                                 {expanded ? "Скрыть настройки" : "Настройки"}
                             </button>
@@ -459,8 +490,24 @@ function FieldRow(props: {
                                                     type="checkbox"
                                                     checked={Boolean(field.allow_multiple)}
                                                     onChange={(e) => void onPatch(field, { allow_multiple: e.target.checked })}
+                                                    disabled={isManyToMany}
                                                 />
                                                 Да
+
+                                                {isManyToMany ? (
+                                                    <TooltipProvider delayDuration={400}>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <button type="button" className="ml-auto text-gray-400 hover:text-gray-700" aria-label="Информация">
+                                                                    <Info className="h-4 w-4" />
+                                                                </button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent className="max-w-xs">
+                                                                Связь множественного выбора позволяет выбрать/создать до 50 связанных объектов прямо в форме.
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
+                                                ) : null}
                                             </label>
                                         </div>
 
@@ -471,6 +518,7 @@ function FieldRow(props: {
                                                     type="checkbox"
                                                     checked={Boolean(field.is_master_relation)}
                                                     onChange={(e) => void onPatch(field, { is_master_relation: e.target.checked })}
+                                                    disabled={isMasterType}
                                                 />
                                                 <span>Да</span>
 
@@ -495,7 +543,7 @@ function FieldRow(props: {
                                                 type="number"
                                                 value={field.max_items ?? 50}
                                                 min={1}
-                                                max={500}
+                                                max={isManyToMany ? 50 : 500}
                                                 onChange={(e) =>
                                                     void onPatch(field, { max_items: Number.parseInt(e.target.value, 10) || 0 })
                                                 }
@@ -528,7 +576,6 @@ function FieldRow(props: {
                                             onClick={async () => {
                                                 await applyValidation();
                                             }}
-                                            className="bg-blue-600 hover:bg-blue-700 text-white"
                                         >
                                             Применить
                                         </Button>

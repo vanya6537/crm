@@ -89,6 +89,8 @@ const FieldModal: React.FC<FieldModalProps> = ({
 
     const selectedFieldType = fieldTypes[formData.field_type];
     const isRelationType = ['reference', 'relation', 'master_relation', 'many_to_many'].includes(formData.field_type);
+    const isMasterRelationType = formData.field_type === 'master_relation';
+    const isManyToManyType = formData.field_type === 'many_to_many';
     const isSelectType = ['select', 'radio', 'checkbox', 'multiselect'].includes(formData.field_type) || formData.field_type.includes('select');
 
     const getTypeIcon = (fieldTypeKey: string) => {
@@ -108,7 +110,32 @@ const FieldModal: React.FC<FieldModalProps> = ({
     };
 
     const handleFieldChange = (key: string, value: any) => {
-        setFormData(prev => ({
+        if (key === 'field_type') {
+            const nextType = String(value);
+
+            setFormData((prev) => {
+                const next = { ...prev, field_type: nextType };
+
+                // Тип "Мастер-связь" должен быть согласован с флагом.
+                if (nextType === 'master_relation') {
+                    next.is_master_relation = true;
+                } else if (prev.field_type === 'master_relation') {
+                    next.is_master_relation = false;
+                }
+
+                // Тип "Связь множественного выбора" подразумевает несколько значений (до 50).
+                if (nextType === 'many_to_many') {
+                    next.allow_multiple = true;
+                    const current = Number(next.max_items ?? 50);
+                    next.max_items = Number.isFinite(current) ? Math.min(current, 50) : 50;
+                }
+
+                return next;
+            });
+            return;
+        }
+
+        setFormData((prev) => ({
             ...prev,
             [key]: value,
         }));
@@ -155,6 +182,10 @@ const FieldModal: React.FC<FieldModalProps> = ({
             }
             if (isRelationType && !formData.reference_table) {
                 throw new Error('Для типа связи необходимо выбрать таблицу');
+            }
+
+            if (isManyToManyType && Number(formData.max_items ?? 50) > 50) {
+                throw new Error('Для связи множественного выбора максимум — 50 элементов');
             }
 
             await onSave(formData);
@@ -256,7 +287,7 @@ const FieldModal: React.FC<FieldModalProps> = ({
                                                 value={formData.label}
                                                 onChange={(e) => handleFieldChange('label', e.target.value)}
                                                 placeholder="Название в интерфейсе"
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-200 focus:border-gray-400"
                                             />
                                         </div>
                                     </div>
@@ -268,7 +299,7 @@ const FieldModal: React.FC<FieldModalProps> = ({
                                             onChange={(e) => handleFieldChange('description', e.target.value)}
                                             placeholder="Подсказка для пользователей"
                                             rows={2}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-200 focus:border-gray-400"
                                         />
                                     </div>
 
@@ -289,7 +320,7 @@ const FieldModal: React.FC<FieldModalProps> = ({
                                                 <select
                                                     value={formData.reference_table}
                                                     onChange={(e) => handleFieldChange('reference_table', e.target.value)}
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-200 focus:border-gray-400"
                                                 >
                                                     <option value="">-- Выберите --</option>
                                                     {['agent', 'property', 'buyer', 'transaction', 'property_showing', 'communication'].map((type) => (
@@ -306,8 +337,24 @@ const FieldModal: React.FC<FieldModalProps> = ({
                                                     type="checkbox"
                                                     checked={formData.allow_multiple}
                                                     onChange={(e) => handleFieldChange('allow_multiple', e.target.checked)}
+                                                    disabled={isManyToManyType}
                                                 />
-                                                <label htmlFor="allow_multiple" className="text-sm font-medium text-gray-700">Разрешить несколько связей</label>
+                                                <label htmlFor="allow_multiple" className="text-sm font-medium text-gray-700">Несколько связанных записей</label>
+
+                                                {isManyToManyType ? (
+                                                    <TooltipProvider delayDuration={400}>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <button type="button" className="text-gray-400 hover:text-gray-700" aria-label="Информация">
+                                                                    <Info className="h-4 w-4" />
+                                                                </button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent className="max-w-xs">
+                                                                Связь множественного выбора позволяет выбрать/создать до 50 связанных объектов прямо в форме.
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
+                                                ) : null}
                                             </div>
 
                                             <div className="flex items-center gap-2">
@@ -316,6 +363,7 @@ const FieldModal: React.FC<FieldModalProps> = ({
                                                     type="checkbox"
                                                     checked={formData.is_master_relation}
                                                     onChange={(e) => handleFieldChange('is_master_relation', e.target.checked)}
+                                                    disabled={isMasterRelationType}
                                                 />
                                                 <label htmlFor="master_relation" className="text-sm font-medium text-gray-700">Мастер-связь</label>
 
@@ -341,9 +389,12 @@ const FieldModal: React.FC<FieldModalProps> = ({
                                                         value={formData.max_items}
                                                         onChange={(e) => handleFieldChange('max_items', parseInt(e.target.value, 10))}
                                                         min="1"
-                                                        max="500"
-                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                                        max={isManyToManyType ? 50 : 500}
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-200 focus:border-gray-400"
                                                     />
+                                                    {isManyToManyType ? (
+                                                        <div className="text-xs text-gray-500 mt-1">Ограничение: до 50 связанных объектов.</div>
+                                                    ) : null}
                                                 </div>
                                             )}
                                         </div>
@@ -382,7 +433,7 @@ const FieldModal: React.FC<FieldModalProps> = ({
                                                 <button
                                                     type="button"
                                                     onClick={handleAddOption}
-                                                    className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                                                    className="text-sm text-gray-700 hover:text-gray-900 font-medium"
                                                 >
                                                     + Добавить вариант
                                                 </button>
@@ -397,17 +448,17 @@ const FieldModal: React.FC<FieldModalProps> = ({
                                                 type="text"
                                                 value={formData.placeholder}
                                                 onChange={(e) => handleFieldChange('placeholder', e.target.value)}
-                                                placeholder="Placeholder"
+                                                placeholder="Текст в поле до ввода"
                                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Помощь</label>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Текст помощи</label>
                                             <input
                                                 type="text"
                                                 value={formData.help_text}
                                                 onChange={(e) => handleFieldChange('help_text', e.target.value)}
-                                                placeholder="Help text"
+                                                placeholder="Пояснение для пользователей"
                                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                                             />
                                         </div>
@@ -442,7 +493,7 @@ function TypeGroup(props: {
     const { title, items, selected, onSelect, getIcon, highlight } = props;
 
     return (
-        <div className={highlight ? 'border border-blue-200 rounded-lg p-3 bg-blue-50/40' : ''}>
+        <div className={highlight ? 'border border-gray-200 rounded-lg p-3 bg-gray-50' : ''}>
             <div className="text-sm font-semibold text-gray-900 mb-3">{title}</div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {items.map((t) => {
@@ -457,8 +508,8 @@ function TypeGroup(props: {
                             className={
                                 'text-left rounded-lg border px-4 py-3 bg-white transition ' +
                                 (isSelected
-                                    ? 'border-blue-600 ring-2 ring-blue-200'
-                                    : 'border-gray-200 hover:border-blue-400 hover:shadow-sm')
+                                    ? 'border-gray-900 ring-2 ring-gray-200'
+                                    : 'border-gray-200 hover:border-gray-300 hover:shadow-sm')
                             }
                         >
                             <div className="flex items-start gap-3">

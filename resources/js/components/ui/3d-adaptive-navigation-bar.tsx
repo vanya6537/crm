@@ -40,7 +40,7 @@ export const CRMAdaptivePill: React.FC = () => {
     { label: 'Agents', id: 'agents', href: '/agents', icon: Users },
     { label: 'Buyers', id: 'buyers', href: '/buyers', icon: UserCircle },
     { label: 'Transactions', id: 'transactions', href: '/transactions', icon: Briefcase },
-    { label: 'Models', id: 'models', href: '/model-manager', icon: Blocks },
+    { label: 'Модели', id: 'models', href: '/model-manager', icon: Blocks },
     { label: 'Processes', id: 'processes', href: '/process-modeler', icon: GitBranch },
     { label: 'Settings', id: 'settings', href: '/settings', icon: Settings },
     { label: 'Log out', id: 'logout', action: () => router.post(logout()), icon: LogOut },
