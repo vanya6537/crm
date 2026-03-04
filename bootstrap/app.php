@@ -27,6 +27,8 @@ return Application::configure(basePath: dirname(__DIR__))
         }
 
         $middleware->api(prepend: [
+             \Illuminate\Cookie\Middleware\EncryptCookies::class,
+             \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
              \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
              \Illuminate\Session\Middleware\StartSession::class,
         ]);
