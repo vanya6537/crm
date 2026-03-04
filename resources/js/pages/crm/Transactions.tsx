@@ -110,7 +110,7 @@ export default function Transactions({
         try {
             const params = new URLSearchParams();
             if (search) params.append('search', search);
-            if (statusFilter) params.append('status', statusFilter);
+            if (statusFilter && statusFilter !== 'all_statuses') params.append('status', statusFilter);
 
             const response = await apiRequest(`/api/v1/transactions?${params.toString()}`, {
                 method: 'GET',
@@ -285,7 +285,7 @@ export default function Transactions({
                                             <SelectValue placeholder="Все статусы" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="">Все статусы</SelectItem>
+                                            <SelectItem value="all_statuses">Все статусы</SelectItem>
                                             <SelectItem value="lead">Лид</SelectItem>
                                             <SelectItem value="negotiation">Переговоры</SelectItem>
                                             <SelectItem value="offer">Предложение</SelectItem>

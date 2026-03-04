@@ -115,9 +115,9 @@ export default function CRMDashboard({
                     </div>
 
                     {/* Quick Actions & Recent Activity */}
-                    <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
+                    <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
                         {/* Quick Actions */}
-                        <Card className="p-6 border-sidebar-border/70 dark:border-sidebar-border md:col-span-1">
+                        <Card className="min-w-60 p-6 border-sidebar-border/70 dark:border-sidebar-border md:col-span-1">
                             <h3 className="text-lg font-semibold text-foreground mb-4">
                                 Быстрые действия
                             </h3>
@@ -158,7 +158,7 @@ export default function CRMDashboard({
                         </Card>
 
                         {/* Recent Transactions */}
-                        <Card className="p-6 border-sidebar-border/70 dark:border-sidebar-border md:col-span-2">
+                        <Card className="min-w-[450px] p-6 border-sidebar-border/70 dark:border-sidebar-border md:col-span-2">
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="text-lg font-semibold text-foreground">
                                     Недавние сделки

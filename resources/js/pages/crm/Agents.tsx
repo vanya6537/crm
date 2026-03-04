@@ -82,8 +82,8 @@ export default function Agents({ agents: initialAgents, filters: initialFilters 
         try {
             const params = new URLSearchParams();
             if (search) params.append('search', search);
-            if (statusFilter) params.append('status', statusFilter);
-            if (specializationFilter) params.append('specialization', specializationFilter);
+            if (statusFilter && statusFilter !== 'all_statuses') params.append('status', statusFilter);
+            if (specializationFilter && specializationFilter !== 'all_specs') params.append('specialization', specializationFilter);
 
             const response = await apiRequest(`/api/v1/agents?${params.toString()}`, {
                 method: 'GET',
@@ -252,7 +252,7 @@ export default function Agents({ agents: initialAgents, filters: initialFilters 
                                             <SelectValue placeholder="Все статусы" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="">Все статусы</SelectItem>
+                                            <SelectItem value="all_statuses">Все статусы</SelectItem>
                                             <SelectItem value="active">Активный</SelectItem>
                                             <SelectItem value="inactive">Неактивный</SelectItem>
                                         </SelectContent>
@@ -266,7 +266,7 @@ export default function Agents({ agents: initialAgents, filters: initialFilters 
                                             <SelectValue placeholder="Все" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="">Все виды</SelectItem>
+                                            <SelectItem value="all_specs">Все виды</SelectItem>
                                             <SelectItem value="residential">Жилая</SelectItem>
                                             <SelectItem value="commercial">Коммерческая</SelectItem>
                                             <SelectItem value="luxury">Люкс</SelectItem>

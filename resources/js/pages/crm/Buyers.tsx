@@ -82,8 +82,8 @@ export default function Buyers({ buyers: initialBuyers, filters: initialFilters 
         try {
             const params = new URLSearchParams();
             if (search) params.append('search', search);
-            if (statusFilter) params.append('status', statusFilter);
-            if (sourceFilter) params.append('source', sourceFilter);
+            if (statusFilter && statusFilter !== 'all_statuses') params.append('status', statusFilter);
+            if (sourceFilter && sourceFilter !== 'all_sources') params.append('source', sourceFilter);
 
             const response = await apiRequest(`/api/v1/buyers?${params.toString()}`, {
                 method: 'GET',
@@ -251,7 +251,7 @@ export default function Buyers({ buyers: initialBuyers, filters: initialFilters 
                                             <SelectValue placeholder="Все статусы" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="">Все статусы</SelectItem>
+                                            <SelectItem value="all_statuses">Все статусы</SelectItem>
                                             <SelectItem value="active">Активный</SelectItem>
                                             <SelectItem value="converted">Конвертирован</SelectItem>
                                             <SelectItem value="lost">Потеряном</SelectItem>
@@ -266,7 +266,7 @@ export default function Buyers({ buyers: initialBuyers, filters: initialFilters 
                                             <SelectValue placeholder="Все источники" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="">Все источники</SelectItem>
+                                            <SelectItem value="all_sources">Все источники</SelectItem>
                                             <SelectItem value="website">Веб-сайт</SelectItem>
                                             <SelectItem value="referral">Рекомендация</SelectItem>
                                             <SelectItem value="agent_call">Звонок агента</SelectItem>
