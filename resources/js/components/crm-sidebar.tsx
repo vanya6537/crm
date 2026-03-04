@@ -68,6 +68,11 @@ const crmNavItems: NavItem[] = [
         href: '/list-of-values',
         icon: BarChart3,
     },
+    {
+        title: 'Конструктор моделей',
+        href: '/model-manager',
+        icon: Settings,
+    },
 ];
 
 const automationNavItems: NavItem[] = [

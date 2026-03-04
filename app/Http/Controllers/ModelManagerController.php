@@ -35,7 +35,7 @@ class ModelManagerController extends Controller
             'communication' => 'Коммуникации',
         ];
 
-        return Inertia::render('settings/ModelManager', [
+        return Inertia::render('crm/ModelManager', [
             'entityType' => $entityType,
             'entityTypes' => $entityTypes,
             'fields' => $fields,
