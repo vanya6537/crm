@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\ModelField;
+use App\Services\MigrationService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
@@ -84,6 +85,12 @@ class ModelFieldController extends \App\Http\Controllers\Controller
             'sort_order' => $validated['sort_order'] ?? ModelField::byEntityType($entityType)->max('sort_order') + 1,
         ]);
 
+        // Apply programmatic migration - add column to table
+        $tableName = MigrationService::getTableNameForEntity($entityType);
+        if ($tableName) {
+            MigrationService::addFieldToTable($tableName, $field);
+        }
+
         return response()->json([
             'data' => $field,
             'message' => 'Field created successfully',
@@ -138,7 +145,16 @@ class ModelFieldController extends \App\Http\Controllers\Controller
             }
         }
 
+        // Keep old field for migration comparison
+        $oldField = $field->replicate();
+        
         $field->update($validated);
+
+        // Apply programmatic migration - update column in table
+        $tableName = MigrationService::getTableNameForEntity($entityType);
+        if ($tableName) {
+            MigrationService::updateFieldInTable($tableName, $oldField, $field);
+        }
 
         return response()->json([
             'data' => $field,
@@ -153,6 +169,12 @@ class ModelFieldController extends \App\Http\Controllers\Controller
     {
         if ($field->entity_type !== $entityType) {
             return response()->json(['error' => 'Field not found'], 404);
+        }
+
+        // Apply programmatic migration - remove column from table
+        $tableName = MigrationService::getTableNameForEntity($entityType);
+        if ($tableName) {
+            MigrationService::removeFieldFromTable($tableName, $field->name);
         }
 
         $field->delete();

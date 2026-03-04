@@ -3,8 +3,8 @@ import { Head } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
 import FieldModal from '@/components/model-manager/FieldModal';
-import FieldsList from '@/components/model-manager/FieldsList';
-import axios from 'axios';
+import DragDropFieldsList from '@/components/model-manager/DragDropFieldsList';
+import { apiRequest } from '@/lib/csrf';
 
 interface ModelField {
     uuid: string;
@@ -52,7 +52,9 @@ export default function ModelManager({
     const [isLoading, setIsLoading] = useState(false);
     const [status, setStatus] = useState<'active' | 'archived'>(initialStatus as 'active' | 'archived');
     const [error, setError] = useState<string | null>(null);
+    const [success, setSuccess] = useState<string | null>(null);
     const [fieldTypes, setFieldTypes] = useState<Record<string, any>>({});
+    const [isSavingOrder, setIsSavingOrder] = useState(false);
 
     // Load field types on mount
     useEffect(() => {
@@ -116,10 +118,13 @@ export default function ModelManager({
                     `/api/v1/model-fields/${entityType}/${selectedField.uuid}`,
                     fieldData
                 );
+                setSuccess('Поле успешно обновлено');
             } else {
                 // Create new field
                 await axios.post(`/api/v1/model-fields/${entityType}`, fieldData);
+                setSuccess('Поле успешно добавлено');
             }
+            setTimeout(() => setSuccess(null), 3000);
             await loadFields();
             handleCloseModal();
         } catch (err: any) {
@@ -133,6 +138,8 @@ export default function ModelManager({
         if (window.confirm(`Удалить поле "${field.label}"?`)) {
             try {
                 await axios.delete(`/api/v1/model-fields/${entityType}/${field.uuid}`);
+                setSuccess('Поле успешно удалено');
+                setTimeout(() => setSuccess(null), 3000);
                 await loadFields();
             } catch (err) {
                 console.error('Failed to delete field:', err);
@@ -146,6 +153,8 @@ export default function ModelManager({
             await axios.put(`/api/v1/model-fields/${entityType}/${field.uuid}`, {
                 is_active: !field.is_active,
             });
+            setSuccess(field.is_active ? 'Поле архивировано' : 'Поле восстановлено');
+            setTimeout(() => setSuccess(null), 3000);
             await loadFields();
         } catch (err) {
             console.error('Failed to toggle field status:', err);
@@ -153,8 +162,33 @@ export default function ModelManager({
         }
     };
 
+    const handleReorderFields = async (reorderedFields: ModelField[]) => {
+        setIsSavingOrder(true);
+        try {
+            const orderData = reorderedFields.map((f, idx) => ({
+                id: f.uuid,
+                sort_order: idx,
+            }));
+
+            await axios.post(`/api/v1/model-fields/${entityType}/reorder`, {
+                fields: orderData,
+            });
+
+            setFields(reorderedFields);
+            setSuccess('Порядок полей сохранён');
+            setTimeout(() => setSuccess(null), 2000);
+        } catch (err) {
+            console.error('Failed to reorder fields:', err);
+            setError('Ошибка при сохранении порядка');
+        } finally {
+            setIsSavingOrder(false);
+        }
+    };
+
     const activeFields = fields.filter(f => f.is_active);
     const archivedFields = fields.filter(f => !f.is_active);
+
+    const displayFields = status === 'active' ? activeFields : archivedFields;
 
     return (
         <AppLayout>
@@ -174,7 +208,19 @@ export default function ModelManager({
                             <p className="text-red-800">{error}</p>
                             <button
                                 onClick={() => setError(null)}
-                                className="text-red-600 hover:text-red-800"
+                                className="text-red-600 hover:text-red-800 font-bold"
+                            >
+                                ×
+                            </button>
+                        </div>
+                    )}
+
+                    {success && (
+                        <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex justify-between items-center">
+                            <p className="text-green-800">{success}</p>
+                            <button
+                                onClick={() => setSuccess(null)}
+                                className="text-green-600 hover:text-green-800 font-bold"
                             >
                                 ×
                             </button>
@@ -249,17 +295,28 @@ export default function ModelManager({
                                 </div>
                             </div>
 
-                            {/* Fields List */}
-                            <FieldsList
-                                fields={
-                                    status === 'active' ? activeFields : archivedFields
-                                }
-                                isLoading={isLoading}
-                                onEdit={handleEditField}
-                                onDelete={handleDeleteField}
-                                onToggleActive={handleToggleActive}
-                                fieldTypes={fieldTypes}
-                            />
+                            {/* Fields List with Drag-and-Drop */}
+                            {displayFields.length > 0 ? (
+                                <DragDropFieldsList
+                                    fields={displayFields}
+                                    isLoading={isLoading || isSavingOrder}
+                                    onEdit={handleEditField}
+                                    onDelete={handleDeleteField}
+                                    onToggleActive={handleToggleActive}
+                                    onReorder={handleReorderFields}
+                                    fieldTypes={fieldTypes}
+                                />
+                            ) : (
+                                <div className="bg-white rounded-lg shadow p-12 text-center">
+                                    <i className="fas fa-inbox text-5xl text-gray-300 mb-4 block"></i>
+                                    <p className="text-gray-600 text-lg">Поля не найдены</p>
+                                    <p className="text-gray-500 mt-2">
+                                        {status === 'active'
+                                            ? 'Создайте первое поле с помощью кнопки выше'
+                                            : 'Нет архивированных полей'}
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </div>
 

@@ -1,103 +1,81 @@
-import { useCallback, useMemo, useSyncExternalStore } from 'react';
+import { useEffect, useState } from 'react';
 
-export type ResolvedAppearance = 'light' | 'dark';
-export type Appearance = ResolvedAppearance | 'system';
+export type Appearance = 'light' | 'dark' | 'system';
 
-export type UseAppearanceReturn = {
-    readonly appearance: Appearance;
-    readonly resolvedAppearance: ResolvedAppearance;
-    readonly updateAppearance: (mode: Appearance) => void;
-};
+export function useAppearance() {
+    const [appearance, setAppearance] = useState<Appearance>('light');
+    const [mounted, setMounted] = useState(false);
 
-const listeners = new Set<() => void>();
-let currentAppearance: Appearance = 'system';
-
-const prefersDark = (): boolean => {
-    if (typeof window === 'undefined') return false;
-
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
-};
-
-const setCookie = (name: string, value: string, days = 365): void => {
-    if (typeof document === 'undefined') return;
-    const maxAge = days * 24 * 60 * 60;
-    document.cookie = `${name}=${value};path=/;max-age=${maxAge};SameSite=Lax`;
-};
-
-const getStoredAppearance = (): Appearance => {
-    if (typeof window === 'undefined') return 'system';
-
-    return (localStorage.getItem('appearance') as Appearance) || 'system';
-};
-
-const isDarkMode = (appearance: Appearance): boolean => {
-    return appearance === 'dark' || (appearance === 'system' && prefersDark());
-};
-
-const applyTheme = (appearance: Appearance): void => {
-    if (typeof document === 'undefined') return;
-
-    const isDark = isDarkMode(appearance);
-
-    document.documentElement.classList.toggle('dark', isDark);
-    document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
-};
-
-const subscribe = (callback: () => void) => {
-    listeners.add(callback);
-
-    return () => listeners.delete(callback);
-};
-
-const notify = (): void => listeners.forEach((listener) => listener());
-
-const mediaQuery = (): MediaQueryList | null => {
-    if (typeof window === 'undefined') return null;
-
-    return window.matchMedia('(prefers-color-scheme: dark)');
-};
-
-const handleSystemThemeChange = (): void => applyTheme(currentAppearance);
-
-export function initializeTheme(): void {
-    if (typeof window === 'undefined') return;
-
-    if (!localStorage.getItem('appearance')) {
-        localStorage.setItem('appearance', 'system');
-        setCookie('appearance', 'system');
-    }
-
-    currentAppearance = getStoredAppearance();
-    applyTheme(currentAppearance);
-
-    // Set up system theme change listener
-    mediaQuery()?.addEventListener('change', handleSystemThemeChange);
-}
-
-export function useAppearance(): UseAppearanceReturn {
-    const appearance: Appearance = useSyncExternalStore(
-        subscribe,
-        () => currentAppearance,
-        () => 'system',
-    );
-
-    const resolvedAppearance: ResolvedAppearance = useMemo(
-        () => (isDarkMode(appearance) ? 'dark' : 'light'),
-        [appearance],
-    );
-
-    const updateAppearance = useCallback((mode: Appearance): void => {
-        currentAppearance = mode;
-
-        // Store in localStorage for client-side persistence...
-        localStorage.setItem('appearance', mode);
-
-        // Store in cookie for SSR...
-        setCookie('appearance', mode);
-
-        applyTheme(mode);
-        notify();
+    useEffect(() => {
+        // Load appearance from localStorage on mount
+        const saved = localStorage.getItem('appearance') as Appearance | null;
+        if (saved) {
+            setAppearance(saved);
+            applyAppearance(saved);
+        } else {
+            // Default to light mode
+            applyAppearance('light');
+        }
+        setMounted(true);
     }, []);
 
-    return { appearance, resolvedAppearance, updateAppearance } as const;
+    const updateAppearance = (value: Appearance) => {
+        setAppearance(value);
+        localStorage.setItem('appearance', value);
+        applyAppearance(value);
+    };
+
+    return {
+        appearance: mounted ? appearance : 'light',
+        updateAppearance,
+    };
+}
+
+export function initializeTheme() {
+    console.log('%c[initializeTheme] Starting theme initialization', 'color: #0088ff; font-weight: bold');
+    
+    const saved = localStorage.getItem('appearance') as Appearance | null;
+    const htmlElement = document.documentElement;
+    const appearance = saved || 'light';
+    
+    console.log('%c[initializeTheme] Settings:', 'color: #0088ff', {
+        saved,
+        defaultAppearance: appearance,
+        htmlClass: htmlElement.className,
+        body: document.body.style.cssText,
+    });
+    
+    applyAppearance(appearance);
+    
+    console.log('%c[initializeTheme] After apply - htmlClass:', 'color: #0088ff', htmlElement.className);
+}
+
+function applyAppearance(appearance: Appearance) {
+    const htmlElement = document.documentElement;
+    
+    console.log('%c[applyAppearance] Applying appearance:', 'color: #ff8800', {
+        appearance,
+        beforeClass: htmlElement.className,
+        computedBg: getComputedStyle(htmlElement).backgroundColor,
+    });
+
+    if (appearance === 'system') {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        console.log('%c[applyAppearance] System preference:', 'color: #ff8800', { prefersDark });
+        if (prefersDark) {
+            htmlElement.classList.add('dark');
+        } else {
+            htmlElement.classList.remove('dark');
+        }
+    } else if (appearance === 'dark') {
+        htmlElement.classList.add('dark');
+    } else {
+        htmlElement.classList.remove('dark');
+    }
+    
+    console.log('%c[applyAppearance] After change:', 'color: #ff8800', {
+        afterClass: htmlElement.className,
+        isDark: htmlElement.classList.contains('dark'),
+        computedBgAfter: getComputedStyle(htmlElement).backgroundColor,
+    });
 }

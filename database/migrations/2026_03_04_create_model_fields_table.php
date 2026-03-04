@@ -9,7 +9,7 @@ return new class extends Migration {
     {
         Schema::create('model_fields', function (Blueprint $table) {
             $table->id();
-            $table->uuid('uuid')->unique();
+            $table->string('uuid', 36)->unique();
             
             // Entity type this field belongs to
             $table->enum('entity_type', [

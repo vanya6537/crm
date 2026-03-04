@@ -95,6 +95,7 @@ const typeLabels: Record<string, string> = {
 };
 
 export default function Properties({ properties, filters: initialFilters }: PropertiesProps) {
+    const [propertyList, setPropertyList] = useState<Property[]>(properties.data);
     const [search, setSearch] = useState(initialFilters.search || '');
     const [statusFilter, setStatusFilter] = useState(initialFilters.status || 'all');
     const [typeFilter, setTypeFilter] = useState(initialFilters.type || 'all');
@@ -103,6 +104,7 @@ export default function Properties({ properties, filters: initialFilters }: Prop
 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [success, setSuccess] = useState<string | null>(null);
 
     // Modal states
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -112,7 +114,7 @@ export default function Properties({ properties, filters: initialFilters }: Prop
 
     // Sort properties
     const sortedProperties = useMemo(() => {
-        const items = [...properties.data];
+        const items = [...propertyList];
         items.sort((a, b) => {
             let aVal: number;
             let bVal: number;
@@ -132,11 +134,12 @@ export default function Properties({ properties, filters: initialFilters }: Prop
         });
 
         return items;
-    }, [properties.data, sortBy, sortOrder]);
+    }, [propertyList, sortBy, sortOrder]);
 
     const handleCreate = async (data: Partial<Property>) => {
         setIsLoading(true);
         setError(null);
+        setSuccess(null);
         try {
             const response = await apiRequest('/api/v1/properties', {
                 method: 'POST',
@@ -149,8 +152,11 @@ export default function Properties({ properties, filters: initialFilters }: Prop
                 throw new Error(errorMsg);
             }
 
+            const newProperty = await response.json();
+            setPropertyList([...propertyList, newProperty.data || newProperty]);
             setIsCreateModalOpen(false);
-            window.location.reload();
+            setSuccess('Объект успешно создан');
+            setTimeout(() => setSuccess(null), 3000);
         } catch (err) {
             const msg = err instanceof Error ? err.message : 'Unknown error';
             console.error('Create error:', msg);
@@ -165,9 +171,8 @@ export default function Properties({ properties, filters: initialFilters }: Prop
 
         setIsLoading(true);
         setError(null);
+        setSuccess(null);
         try {
-            console.log('Updating property:', selectedProperty.id, 'with data:', data);
-            
             const response = await apiRequest(`/api/v1/properties/${selectedProperty.id}`, {
                 method: 'PUT',
                 body: JSON.stringify(data),
@@ -179,9 +184,13 @@ export default function Properties({ properties, filters: initialFilters }: Prop
                 throw new Error(errorMsg);
             }
 
+            const updatedProperty = await response.json();
+            const updated = updatedProperty.data || updatedProperty;
+            setPropertyList(propertyList.map(p => p.id === selectedProperty.id ? updated : p));
             setIsEditModalOpen(false);
             setSelectedProperty(null);
-            window.location.reload();
+            setSuccess('Объект успешно обновлен');
+            setTimeout(() => setSuccess(null), 3000);
         } catch (err) {
             const msg = err instanceof Error ? err.message : 'Unknown error';
             console.error('Update error:', msg);
@@ -196,6 +205,7 @@ export default function Properties({ properties, filters: initialFilters }: Prop
 
         setIsLoading(true);
         setError(null);
+        setSuccess(null);
         try {
             const response = await apiRequest(`/api/v1/properties/${selectedProperty.id}`, {
                 method: 'DELETE',
@@ -207,9 +217,11 @@ export default function Properties({ properties, filters: initialFilters }: Prop
                 throw new Error(errorMsg);
             }
 
+            setPropertyList(propertyList.filter(p => p.id !== selectedProperty.id));
             setIsDeleteModalOpen(false);
             setSelectedProperty(null);
-            window.location.reload();
+            setSuccess('Объект успешно удален');
+            setTimeout(() => setSuccess(null), 3000);
         } catch (err) {
             const msg = err instanceof Error ? err.message : 'Unknown error';
             console.error('Delete error:', msg);
@@ -235,6 +247,21 @@ export default function Properties({ properties, filters: initialFilters }: Prop
                                 <button
                                     onClick={() => setError(null)}
                                     className="text-red-700 dark:text-red-200 hover:opacity-70"
+                                >
+                                    <X className="h-4 w-4" />
+                                </button>
+                            </div>
+                        </Card>
+                    )}
+
+                    {/* Success Alert */}
+                    {success && (
+                        <Card className="p-4 border-green-500/50 bg-green-500/10">
+                            <div className="flex items-start justify-between">
+                                <p className="text-sm text-green-700 dark:text-green-200">{success}</p>
+                                <button
+                                    onClick={() => setSuccess(null)}
+                                    className="text-green-700 dark:text-green-200 hover:opacity-70"
                                 >
                                     <X className="h-4 w-4" />
                                 </button>
@@ -426,13 +453,8 @@ export default function Properties({ properties, filters: initialFilters }: Prop
                     {sortedProperties.length > 0 && (
                         <div className="flex items-center justify-between text-sm text-muted-foreground">
                             <span>
-                                Показано {sortedProperties.length} из {properties.total} объектов
+                                Показано {sortedProperties.length} из {propertyList.length} объектов
                             </span>
-                            {properties.last_page > 1 && (
-                                <span>
-                                    Страница {properties.current_page} из {properties.last_page}
-                                </span>
-                            )}
                         </div>
                     )}
                 </div>
@@ -495,10 +517,10 @@ export default function Properties({ properties, filters: initialFilters }: Prop
                                 className="bg-red-500 hover:bg-red-600"
                             >
                                 {isLoading ? (
-                                    <>
-                                        <Spinner className="h-4 w-4 mr-2" />
+                                    <span className="flex items-center gap-2">
+                                        <Spinner className="h-4 w-4" />
                                         Удаление...
-                                    </>
+                                    </span>
                                 ) : (
                                     'Удалить'
                                 )}

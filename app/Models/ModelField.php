@@ -4,13 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Support\Str;
 
 class ModelField extends Model
 {
-    use HasUuids;
-
     protected $fillable = [
+        'uuid',
         'entity_type',
         'name',
         'label',
@@ -48,6 +47,18 @@ class ModelField extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
+
+    // Boot method to generate UUID
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            if (!$model->uuid) {
+                $model->uuid = Str::uuid()->toString();
+            }
+        });
+    }
 
     // Relationships
     public function creator(): BelongsTo
