@@ -11,6 +11,7 @@ import {
     ChevronDown,
     BarChart3,
     Workflow,
+    Blocks,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
@@ -71,7 +72,7 @@ const crmNavItems: NavItem[] = [
     {
         title: 'Конструктор моделей',
         href: '/model-manager',
-        icon: Settings,
+        icon: Blocks,
     },
 ];
 

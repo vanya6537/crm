@@ -262,7 +262,7 @@ export default function ModelManager({
         <CRMLayout title="Конструктор моделей" description="Управление полями моделей данных">
             <Head title="Конструктор моделей" />
 
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
                 {(error || success) && (
                     <div className="mb-6 space-y-2">
                         {error && (

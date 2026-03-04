@@ -12,7 +12,8 @@ import {
     Building2,
     LayoutDashboard,
     Zap,
-    GitBranch
+  GitBranch,
+  Blocks
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { logout } from '@/routes'
@@ -39,6 +40,7 @@ export const CRMAdaptivePill: React.FC = () => {
     { label: 'Agents', id: 'agents', href: '/agents', icon: Users },
     { label: 'Buyers', id: 'buyers', href: '/buyers', icon: UserCircle },
     { label: 'Transactions', id: 'transactions', href: '/transactions', icon: Briefcase },
+    { label: 'Models', id: 'models', href: '/model-manager', icon: Blocks },
     { label: 'Processes', id: 'processes', href: '/process-modeler', icon: GitBranch },
     { label: 'Settings', id: 'settings', href: '/settings', icon: Settings },
     { label: 'Log out', id: 'logout', action: () => router.post(logout()), icon: LogOut },
@@ -108,7 +110,7 @@ export const CRMAdaptivePill: React.FC = () => {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-[100] md:hidden" ref={containerRef}>
+    <div className="fixed bottom-6 right-6 z-50 md:hidden" ref={containerRef}>
         <motion.nav
         onPointerDown={(e) => {
           if (!expanded) {
@@ -152,7 +154,7 @@ export const CRMAdaptivePill: React.FC = () => {
         >
         {/* Glossy Overlay UI */}
         <div 
-            className="absolute inset-x-0 top-0 rounded-t-full pointer-events-none h-[2px]"
+          className="absolute inset-x-0 top-0 rounded-t-full pointer-events-none h-0.5"
             style={{
             background: 'linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 1) 50%, rgba(255, 255, 255, 0) 100%)',
             }}

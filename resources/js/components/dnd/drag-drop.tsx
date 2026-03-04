@@ -4,6 +4,7 @@ import * as React from "react";
 import {
     DndContext,
     type DragEndEvent,
+    DragOverlay,
     PointerSensor,
     KeyboardSensor,
     closestCenter,
@@ -31,9 +32,10 @@ export type DragDropProviderProps = {
     onReorder: (nextItems: string[]) => void;
     children: React.ReactNode;
     disabled?: boolean;
+    renderOverlay?: (activeId: string) => React.ReactNode;
 };
 
-export function DragDropProvider({ items, onReorder, children, disabled }: DragDropProviderProps) {
+export function DragDropProvider({ items, onReorder, children, disabled, renderOverlay }: DragDropProviderProps) {
     const [activeId, setActiveId] = React.useState<string | null>(null);
 
     const sensors = useSensors(
@@ -79,6 +81,10 @@ export function DragDropProvider({ items, onReorder, children, disabled }: DragD
                 <SortableContext items={items} strategy={verticalListSortingStrategy}>
                     {children}
                 </SortableContext>
+
+                <DragOverlay>
+                    {activeId && (renderOverlay ? renderOverlay(activeId) : null)}
+                </DragOverlay>
             </DndContext>
         </DragDropContext.Provider>
     );

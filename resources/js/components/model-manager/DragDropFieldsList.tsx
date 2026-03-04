@@ -1,4 +1,6 @@
 import React from 'react';
+import { GripVertical, Pencil, Trash2, Archive, RotateCcw, Info } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 import { DragDropProvider, useDraggable } from '@/components/dnd/drag-drop';
 
@@ -94,13 +96,26 @@ const DragDropFieldsList: React.FC<DragDropFieldsListProps> = ({
     return (
         <div className="bg-white rounded-lg shadow overflow-hidden">
             <div className="p-4 bg-blue-50 border-b border-blue-200">
-                <p className="text-sm text-blue-800">
-                    <i className="fas fa-info-circle mr-2"></i>
-                    Перетаскивайте поля за их названия для изменения порядка
+                <p className="text-sm text-blue-800 flex items-start gap-2">
+                    <Info className="h-4 w-4 mt-0.5 shrink-0" />
+                    Перетаскивайте поля за ручку слева для изменения порядка
                 </p>
             </div>
 
-            <DragDropProvider items={itemIds} onReorder={handleReorderByIds}>
+            <DragDropProvider
+                items={itemIds}
+                onReorder={handleReorderByIds}
+                renderOverlay={(activeId) => {
+                    const active = localFields.find((f) => f.uuid === activeId);
+                    if (!active) return null;
+                    return (
+                        <div className="rounded-lg border border-gray-200 bg-white shadow-lg px-4 py-3 w-[min(90vw,520px)]">
+                            <div className="text-sm font-semibold text-gray-900 truncate">{active.label}</div>
+                            <div className="text-xs text-gray-600 truncate">{active.name}</div>
+                        </div>
+                    );
+                }}
+            >
                 <div className="divide-y">
                     {localFields.map((field) => (
                         <SortableFieldRow
@@ -135,38 +150,62 @@ const SortableFieldRow: React.FC<{
             style={draggable.style}
             className={`px-6 py-4 transition ${draggable.isDragging ? 'opacity-60 bg-gray-100' : 'hover:bg-gray-50'}`}
         >
-            <div className="flex items-start gap-4">
+            <div className="flex items-start gap-3">
                 {/* Drag Handle */}
-                <div
-                    className="pt-1 cursor-grab active:cursor-grabbing shrink-0 text-gray-400 hover:text-gray-600"
+                <button
+                    type="button"
+                    className="mt-1 shrink-0 h-9 w-9 inline-flex items-center justify-center rounded-md border border-gray-200 text-gray-500 hover:text-gray-900 hover:bg-gray-50 cursor-grab active:cursor-grabbing"
                     {...draggable.attributes}
                     {...draggable.listeners}
+                    aria-label="Перетащить"
                 >
-                    <i className="fas fa-grip-vertical text-lg"></i>
-                </div>
+                    <GripVertical className="h-4 w-4" />
+                </button>
 
                 {/* Field Info */}
                 <div className="flex-1 min-w-0">
                     <h4 className="font-semibold text-gray-900 flex items-center gap-2">
-                        {getFieldTypeIcon(field.field_type) && (
-                            <i className={`fas ${getFieldTypeIcon(field.field_type)} text-gray-600`}></i>
-                        )}
                         {field.label}
                         {field.required && <span className="text-red-600 font-bold">*</span>}
                     </h4>
                     <p className="text-sm text-gray-600 mt-1">{field.name}</p>
                     {field.description && <p className="text-sm text-gray-500 mt-2">{field.description}</p>}
+
+                    {/* Mobile chips */}
+                    <div className="mt-3 flex flex-wrap gap-2 lg:hidden">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            {getFieldTypeLabel(field.field_type)}
+                        </span>
+                        {field.is_master_relation && (
+                            <span
+                                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-300"
+                                title="Мастер-связь: каскадное удаление"
+                            >
+                                Мастер
+                            </span>
+                        )}
+                        {field.allow_multiple && (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                Множество
+                            </span>
+                        )}
+                        {field.reference_table && (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                {field.reference_table}
+                            </span>
+                        )}
+                    </div>
                 </div>
 
                 {/* Field Type Badge */}
-                <div className="shrink-0">
+                <div className="shrink-0 hidden lg:block">
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                         {getFieldTypeLabel(field.field_type)}
                     </span>
                 </div>
 
                 {/* Tags */}
-                <div className="shrink-0 flex flex-wrap gap-2 w-32">
+                <div className="shrink-0 hidden lg:flex flex-wrap gap-2 w-32">
                     {field.is_master_relation && (
                         <span
                             className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-300"
@@ -188,32 +227,22 @@ const SortableFieldRow: React.FC<{
                 </div>
 
                 {/* Actions */}
-                <div className="shrink-0 space-x-2 flex">
-                    <button
-                        onClick={() => onEdit(field)}
-                        className="text-blue-600 hover:text-blue-800 font-medium text-sm px-2 py-1 rounded hover:bg-blue-50 transition"
-                        title="Редактировать"
-                    >
-                        <i className="fas fa-edit"></i>
-                    </button>
-                    <button
+                <div className="shrink-0 flex items-start gap-1">
+                    <Button type="button" variant="ghost" size="icon-sm" onClick={() => onEdit(field)} title="Редактировать">
+                        <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
                         onClick={() => onToggleActive(field)}
-                        className={`font-medium text-sm px-2 py-1 rounded transition ${
-                            field.is_active
-                                ? 'text-orange-600 hover:text-orange-800 hover:bg-orange-50'
-                                : 'text-green-600 hover:text-green-800 hover:bg-green-50'
-                        }`}
                         title={field.is_active ? 'Архивировать' : 'Восстановить'}
                     >
-                        <i className={`fas ${field.is_active ? 'fa-archive' : 'fa-redo'}`}></i>
-                    </button>
-                    <button
-                        onClick={() => onDelete(field)}
-                        className="text-red-600 hover:text-red-800 font-medium text-sm px-2 py-1 rounded hover:bg-red-50 transition"
-                        title="Удалить"
-                    >
-                        <i className="fas fa-trash"></i>
-                    </button>
+                        {field.is_active ? <Archive className="h-4 w-4" /> : <RotateCcw className="h-4 w-4" />}
+                    </Button>
+                    <Button type="button" variant="ghost" size="icon-sm" onClick={() => onDelete(field)} title="Удалить">
+                        <Trash2 className="h-4 w-4" />
+                    </Button>
                 </div>
             </div>
         </div>

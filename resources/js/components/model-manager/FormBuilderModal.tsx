@@ -1,7 +1,9 @@
 import * as React from "react";
+import { GripVertical, Info } from 'lucide-react';
 
 import { Button } from "@/components/ui/button";
 import { DragDropProvider, useDraggable } from "@/components/dnd/drag-drop";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 
 type FieldTypeMeta = {
     label?: string;
@@ -178,9 +180,9 @@ export default function FormBuilderModal(props: FormBuilderModalProps) {
 
     return (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg w-full max-w-6xl max-h-[90vh] overflow-hidden shadow-xl">
+            <div className="bg-white rounded-lg w-full sm:max-w-6xl h-[100dvh] sm:h-auto sm:max-h-[90vh] overflow-hidden shadow-xl">
                 {/* Header */}
-                <div className="flex items-center justify-between gap-3 p-4 border-b">
+                <div className="flex items-center justify-between gap-3 p-4 border-b sticky top-0 bg-white z-10">
                     <div className="min-w-0">
                         <div className="text-lg font-semibold text-gray-900 truncate">Конструктор формы</div>
                         <div className="text-sm text-gray-600 truncate">Перетаскивайте поля, меняйте типы, обязательность и связи</div>
@@ -222,13 +224,26 @@ export default function FormBuilderModal(props: FormBuilderModalProps) {
                 </div>
 
                 {/* Body */}
-                <div className="p-4 overflow-y-auto max-h-[calc(90vh-72px)]">
+                <div className="p-4 overflow-y-auto max-h-[calc(100dvh-72px)] sm:max-h-[calc(90vh-72px)]">
                     {isLoading ? (
                         <div className="p-10 text-center text-gray-600">Загрузка...</div>
                     ) : localFields.length === 0 ? (
                         <div className="p-10 text-center text-gray-600">Поля не найдены</div>
                     ) : (
-                        <DragDropProvider items={itemIds} onReorder={handleReorderByIds}>
+                        <DragDropProvider
+                            items={itemIds}
+                            onReorder={handleReorderByIds}
+                            renderOverlay={(activeId) => {
+                                const active = localFields.find((f) => f.uuid === activeId);
+                                if (!active) return null;
+                                return (
+                                    <div className="rounded-lg border border-gray-200 bg-white shadow-lg px-4 py-3 w-[min(90vw,520px)]">
+                                        <div className="text-sm font-semibold text-gray-900 truncate">{active.label}</div>
+                                        <div className="text-xs text-gray-600 truncate">{active.name}</div>
+                                    </div>
+                                );
+                            }}
+                        >
                             <div className="divide-y border border-gray-200 rounded-lg overflow-hidden">
                                 {localFields.map((field) => (
                                     <FieldRow
@@ -317,7 +332,7 @@ function FieldRow(props: {
                         {...draggable.listeners}
                         aria-label="Перетащить"
                     >
-                        ≡
+                        <GripVertical className="h-4 w-4" />
                     </button>
 
                     <div className="flex-1 min-w-0">
@@ -438,14 +453,27 @@ function FieldRow(props: {
 
                                         <div className="md:col-span-3">
                                             <label className="block text-xs text-gray-600 mb-1">Мастер-связь</label>
-                                            <label className="h-9 px-3 border border-gray-300 rounded-lg inline-flex items-center gap-2 text-sm bg-white">
+                                            <div className="h-9 px-3 border border-gray-300 rounded-lg inline-flex items-center gap-2 text-sm bg-white">
                                                 <input
                                                     type="checkbox"
                                                     checked={Boolean(field.is_master_relation)}
                                                     onChange={(e) => void onPatch(field, { is_master_relation: e.target.checked })}
                                                 />
-                                                Да
-                                            </label>
+                                                <span>Да</span>
+
+                                                <TooltipProvider delayDuration={400}>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <button type="button" className="ml-auto text-gray-400 hover:text-gray-700" aria-label="Информация">
+                                                                <Info className="h-4 w-4" />
+                                                            </button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent className="max-w-xs">
+                                                            Проставить мастер-связь на объект. При удалении основного объекта также будет удалён связанный объект.
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </TooltipProvider>
+                                            </div>
                                         </div>
 
                                         <div className="md:col-span-2">
