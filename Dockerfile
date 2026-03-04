@@ -3,7 +3,7 @@
 ############################
 # Build stage (PHP + Composer + Node)
 ############################
-FROM php:8.3-cli-bookworm AS build
+FROM php:8.4-cli-bookworm AS build
 
 WORKDIR /var/www/html
 
@@ -40,7 +40,7 @@ RUN npm run build \
 ############################
 # Runtime stage (nginx + php-fpm)
 ############################
-FROM php:8.3-fpm-bookworm AS runtime
+FROM php:8.4-fpm-bookworm AS runtime
 
 WORKDIR /var/www/html
 
