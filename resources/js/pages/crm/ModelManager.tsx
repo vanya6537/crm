@@ -68,6 +68,17 @@ export default function ModelManager({
     const [isBuilderOpen, setIsBuilderOpen] = useState(false);
 
     useEffect(() => {
+        // Initialize CSRF token
+        const initializeCsrf = async () => {
+            try {
+                await fetch('/sanctum/csrf-cookie', {
+                    credentials: 'include',
+                });
+            } catch (err) {
+                console.error('Failed to initialize CSRF:', err);
+            }
+        };
+        initializeCsrf();
         loadFieldTypes();
     }, []);
 
