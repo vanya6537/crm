@@ -12,8 +12,33 @@ use App\Http\Controllers\API\DiagnosticsController;
 use App\Http\Middleware\EnsureApiAuthenticated;
 use Illuminate\Support\Facades\Route;
 
+// ===== Public Debug Routes (No Auth Required) =====
+Route::get('/status', function () {
+    return response()->json([
+        'authenticated' => auth()->check() || auth('sanctum')->check(),
+        'user' => [
+            'id' => auth()->id(),
+            'email' => auth()->user()?->email,
+            'name' => auth()->user()?->name,
+        ],
+        'sanctum_user' => auth('sanctum')->id(),
+        'session' => [
+            'id' => request()->getSession()?->getId(),
+            'exists' => request()->getSession() !== null,
+        ],
+        'timestamp' => now(),
+    ]);
+});
+
+// Middleware for stateful API requests with CSRF protection
+$apiMiddleware = [
+    'api',
+    EnsureApiAuthenticated::class,
+    // CSRF protection is included via EnsureFrontendRequestsAreStateful in middleware
+];
+
 // API routes - automatically prefixed with /api by Laravel
-Route::prefix('v1')->middleware(EnsureApiAuthenticated::class)->group(function () {
+Route::prefix('v1')->middleware($apiMiddleware)->group(function () {
     
     // ===== List of Values Routes =====
     Route::get('/list-of-values', [ListOfValuesController::class, 'index']);
@@ -26,7 +51,7 @@ Route::prefix('v1')->middleware(EnsureApiAuthenticated::class)->group(function (
     Route::put('/list-of-values/items/{itemId}', [ListOfValuesController::class, 'updateItem']);
     Route::delete('/list-of-values/items/{itemId}', [ListOfValuesController::class, 'deleteItem']);
     
-    // ===== Model Field Routes =====
+    // ===== Model Field Routes - Optimized with JSONB =====
     Route::get('/model-fields/types', [ModelFieldController::class, 'getFieldTypes']);
     Route::get('/model-fields/entity-types', [ModelFieldController::class, 'getEntityTypes']);
     Route::prefix('model-fields/{entityType}')->group(function () {
@@ -144,3 +169,4 @@ Route::prefix('v1/diagnostics')->group(function () {
     Route::get('/lov-sample', [DiagnosticsController::class, 'lovSample']);
     Route::get('/detailed', [DiagnosticsController::class, 'detailed']);
 });
+

@@ -14,7 +14,7 @@ import {
 import FieldModal from '@/components/model-manager/FieldModal';
 import DragDropFieldsList from '@/components/model-manager/DragDropFieldsList';
 import FormBuilderModal from '@/components/model-manager/FormBuilderModal';
-import { apiRequest } from '@/lib/csrf';
+import { apiRequest, initializeCsrf, checkAuthStatus } from '@/lib/csrf';
 
 interface ModelField {
     uuid: string;
@@ -68,18 +68,21 @@ export default function ModelManager({
     const [isBuilderOpen, setIsBuilderOpen] = useState(false);
 
     useEffect(() => {
-        // Initialize CSRF token
-        const initializeCsrf = async () => {
-            try {
-                await fetch('/sanctum/csrf-cookie', {
-                    credentials: 'include',
-                });
-            } catch (err) {
-                console.error('Failed to initialize CSRF:', err);
+        // Initialize CSRF protection and then load initial data
+        const init = async () => {
+            console.log('[ModelManager] Initializing CSRF...');
+            await initializeCsrf();
+            console.log('[ModelManager] Checking auth status...');
+            const authStatus = await checkAuthStatus();
+            console.log('[ModelManager] Auth status:', authStatus);
+            if (!authStatus?.authenticated) {
+                console.warn('[ModelManager] User is not authenticated!');
+                setError('Ошибка: User не авторизован. Пожалуйста, перепроверьте page.');
+                return;
             }
+            await loadFieldTypes();
         };
-        initializeCsrf();
-        loadFieldTypes();
+        init();
     }, []);
 
     useEffect(() => {

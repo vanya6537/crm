@@ -4,6 +4,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import '../css/app.css';
 import { initializeTheme } from '@/hooks/use-appearance';
+import { initializeCsrf } from '@/lib/csrf';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -39,3 +40,8 @@ createInertiaApp({
 console.log('%c[App] About to initialize theme', 'color: #ff0000');
 initializeTheme();
 console.log('%c[App] Theme initialization complete', 'color: #ff0000');
+
+// Initialize CSRF protection
+console.log('%c[App] About to initialize CSRF', 'color: #ff0000');
+initializeCsrf();
+console.log('%c[App] CSRF initialization complete', 'color: #ff0000');

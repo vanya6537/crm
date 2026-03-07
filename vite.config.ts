@@ -27,7 +27,7 @@ export default defineConfig({
             '@/components': path.resolve(__dirname, './resources/js/components'),
             '@/pages': path.resolve(__dirname, './resources/js/pages'),
             '@/layouts': path.resolve(__dirname, './resources/js/layouts'),
-            '@/hooks': path.resolve(__dirname, './hooks'),
+            '@/hooks': path.resolve(__dirname, './resources/js/hooks'),
             '@/lib': path.resolve(__dirname, './resources/js/lib'),
             '@/routes': path.resolve(__dirname, './resources/js/routes'),
             '@/types': path.resolve(__dirname, './resources/js/types'),
@@ -38,6 +38,18 @@ export default defineConfig({
         hmr: {
             host: getHmrHost(),
             port: process.env.VITE_HMR_PORT ? parseInt(process.env.VITE_HMR_PORT) : 5173,
+        },
+        proxy: {
+            '/api': {
+                target: process.env.API_URL || 'http://localhost:3000',
+                changeOrigin: true,
+                secure: false,
+            },
+            '/sanctum': {
+                target: process.env.API_URL || 'http://localhost:3000',
+                changeOrigin: true,
+                secure: false,
+            },
         },
     } : {},
     plugins: [
