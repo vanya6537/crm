@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import CRMLayout from '@/layouts/crm-layout';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,7 +14,7 @@ import {
 import FieldModal from '@/components/model-manager/FieldModal';
 import DragDropFieldsList from '@/components/model-manager/DragDropFieldsList';
 import FormBuilderModal from '@/components/model-manager/FormBuilderModal';
-import { apiRequest, initializeCsrf, checkAuthStatus } from '@/lib/csrf';
+import { apiRequest, initializeCsrf } from '@/lib/csrf';
 
 interface ModelField {
     uuid: string;
@@ -55,6 +55,7 @@ export default function ModelManager({
     fields: initialFields,
     initialStatus,
 }: Props) {
+    const { auth } = usePage().props;
     const [entityType, setEntityType] = useState(initialEntityType);
     const [fields, setFields] = useState<ModelField[]>(initialFields);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -68,14 +69,12 @@ export default function ModelManager({
     const [isBuilderOpen, setIsBuilderOpen] = useState(false);
 
     useEffect(() => {
-        // Initialize CSRF protection and then load initial data
+        // Initialize CSRF protection and load initial data
         const init = async () => {
             console.log('[ModelManager] Initializing CSRF...');
             await initializeCsrf();
-            console.log('[ModelManager] Checking auth status...');
-            const authStatus = await checkAuthStatus();
-            console.log('[ModelManager] Auth status:', authStatus);
-            if (!authStatus?.authenticated) {
+            console.log('[ModelManager] Auth user:', auth?.user);
+            if (!auth?.user) {
                 console.warn('[ModelManager] User is not authenticated!');
                 setError('Ошибка: User не авторизован. Пожалуйста, перепроверьте page.');
                 return;
@@ -83,7 +82,7 @@ export default function ModelManager({
             await loadFieldTypes();
         };
         init();
-    }, []);
+    }, [auth?.user]);
 
     useEffect(() => {
         loadFields();

@@ -40,12 +40,45 @@ export default defineConfig({
             port: process.env.VITE_HMR_PORT ? parseInt(process.env.VITE_HMR_PORT) : 5173,
         },
         proxy: {
+            // API routes (JSON responses)
             '/api': {
                 target: process.env.API_URL || 'http://localhost:3000',
                 changeOrigin: true,
                 secure: false,
             },
+            // CSRF/Session initialization
             '/sanctum': {
+                target: process.env.API_URL || 'http://localhost:3000',
+                changeOrigin: true,
+                secure: false,
+            },
+            // Authentication routes (form submissions)
+            '/login': {
+                target: process.env.API_URL || 'http://localhost:3000',
+                changeOrigin: true,
+                secure: false,
+            },
+            '/register': {
+                target: process.env.API_URL || 'http://localhost:3000',
+                changeOrigin: true,
+                secure: false,
+            },
+            '/logout': {
+                target: process.env.API_URL || 'http://localhost:3000',
+                changeOrigin: true,
+                secure: false,
+            },
+            '/forgot-password': {
+                target: process.env.API_URL || 'http://localhost:3000',
+                changeOrigin: true,
+                secure: false,
+            },
+            '/reset-password': {
+                target: process.env.API_URL || 'http://localhost:3000',
+                changeOrigin: true,
+                secure: false,
+            },
+            '/settings': {
                 target: process.env.API_URL || 'http://localhost:3000',
                 changeOrigin: true,
                 secure: false,

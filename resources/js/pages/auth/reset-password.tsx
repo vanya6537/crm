@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import AuthLayout from '@/layouts/auth-layout';
 import { update } from '@/routes/password';
+import { getCsrfToken } from '@/lib/csrf';
 
 type Props = {
     token: string;
@@ -24,6 +25,9 @@ export default function ResetPassword({ token, email }: Props) {
                 {...update.form()}
                 transform={(data) => ({ ...data, token, email })}
                 resetOnSuccess={['password', 'password_confirmation']}
+                headers={{
+                    'X-CSRF-TOKEN': getCsrfToken() || '',
+                }}
             >
                 {({ processing, errors }) => (
                     <div className="grid gap-6">

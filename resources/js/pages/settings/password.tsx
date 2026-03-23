@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/app-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 import { edit } from '@/routes/user-password';
+import { getCsrfToken } from '@/lib/csrf';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -41,6 +42,9 @@ export default function Password() {
                         {...PasswordController.update.form()}
                         options={{
                             preserveScroll: true,
+                        }}
+                        headers={{
+                            'X-CSRF-TOKEN': getCsrfToken() || '',
                         }}
                         resetOnError={[
                             'password',

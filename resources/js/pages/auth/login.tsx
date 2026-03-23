@@ -10,6 +10,7 @@ import AuthLayout from '@/layouts/auth-layout';
 import { register } from '@/routes';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
+import { getCsrfToken } from '@/lib/csrf';
 
 type Props = {
     status?: string;
@@ -33,6 +34,9 @@ export default function Login({
                 {...store.form()}
                 resetOnSuccess={['password']}
                 className="flex flex-col gap-6"
+                headers={{
+                    'X-CSRF-TOKEN': getCsrfToken() || '',
+                }}
             >
                 {({ processing, errors }) => (
                     <>

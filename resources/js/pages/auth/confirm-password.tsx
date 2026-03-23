@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import AuthLayout from '@/layouts/auth-layout';
 import { store } from '@/routes/password/confirm';
+import { getCsrfToken } from '@/lib/csrf';
 
 export default function ConfirmPassword() {
     return (
@@ -15,7 +16,13 @@ export default function ConfirmPassword() {
         >
             <Head title="Confirm password" />
 
-            <Form {...store.form()} resetOnSuccess={['password']}>
+            <Form
+                {...store.form()}
+                resetOnSuccess={['password']}
+                headers={{
+                    'X-CSRF-TOKEN': getCsrfToken() || '',
+                }}
+            >
                 {({ processing, errors }) => (
                     <div className="space-y-6">
                         <div className="grid gap-2">
