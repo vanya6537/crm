@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\CRM\Services\EntitySchemaService;
 use App\Models\ModelField;
-use App\Services\MigrationService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
@@ -379,6 +378,31 @@ class ModelFieldController extends \App\Http\Controllers\Controller
 
         return response()->json([
             'data' => $entitySchemaService->getEntitySchema($entityType),
+        ]);
+    }
+
+    public function getRelationOptions(Request $request, string $referenceEntityType, EntitySchemaService $entitySchemaService): JsonResponse
+    {
+        $entityTypes = $this->getAvailableEntityTypes();
+        if (!isset($entityTypes[$referenceEntityType])) {
+            return response()->json([
+                'error' => 'Неверный тип связанной сущности',
+                'valid_types' => array_keys($entityTypes),
+            ], 404);
+        }
+
+        $ids = $request->input('ids', []);
+        if (is_string($ids)) {
+            $ids = array_filter(array_map('trim', explode(',', $ids)));
+        }
+
+        return response()->json([
+            'data' => $entitySchemaService->getRelationOptions(
+                $referenceEntityType,
+                $request->string('search')->toString() ?: null,
+                is_array($ids) ? $ids : [],
+                min(max($request->integer('limit', 100), 1), 250),
+            ),
         ]);
     }
 

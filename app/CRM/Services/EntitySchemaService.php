@@ -10,6 +10,7 @@ use App\Models\Property;
 use App\Models\PropertyShowing;
 use App\Models\Transaction;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 
 class EntitySchemaService
@@ -128,6 +129,122 @@ class EntitySchemaService
         }
 
         return $payload;
+    }
+
+    public function getRelationOptions(string $entityType, ?string $search = null, array $ids = [], int $limit = 100): array
+    {
+        $normalizedIds = collect($ids)
+            ->filter(fn ($id) => $id !== null && $id !== '')
+            ->map(fn ($id) => is_numeric($id) ? (int) $id : $id)
+            ->values()
+            ->all();
+
+        return match ($entityType) {
+            'agent' => Agent::query()
+                ->when($search, fn ($query) => $query
+                    ->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%"))
+                ->when(!empty($normalizedIds), fn ($query) => $query->orWhereIn('id', $normalizedIds))
+                ->orderBy('name')
+                ->limit($limit)
+                ->get(['id', 'name', 'email'])
+                ->map(fn (Agent $agent) => [
+                    'value' => (string) $agent->id,
+                    'label' => $agent->name,
+                    'description' => $agent->email,
+                ])
+                ->values()
+                ->all(),
+            'buyer' => Buyer::query()
+                ->when($search, fn ($query) => $query
+                    ->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%"))
+                ->when(!empty($normalizedIds), fn ($query) => $query->orWhereIn('id', $normalizedIds))
+                ->orderBy('name')
+                ->limit($limit)
+                ->get(['id', 'name', 'email'])
+                ->map(fn (Buyer $buyer) => [
+                    'value' => (string) $buyer->id,
+                    'label' => $buyer->name,
+                    'description' => $buyer->email,
+                ])
+                ->values()
+                ->all(),
+            'property' => Property::query()
+                ->when($search, fn ($query) => $query
+                    ->where('address', 'like', "%{$search}%")
+                    ->orWhere('city', 'like', "%{$search}%"))
+                ->when(!empty($normalizedIds), fn ($query) => $query->orWhereIn('id', $normalizedIds))
+                ->orderBy('address')
+                ->limit($limit)
+                ->get(['id', 'address', 'city'])
+                ->map(fn (Property $property) => [
+                    'value' => (string) $property->id,
+                    'label' => trim($property->address . ($property->city ? ', ' . $property->city : '')),
+                    'description' => $property->status ?? null,
+                ])
+                ->values()
+                ->all(),
+            'transaction' => Transaction::query()
+                ->with(['property:id,address,city', 'buyer:id,name'])
+                ->when($search, fn ($query) => $query->where(function ($builder) use ($search) {
+                    $builder
+                        ->whereHas('property', fn ($q) => $q->where('address', 'like', "%{$search}%"))
+                        ->orWhereHas('buyer', fn ($q) => $q->where('name', 'like', "%{$search}%"));
+                }))
+                ->when(!empty($normalizedIds), fn ($query) => $query->orWhereIn('id', $normalizedIds))
+                ->latest()
+                ->limit($limit)
+                ->get(['id', 'property_id', 'buyer_id', 'status'])
+                ->map(fn (Transaction $transaction) => [
+                    'value' => (string) $transaction->id,
+                    'label' => $this->formatTransactionLabel($transaction),
+                    'description' => $transaction->status,
+                ])
+                ->values()
+                ->all(),
+            'property_showing' => PropertyShowing::query()
+                ->with(['property:id,address,city', 'buyer:id,name'])
+                ->when($search, fn ($query) => $query->where(function ($builder) use ($search) {
+                    $builder
+                        ->whereHas('property', fn ($q) => $q->where('address', 'like', "%{$search}%"))
+                        ->orWhereHas('buyer', fn ($q) => $q->where('name', 'like', "%{$search}%"));
+                }))
+                ->when(!empty($normalizedIds), fn ($query) => $query->orWhereIn('id', $normalizedIds))
+                ->latest('scheduled_at')
+                ->limit($limit)
+                ->get(['id', 'property_id', 'buyer_id', 'scheduled_at', 'status'])
+                ->map(fn (PropertyShowing $showing) => [
+                    'value' => (string) $showing->id,
+                    'label' => $this->formatShowingLabel($showing),
+                    'description' => $showing->status,
+                ])
+                ->values()
+                ->all(),
+            'communication' => Communication::query()
+                ->with(['transaction.property:id,address,city', 'transaction.buyer:id,name'])
+                ->when($search, fn ($query) => $query->where(function ($builder) use ($search) {
+                    $builder
+                        ->where('subject', 'like', "%{$search}%")
+                        ->orWhere('body', 'like', "%{$search}%")
+                        ->orWhereHas('transaction.property', fn ($q) => $q->where('address', 'like', "%{$search}%"))
+                        ->orWhereHas('transaction.buyer', fn ($q) => $q->where('name', 'like', "%{$search}%"));
+                }))
+                ->when(!empty($normalizedIds), fn ($query) => $query->orWhereIn('id', $normalizedIds))
+                ->latest()
+                ->limit($limit)
+                ->get(['id', 'transaction_id', 'subject', 'type', 'status'])
+                ->map(fn (Communication $communication) => [
+                    'value' => (string) $communication->id,
+                    'label' => $this->formatCommunicationLabel($communication),
+                    'description' => $communication->status,
+                ])
+                ->values()
+                ->all(),
+            default => [],
+        };
     }
 
     protected function transformDynamicField(ModelField $field): array
@@ -369,6 +486,31 @@ class EntitySchemaService
             ->map(fn ($option) => (string) $option)
             ->values()
             ->all();
+    }
+
+    protected function formatTransactionLabel(Transaction $transaction): string
+    {
+        $propertyLabel = $transaction->property?->address;
+        $buyerLabel = $transaction->buyer?->name;
+
+        return trim('#' . $transaction->id . ' ' . implode(' • ', array_filter([$propertyLabel, $buyerLabel])));
+    }
+
+    protected function formatShowingLabel(PropertyShowing $showing): string
+    {
+        $propertyLabel = $showing->property?->address;
+        $buyerLabel = $showing->buyer?->name;
+        $scheduledAt = $showing->scheduled_at?->format('Y-m-d H:i');
+
+        return trim('#' . $showing->id . ' ' . implode(' • ', array_filter([$propertyLabel, $buyerLabel, $scheduledAt])));
+    }
+
+    protected function formatCommunicationLabel(Communication $communication): string
+    {
+        $subject = $communication->subject ?: ucfirst((string) $communication->type);
+        $transaction = $communication->transaction ? $this->formatTransactionLabel($communication->transaction) : null;
+
+        return trim('#' . $communication->id . ' ' . implode(' • ', array_filter([$subject, $transaction])));
     }
 
     protected function makePartialRules(array $rules): array

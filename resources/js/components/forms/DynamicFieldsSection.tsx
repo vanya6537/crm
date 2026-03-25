@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useMemo, useState } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,6 +13,7 @@ import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
+import { apiRequest } from '@/lib/csrf';
 import type { EntityFieldSchema, EntitySchema, FieldOption } from '@/types/entity-schema';
 
 interface DynamicFieldsSectionProps {
@@ -41,6 +45,9 @@ export function DynamicFieldsSection({
         return null;
     }
 
+    const [relationOptions, setRelationOptions] = useState<Record<string, FieldOption[]>>({});
+    const [relationLoading, setRelationLoading] = useState<Record<string, boolean>>({});
+
     const normalizeOptions = (options?: Array<FieldOption | string> | null): FieldOption[] => {
         if (!options) {
             return [];
@@ -52,6 +59,83 @@ export function DynamicFieldsSection({
                 : { value: option.value, label: option.label }
         );
     };
+
+    const relationFields = useMemo(
+        () => entitySchema.dynamic_fields.filter((field) => ['reference', 'relation', 'master_relation', 'many_to_many'].includes(field.field_type) && field.reference_table),
+        [entitySchema.dynamic_fields]
+    );
+
+    const relationIdsByTable = useMemo(() => {
+        return relationFields.reduce<Record<string, string[]>>((accumulator, field) => {
+            const table = field.reference_table;
+            if (!table) {
+                return accumulator;
+            }
+
+            const rawValue = values[field.name];
+            const ids = Array.isArray(rawValue)
+                ? rawValue.map(String)
+                : rawValue !== undefined && rawValue !== null && rawValue !== ''
+                ? [String(rawValue)]
+                : [];
+
+            accumulator[table] = Array.from(new Set([...(accumulator[table] || []), ...ids]));
+            return accumulator;
+        }, {});
+    }, [relationFields, values]);
+
+    useEffect(() => {
+        const tables = Object.keys(relationIdsByTable);
+        if (tables.length === 0) {
+            return;
+        }
+
+        let isCancelled = false;
+
+        const loadOptions = async () => {
+            await Promise.all(
+                tables.map(async (table) => {
+                    setRelationLoading((prev) => ({ ...prev, [table]: true }));
+
+                    try {
+                        const params = new URLSearchParams();
+                        params.set('limit', '100');
+                        for (const id of relationIdsByTable[table] || []) {
+                            params.append('ids[]', id);
+                        }
+
+                        const response = await apiRequest(`/api/v1/model-fields/relation-options/${table}?${params.toString()}`, {
+                            method: 'GET',
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`Failed to load relation options for ${table}`);
+                        }
+
+                        const payload = await response.json();
+                        if (!isCancelled) {
+                            setRelationOptions((prev) => ({
+                                ...prev,
+                                [table]: normalizeOptions(payload.data || []),
+                            }));
+                        }
+                    } catch (error) {
+                        console.error(error);
+                    } finally {
+                        if (!isCancelled) {
+                            setRelationLoading((prev) => ({ ...prev, [table]: false }));
+                        }
+                    }
+                })
+            );
+        };
+
+        void loadOptions();
+
+        return () => {
+            isCancelled = true;
+        };
+    }, [relationIdsByTable]);
 
     const renderField = (field: EntityFieldSchema) => {
         const value = values[field.name];
@@ -183,22 +267,75 @@ export function DynamicFieldsSection({
 
         if (['reference', 'relation', 'master_relation', 'many_to_many'].includes(field.field_type)) {
             const isMultipleRelation = field.allow_multiple || field.field_type === 'many_to_many';
+            const table = field.reference_table || '';
+            const options = table ? relationOptions[table] || [] : [];
+            const currentValues = Array.isArray(value) ? value.map(String) : [];
+            const currentValue = value !== undefined && value !== null && value !== '' ? String(value) : undefined;
+
+            if (isMultipleRelation) {
+                return (
+                    <div key={field.name} className="space-y-3 md:col-span-2">
+                        <Label>{field.label}{field.required ? ' *' : ''}</Label>
+                        {relationLoading[table] ? (
+                            <p className="text-xs text-muted-foreground">Загрузка связанных записей...</p>
+                        ) : options.length > 0 ? (
+                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                {options.map((option) => {
+                                    const checked = currentValues.includes(option.value);
+                                    const selectionLimit = field.max_items ?? undefined;
+
+                                    return (
+                                        <label key={option.value} className="flex items-center gap-3 rounded-md border p-3 text-sm">
+                                            <Checkbox
+                                                checked={checked}
+                                                onCheckedChange={(nextChecked) => {
+                                                    const nextValues = nextChecked
+                                                        ? [...currentValues, option.value]
+                                                        : currentValues.filter((item) => item !== option.value);
+
+                                                    if (selectionLimit && nextChecked && nextValues.length > selectionLimit) {
+                                                        return;
+                                                    }
+
+                                                    onChange(field.name, nextValues);
+                                                }}
+                                            />
+                                            <span>{option.label}</span>
+                                        </label>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <p className="text-xs text-muted-foreground">Нет доступных связанных записей для выбора.</p>
+                        )}
+                        {commonMeta}
+                    </div>
+                );
+            }
 
             return (
-                <div key={field.name} className="space-y-2 md:col-span-2">
+                <div key={field.name} className="space-y-2">
                     <Label htmlFor={field.name}>{field.label}{field.required ? ' *' : ''}</Label>
-                    <Input
-                        id={field.name}
-                        type="text"
-                        placeholder={isMultipleRelation ? 'ID1, ID2, ID3' : 'ID связанной записи'}
-                        value={Array.isArray(value) ? value.join(', ') : String(value ?? '')}
-                        onChange={(e) => onChange(field.name, e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                        {isMultipleRelation
-                            ? 'Укажите идентификаторы связанных записей через запятую.'
-                            : 'Укажите идентификатор связанной записи.'}
-                    </p>
+                    <Select
+                        value={currentValue}
+                        onValueChange={(nextValue) => onChange(field.name, nextValue === '__empty__' ? null : nextValue)}
+                    >
+                        <SelectTrigger id={field.name}>
+                            <SelectValue placeholder={field.placeholder || 'Выберите связанную запись'} />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {!field.required && <SelectItem value="__empty__">Не выбрано</SelectItem>}
+                            {options.map((option) => (
+                                <SelectItem key={option.value} value={option.value}>
+                                    {option.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    {relationLoading[table] && <p className="text-xs text-muted-foreground">Загрузка связанных записей...</p>}
+                    {!relationLoading[table] && options.length === 0 && (
+                        <p className="text-xs text-muted-foreground">Нет доступных связанных записей для выбора.</p>
+                    )}
                     {commonMeta}
                 </div>
             );

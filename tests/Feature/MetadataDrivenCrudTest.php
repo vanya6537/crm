@@ -24,6 +24,10 @@ class MetadataDrivenCrudTest extends TestCase
             'label' => 'Telegram',
             'field_type' => 'text',
             'required' => false,
+            'validation' => [
+                'searchable' => true,
+                'filterable' => true,
+            ],
             'created_by' => $user->id,
         ]);
 
@@ -39,6 +43,32 @@ class MetadataDrivenCrudTest extends TestCase
                 'label' => 'Telegram',
                 'source' => 'dynamic',
                 'storage' => 'custom_fields',
+                'searchable' => true,
+                'filterable' => true,
+            ]);
+    }
+
+    public function test_relation_options_endpoint_returns_runtime_options_for_reference_entities(): void
+    {
+        $user = User::factory()->create();
+
+        $agent = Agent::create([
+            'name' => 'Relation Agent',
+            'email' => 'relation.agent@example.test',
+            'phone' => '+79990000010',
+            'status' => 'active',
+            'specialization' => 'residential',
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->getJson('/api/v1/model-fields/relation-options/agent');
+
+        $response
+            ->assertOk()
+            ->assertJsonFragment([
+                'value' => (string) $agent->id,
+                'label' => 'Relation Agent',
             ]);
     }
 

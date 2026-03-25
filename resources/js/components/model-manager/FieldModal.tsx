@@ -495,6 +495,36 @@ const FieldModal: React.FC<FieldModalProps> = ({
                                     <div className="border border-gray-200 rounded-lg p-4 space-y-4 bg-gray-50/60">
                                         <div className="text-sm font-semibold text-gray-900">Правила и ограничения</div>
 
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <label className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={Boolean(formData.validation?.searchable)}
+                                                    onChange={(e) => updateValidation('searchable', e.target.checked)}
+                                                />
+                                                <span>
+                                                    Искать по этому полю
+                                                    <span className="block text-xs text-gray-500">
+                                                        Поле будет участвовать в runtime search layer
+                                                    </span>
+                                                </span>
+                                            </label>
+
+                                            <label className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={Boolean(formData.validation?.filterable)}
+                                                    onChange={(e) => updateValidation('filterable', e.target.checked)}
+                                                />
+                                                <span>
+                                                    Использовать как фильтр
+                                                    <span className="block text-xs text-gray-500">
+                                                        Поле будет доступно для schema-driven filter toolbar
+                                                    </span>
+                                                </span>
+                                            </label>
+                                        </div>
+
                                         {isTextType && (
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                 <div>

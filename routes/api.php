@@ -56,6 +56,7 @@ Route::prefix('v1')->middleware($apiMiddleware)->group(function () {
     // ===== Model Field Routes - Optimized with JSONB =====
     Route::get('/model-fields/types', [ModelFieldController::class, 'getFieldTypes']);
     Route::get('/model-fields/entity-types', [ModelFieldController::class, 'getEntityTypes']);
+    Route::get('/model-fields/relation-options/{referenceEntityType}', [ModelFieldController::class, 'getRelationOptions']);
     Route::prefix('model-fields/{entityType}')->group(function () {
         Route::get('/', [ModelFieldController::class, 'index']);
         Route::post('/', [ModelFieldController::class, 'store']);
