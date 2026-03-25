@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\CRM\Services\EntitySchemaService;
 use App\Http\Controllers\Controller;
 use App\Models\Buyer;
 use Illuminate\Http\Request;
 
 class BuyerController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, EntitySchemaService $entitySchemaService)
     {
         $query = Buyer::query();
 
@@ -35,52 +36,58 @@ class BuyerController extends Controller
             ->paginate($request->integer('per_page', 15))
             ->withQueryString();
 
+        $buyers->setCollection(
+            $buyers->getCollection()->map(
+                fn (Buyer $buyer) => $entitySchemaService->serializeModel($buyer, 'buyer')
+            )
+        );
+
         return response()->json($buyers);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, EntitySchemaService $entitySchemaService)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:buyers',
-            'phone' => 'required|string|max:20',
-            'budget_min' => 'nullable|numeric|min:0',
-            'budget_max' => 'nullable|numeric|min:0',
-            'source' => 'required|in:website,referral,agent_call,ads',
-            'status' => 'required|in:active,converted,lost',
-            'notes' => 'nullable|string',
-            'custom_fields' => 'nullable|array',
-            'preferences_json' => 'nullable|array',
-        ]);
+        $rules = $entitySchemaService->getValidationRules('buyer');
+        $rules['email'][] = 'unique:buyers,email';
+        $rules['preferences_json'] = ['nullable', 'array'];
 
-        $buyer = Buyer::create($validated);
+        $validated = $request->validate($rules);
 
-        return response()->json($buyer, 201);
+        $payload = $entitySchemaService->normalizePayload('buyer', $validated);
+        if (array_key_exists('preferences_json', $validated)) {
+            $payload['preferences_json'] = $validated['preferences_json'];
+        }
+
+        $buyer = Buyer::create($payload);
+
+        return response()->json($entitySchemaService->serializeModel($buyer, 'buyer'), 201);
     }
 
-    public function show(Buyer $buyer)
+    public function show(Buyer $buyer, EntitySchemaService $entitySchemaService)
     {
-        return response()->json($buyer);
+        return response()->json($entitySchemaService->serializeModel($buyer, 'buyer'));
     }
 
-    public function update(Request $request, Buyer $buyer)
+    public function update(Request $request, Buyer $buyer, EntitySchemaService $entitySchemaService)
     {
-        $validated = $request->validate([
-            'name' => 'sometimes|required|string|max:255',
-            'email' => 'sometimes|required|email|unique:buyers,email,' . $buyer->id,
-            'phone' => 'sometimes|required|string|max:20',
-            'budget_min' => 'nullable|numeric|min:0',
-            'budget_max' => 'nullable|numeric|min:0',
-            'source' => 'sometimes|required|in:website,referral,agent_call,ads',
-            'status' => 'sometimes|required|in:active,converted,lost',
-            'notes' => 'nullable|string',
-            'custom_fields' => 'nullable|array',
-            'preferences_json' => 'nullable|array',
-        ]);
+        $rules = $entitySchemaService->getValidationRules('buyer', true);
+        $rules['email'][] = 'unique:buyers,email,' . $buyer->id;
+        $rules['preferences_json'] = ['nullable', 'array'];
 
-        $buyer->update($validated);
+        $validated = $request->validate($rules);
 
-        return response()->json($buyer);
+        $payload = $entitySchemaService->normalizePayload('buyer', $validated);
+        if (array_key_exists('preferences_json', $validated)) {
+            $payload['preferences_json'] = $validated['preferences_json'];
+        }
+
+        if (array_key_exists('custom_fields', $payload)) {
+            $payload['custom_fields'] = array_merge($buyer->custom_fields ?? [], $payload['custom_fields']);
+        }
+
+        $buyer->update($payload);
+
+        return response()->json($entitySchemaService->serializeModel($buyer->fresh(), 'buyer'));
     }
 
     public function destroy(Buyer $buyer)

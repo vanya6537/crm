@@ -23,6 +23,7 @@ import { ResizableTable, type ResizableTableColumn } from '@/components/ui/resiz
 import { AgentForm } from './AgentForm';
 import { DeleteConfirmationDialog } from '@/components/dialogs/DeleteConfirmationDialog';
 import { apiRequest } from '@/lib/csrf';
+import type { EntitySchema } from '@/types/entity-schema';
 
 type Agent = {
     id: number;
@@ -33,6 +34,8 @@ type Agent = {
     status: 'active' | 'inactive';
     specialization: 'residential' | 'commercial' | 'luxury';
     created_at: string;
+    custom_fields?: Record<string, unknown>;
+    dynamic_field_values?: Record<string, { value: unknown }>;
 };
 
 type PaginatedResponse = {
@@ -44,6 +47,7 @@ type PaginatedResponse = {
 
 interface AgentsPageProps {
     agents: PaginatedResponse;
+    entitySchema: EntitySchema;
     filters: {
         search?: string;
         status?: string;
@@ -51,7 +55,7 @@ interface AgentsPageProps {
     };
 }
 
-export default function Agents({ agents: initialAgents, filters: initialFilters }: AgentsPageProps) {
+export default function Agents({ agents: initialAgents, filters: initialFilters, entitySchema }: AgentsPageProps) {
     const [agents, setAgents] = useState<Agent[]>(initialAgents.data);
     const [pagination, setPagination] = useState(initialAgents);
     const [filters, setFilters] = useState(initialFilters);
@@ -396,6 +400,7 @@ export default function Agents({ agents: initialAgents, filters: initialFilters 
                                 onCancel={() => setIsCreateOpen(false)}
                                 isLoading={isLoading}
                                 mode="create"
+                                entitySchema={entitySchema}
                             />
                         </DialogContent>
                     </Dialog>
@@ -413,6 +418,7 @@ export default function Agents({ agents: initialAgents, filters: initialFilters 
                                     onCancel={() => setIsEditOpen(false)}
                                     isLoading={isLoading}
                                     mode="edit"
+                                    entitySchema={entitySchema}
                                 />
                             )}
                         </DialogContent>

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\CRM\Services\EntitySchemaService;
 use App\Models\Buyer;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -9,7 +10,7 @@ use Inertia\Response;
 
 class BuyerController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request, EntitySchemaService $entitySchemaService): Response
     {
         $filters = $request->only(['search', 'status', 'source']);
 
@@ -37,25 +38,12 @@ class BuyerController extends Controller
             ->latest()
             ->paginate(15)
             ->withQueryString()
-            ->through(function (Buyer $buyer) {
-                return [
-                    'id' => $buyer->id,
-                    'name' => $buyer->name,
-                    'email' => $buyer->email,
-                    'phone' => $buyer->phone,
-                    'budget_min' => $buyer->budget_min,
-                    'budget_max' => $buyer->budget_max,
-                    'source' => $buyer->source,
-                    'status' => $buyer->status,
-                    'notes' => $buyer->notes,
-                    'created_at' => optional($buyer->created_at)->toDateTimeString(),
-                    'updated_at' => optional($buyer->updated_at)->toDateTimeString(),
-                ];
-            });
+            ->through(fn (Buyer $buyer) => $entitySchemaService->serializeModel($buyer, 'buyer'));
 
         return Inertia::render('crm/Buyers', [
             'filters' => $filters,
             'buyers' => $buyers,
+            'entitySchema' => $entitySchemaService->getEntitySchema('buyer'),
         ]);
     }
 }

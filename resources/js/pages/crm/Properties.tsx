@@ -37,6 +37,7 @@ import { Label } from '@/components/ui/label';
 import { PropertyForm } from './PropertyForm';
 import { DeleteConfirmationDialog } from '@/components/dialogs/DeleteConfirmationDialog';
 import { apiRequest } from '@/lib/csrf';
+import type { EntitySchema } from '@/types/entity-schema';
 
 type Property = {
     id: number;
@@ -51,6 +52,12 @@ type Property = {
     rooms?: number;
     created_at?: string;
     updated_at?: string;
+    custom_fields?: Record<string, unknown>;
+};
+
+type AgentOption = {
+    id: number;
+    name: string;
 };
 
 type PaginatedResponse = {
@@ -63,6 +70,8 @@ type PaginatedResponse = {
 
 interface PropertiesProps {
     properties: PaginatedResponse;
+    agents: AgentOption[];
+    entitySchema: EntitySchema;
     filters: Record<string, string>;
 }
 
@@ -86,7 +95,7 @@ const typeLabels: Record<string, string> = {
     commercial: 'Коммерческая',
 };
 
-export default function Properties({ properties, filters: initialFilters }: PropertiesProps) {
+export default function Properties({ properties, filters: initialFilters, agents, entitySchema }: PropertiesProps) {
     const [propertyList, setPropertyList] = useState<Property[]>(properties.data);
     const [search, setSearch] = useState(initialFilters.search || '');
     const [statusFilter, setStatusFilter] = useState(initialFilters.status || 'all');
@@ -486,6 +495,8 @@ export default function Properties({ properties, filters: initialFilters }: Prop
                             onCancel={() => setIsCreateModalOpen(false)}
                             isLoading={isLoading}
                             mode="create"
+                            agents={agents}
+                            entitySchema={entitySchema}
                         />
                     </DialogContent>
                 </Dialog>
@@ -506,6 +517,8 @@ export default function Properties({ properties, filters: initialFilters }: Prop
                                 onCancel={() => setIsEditModalOpen(false)}
                                 isLoading={isLoading}
                                 mode="edit"
+                                agents={agents}
+                                entitySchema={entitySchema}
                             />
                         </DialogContent>
                     </Dialog>

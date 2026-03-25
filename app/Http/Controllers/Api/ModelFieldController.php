@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\CRM\Services\EntitySchemaService;
 use App\Models\ModelField;
 use App\Services\MigrationService;
 use Illuminate\Http\Request;
@@ -360,6 +361,24 @@ class ModelFieldController extends \App\Http\Controllers\Controller
     {
         return response()->json([
             'data' => $this->getAvailableFieldTypes(),
+        ]);
+    }
+
+    /**
+     * Get effective runtime schema for entity type
+     */
+    public function getEntitySchema(string $entityType, EntitySchemaService $entitySchemaService): JsonResponse
+    {
+        $entityTypes = $this->getAvailableEntityTypes();
+        if (!isset($entityTypes[$entityType])) {
+            return response()->json([
+                'error' => 'Неверный тип сущности',
+                'valid_types' => array_keys($entityTypes),
+            ], 404);
+        }
+
+        return response()->json([
+            'data' => $entitySchemaService->getEntitySchema($entityType),
         ]);
     }
 

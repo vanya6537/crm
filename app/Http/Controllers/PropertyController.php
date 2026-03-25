@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\CRM\Services\EntitySchemaService;
+use App\Models\Agent;
 use App\Models\Property;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -9,7 +11,7 @@ use Inertia\Response;
 
 class PropertyController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request, EntitySchemaService $entitySchemaService): Response
     {
         $filters = $request->only(['search', 'status', 'type', 'city', 'agent_id']);
 
@@ -44,26 +46,13 @@ class PropertyController extends Controller
             ->latest()
             ->paginate(15)
             ->withQueryString()
-            ->through(function (Property $property) {
-                return [
-                    'id' => $property->id,
-                    'agent_id' => $property->agent_id,
-                    'agent_name' => $property->agent?->name,
-                    'address' => $property->address,
-                    'city' => $property->city,
-                    'type' => $property->type,
-                    'status' => $property->status,
-                    'price' => $property->price,
-                    'area' => $property->area,
-                    'rooms' => $property->rooms,
-                    'created_at' => optional($property->created_at)->toDateTimeString(),
-                    'updated_at' => optional($property->updated_at)->toDateTimeString(),
-                ];
-            });
+            ->through(fn (Property $property) => $entitySchemaService->serializeModel($property, 'property'));
 
         return Inertia::render('crm/Properties', [
             'filters' => $filters,
             'properties' => $properties,
+            'agents' => Agent::select('id', 'name')->get(),
+            'entitySchema' => $entitySchemaService->getEntitySchema('property'),
         ]);
     }
 }

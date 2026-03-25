@@ -13,6 +13,8 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { DynamicFieldsSection, getDefaultCustomFieldValues } from '@/components/forms/DynamicFieldsSection';
+import type { EntitySchema } from '@/types/entity-schema';
 
 type Agent = {
     id?: number;
@@ -31,6 +33,7 @@ interface AgentFormProps {
     onCancel?: () => void;
     isLoading: boolean;
     mode: 'create' | 'edit';
+    entitySchema: EntitySchema;
 }
 
 export function AgentForm({
@@ -39,16 +42,28 @@ export function AgentForm({
     onCancel,
     isLoading,
     mode,
+    entitySchema,
 }: AgentFormProps) {
+    const defaultCustomFields = getDefaultCustomFieldValues(entitySchema);
+
     const [formData, setFormData] = useState<Partial<Agent>>(
-        initialData || {
-            name: '',
-            email: '',
-            phone: '',
-            license_number: '',
-            status: 'active',
-            specialization: 'residential',
-        }
+        initialData
+            ? {
+                  ...initialData,
+                  custom_fields: {
+                      ...defaultCustomFields,
+                      ...(initialData.custom_fields || {}),
+                  },
+              }
+            : {
+                  name: '',
+                  email: '',
+                  phone: '',
+                  license_number: '',
+                  status: 'active',
+                  specialization: 'residential',
+                  custom_fields: defaultCustomFields,
+              }
     );
 
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -59,6 +74,14 @@ export function AgentForm({
         if (!formData.name?.trim()) newErrors.name = 'Имя обязательно';
         if (!formData.email?.trim()) newErrors.email = 'Email обязателен';
         if (!formData.phone?.trim()) newErrors.phone = 'Телефон обязателен';
+
+        for (const field of entitySchema.dynamic_fields) {
+            const value = formData.custom_fields?.[field.name];
+            const isEmptyArray = Array.isArray(value) && value.length === 0;
+            if (field.required && (value === undefined || value === null || value === '' || isEmptyArray)) {
+                newErrors[`custom_fields.${field.name}`] = `Поле "${field.label}" обязательно`;
+            }
+        }
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -76,7 +99,7 @@ export function AgentForm({
         }
     };
 
-    const handleInputChange = (field: keyof Agent, value: any) => {
+    const handleInputChange = (field: keyof Agent, value: Agent[keyof Agent]) => {
         setFormData((prev) => ({
             ...prev,
             [field]: value,
@@ -86,6 +109,25 @@ export function AgentForm({
                 const newErrors = { ...prev };
                 delete newErrors[field];
                 return newErrors;
+            });
+        }
+    };
+
+    const handleCustomFieldChange = (fieldName: string, value: unknown) => {
+        setFormData((prev) => ({
+            ...prev,
+            custom_fields: {
+                ...(prev.custom_fields || {}),
+                [fieldName]: value,
+            },
+        }));
+
+        const errorKey = `custom_fields.${fieldName}`;
+        if (errors[errorKey]) {
+            setErrors((prev) => {
+                const nextErrors = { ...prev };
+                delete nextErrors[errorKey];
+                return nextErrors;
             });
         }
     };
@@ -208,6 +250,13 @@ export function AgentForm({
                     </div>
                 </div>
             </div>
+
+            <DynamicFieldsSection
+                entitySchema={entitySchema}
+                values={formData.custom_fields || {}}
+                errors={errors}
+                onChange={handleCustomFieldChange}
+            />
 
             {/* Form Actions */}
             <div className="flex gap-2 justify-end pt-4 border-t">

@@ -57,6 +57,7 @@ Route::prefix('v1')->middleware($apiMiddleware)->group(function () {
     Route::prefix('model-fields/{entityType}')->group(function () {
         Route::get('/', [ModelFieldController::class, 'index']);
         Route::post('/', [ModelFieldController::class, 'store']);
+        Route::get('/schema', [ModelFieldController::class, 'getEntitySchema']);
         Route::get('/{field}', [ModelFieldController::class, 'show']);
         Route::put('/{field}', [ModelFieldController::class, 'update']);
         Route::delete('/{field}', [ModelFieldController::class, 'destroy']);

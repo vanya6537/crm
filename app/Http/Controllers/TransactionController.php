@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\CRM\Services\EntitySchemaService;
 use App\Models\Transaction;
 use App\Models\Agent;
 use App\Models\Buyer;
@@ -12,7 +13,7 @@ use Inertia\Response;
 
 class TransactionController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request, EntitySchemaService $entitySchemaService): Response
     {
         $filters = $request->only(['search', 'status', 'agent_id', 'property_id']);
 
@@ -43,27 +44,7 @@ class TransactionController extends Controller
             ->latest()
             ->paginate(15)
             ->withQueryString()
-            ->through(function (Transaction $transaction) {
-                return [
-                    'id' => $transaction->id,
-                    'property_id' => $transaction->property_id,
-                    'property_address' => $transaction->property?->address,
-                    'buyer_id' => $transaction->buyer_id,
-                    'buyer_name' => $transaction->buyer?->name,
-                    'agent_id' => $transaction->agent_id,
-                    'agent_name' => $transaction->agent?->name,
-                    'status' => $transaction->status,
-                    'offer_price' => $transaction->offer_price,
-                    'final_price' => $transaction->final_price,
-                    'commission_percent' => $transaction->commission_percent,
-                    'commission_amount' => $transaction->commission_amount,
-                    'notes' => $transaction->notes,
-                    'started_at' => optional($transaction->started_at)->toDateTimeString(),
-                    'closed_at' => optional($transaction->closed_at)->toDateTimeString(),
-                    'created_at' => optional($transaction->created_at)->toDateTimeString(),
-                    'updated_at' => optional($transaction->updated_at)->toDateTimeString(),
-                ];
-            });
+            ->through(fn (Transaction $transaction) => $entitySchemaService->serializeModel($transaction, 'transaction'));
 
         return Inertia::render('crm/Transactions', [
             'filters' => $filters,
@@ -71,6 +52,7 @@ class TransactionController extends Controller
             'agents' => Agent::select('id', 'name')->get(),
             'properties' => Property::select('id', 'address', 'city')->get(),
             'buyers' => Buyer::select('id', 'name')->get(),
+            'entitySchema' => $entitySchemaService->getEntitySchema('transaction'),
         ]);
     }
 }

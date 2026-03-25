@@ -23,6 +23,7 @@ import { ResizableTable, type ResizableTableColumn } from '@/components/ui/resiz
 import { BuyerForm } from './BuyerForm';
 import { DeleteConfirmationDialog } from '@/components/dialogs/DeleteConfirmationDialog';
 import { apiRequest } from '@/lib/csrf';
+import type { EntitySchema } from '@/types/entity-schema';
 
 type Buyer = {
     id: number;
@@ -35,6 +36,7 @@ type Buyer = {
     status: 'active' | 'converted' | 'lost';
     notes?: string;
     created_at: string;
+    custom_fields?: Record<string, unknown>;
 };
 
 type PaginatedResponse = {
@@ -46,6 +48,7 @@ type PaginatedResponse = {
 
 interface BuyersPageProps {
     buyers: PaginatedResponse;
+    entitySchema: EntitySchema;
     filters: {
         search?: string;
         status?: string;
@@ -53,7 +56,7 @@ interface BuyersPageProps {
     };
 }
 
-export default function Buyers({ buyers: initialBuyers, filters: initialFilters }: BuyersPageProps) {
+export default function Buyers({ buyers: initialBuyers, filters: initialFilters, entitySchema }: BuyersPageProps) {
     const [buyers, setBuyers] = useState<Buyer[]>(initialBuyers.data);
     const [pagination, setPagination] = useState(initialBuyers);
     const [filters, setFilters] = useState(initialFilters);
@@ -397,6 +400,7 @@ export default function Buyers({ buyers: initialBuyers, filters: initialFilters 
                                 onCancel={() => setIsCreateOpen(false)}
                                 isLoading={isLoading}
                                 mode="create"
+                                entitySchema={entitySchema}
                             />
                         </DialogContent>
                     </Dialog>
@@ -414,6 +418,7 @@ export default function Buyers({ buyers: initialBuyers, filters: initialFilters 
                                     onCancel={() => setIsEditOpen(false)}
                                     isLoading={isLoading}
                                     mode="edit"
+                                    entitySchema={entitySchema}
                                 />
                             )}
                         </DialogContent>

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { DynamicFieldsSection, getDefaultCustomFieldValues } from '@/components/forms/DynamicFieldsSection';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
@@ -13,6 +14,8 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { Textarea } from '@/components/ui/textarea';
+import type { EntitySchema } from '@/types/entity-schema';
 
 type Buyer = {
     id?: number;
@@ -24,6 +27,7 @@ type Buyer = {
     source: 'website' | 'referral' | 'agent_call' | 'ads';
     status: 'active' | 'converted' | 'lost';
     notes?: string;
+    custom_fields?: Record<string, unknown>;
 };
 
 interface BuyerFormProps {
@@ -32,6 +36,7 @@ interface BuyerFormProps {
     onCancel?: () => void;
     isLoading: boolean;
     mode: 'create' | 'edit';
+    entitySchema: EntitySchema;
 }
 
 export function BuyerForm({
@@ -40,18 +45,30 @@ export function BuyerForm({
     onCancel,
     isLoading,
     mode,
+    entitySchema,
 }: BuyerFormProps) {
+    const defaultCustomFields = getDefaultCustomFieldValues(entitySchema);
+
     const [formData, setFormData] = useState<Partial<Buyer>>(
-        initialData || {
-            name: '',
-            email: '',
-            phone: '',
-            budget_min: undefined,
-            budget_max: undefined,
-            source: 'website',
-            status: 'active',
-            notes: '',
-        }
+        initialData
+            ? {
+                  ...initialData,
+                  custom_fields: {
+                      ...defaultCustomFields,
+                      ...(initialData.custom_fields || {}),
+                  },
+              }
+            : {
+                  name: '',
+                  email: '',
+                  phone: '',
+                  budget_min: undefined,
+                  budget_max: undefined,
+                  source: 'website',
+                  status: 'active',
+                  notes: '',
+                  custom_fields: defaultCustomFields,
+              }
     );
 
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -62,6 +79,13 @@ export function BuyerForm({
         if (!formData.name?.trim()) newErrors.name = 'Имя обязательно';
         if (!formData.email?.trim()) newErrors.email = 'Email обязателен';
         if (!formData.phone?.trim()) newErrors.phone = 'Телефон обязателен';
+        for (const field of entitySchema.dynamic_fields) {
+            const value = formData.custom_fields?.[field.name];
+            const isEmptyArray = Array.isArray(value) && value.length === 0;
+            if (field.required && (value === undefined || value === null || value === '' || isEmptyArray)) {
+                newErrors[`custom_fields.${field.name}`] = `Поле "${field.label}" обязательно`;
+            }
+        }
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -79,7 +103,7 @@ export function BuyerForm({
         }
     };
 
-    const handleInputChange = (field: keyof Buyer, value: any) => {
+    const handleInputChange = (field: keyof Buyer, value: Buyer[keyof Buyer]) => {
         setFormData((prev) => ({
             ...prev,
             [field]: value,
@@ -89,6 +113,25 @@ export function BuyerForm({
                 const newErrors = { ...prev };
                 delete newErrors[field];
                 return newErrors;
+            });
+        }
+    };
+
+    const handleCustomFieldChange = (fieldName: string, value: unknown) => {
+        setFormData((prev) => ({
+            ...prev,
+            custom_fields: {
+                ...(prev.custom_fields || {}),
+                [fieldName]: value,
+            },
+        }));
+
+        const errorKey = `custom_fields.${fieldName}`;
+        if (errors[errorKey]) {
+            setErrors((prev) => {
+                const nextErrors = { ...prev };
+                delete nextErrors[errorKey];
+                return nextErrors;
             });
         }
     };
@@ -248,10 +291,9 @@ export function BuyerForm({
 
                 <div className="space-y-2">
                     <Label htmlFor="notes">Заметки</Label>
-                    <textarea
+                    <Textarea
                         id="notes"
                         placeholder="Дополнительная информация о клиенте..."
-                        className="w-full min-h-20 px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                         value={formData.notes || ''}
                         onChange={(e) =>
                             handleInputChange('notes', e.target.value)
@@ -259,6 +301,13 @@ export function BuyerForm({
                     />
                 </div>
             </div>
+
+            <DynamicFieldsSection
+                entitySchema={entitySchema}
+                values={formData.custom_fields || {}}
+                errors={errors}
+                onChange={handleCustomFieldChange}
+            />
 
             {/* Form Actions */}
             <div className="flex gap-2 justify-end pt-4 border-t">

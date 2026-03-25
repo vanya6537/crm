@@ -23,6 +23,7 @@ import { ResizableTable, type ResizableTableColumn } from '@/components/ui/resiz
 import { TransactionForm } from './TransactionForm';
 import { DeleteConfirmationDialog } from '@/components/dialogs/DeleteConfirmationDialog';
 import { apiRequest } from '@/lib/csrf';
+import type { EntitySchema } from '@/types/entity-schema';
 
 type Agent = {
     id: number;
@@ -59,6 +60,7 @@ type Transaction = {
     notes?: string;
     started_at: string;
     closed_at?: string;
+    custom_fields?: Record<string, unknown>;
 };
 
 type PaginatedResponse = {
@@ -73,6 +75,7 @@ interface TransactionsPageProps {
     agents: Agent[];
     buyers: Buyer[];
     properties: Property[];
+    entitySchema: EntitySchema;
     filters: {
         search?: string;
         status?: string;
@@ -84,6 +87,7 @@ export default function Transactions({
     agents,
     buyers,
     properties,
+    entitySchema,
     filters: initialFilters,
 }: TransactionsPageProps) {
     const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions.data);
@@ -445,6 +449,7 @@ export default function Transactions({
                                 agents={agents}
                                 buyers={buyers}
                                 properties={properties}
+                                entitySchema={entitySchema}
                             />
                         </DialogContent>
                     </Dialog>
@@ -465,6 +470,7 @@ export default function Transactions({
                                     agents={agents}
                                     buyers={buyers}
                                     properties={properties}
+                                    entitySchema={entitySchema}
                                 />
                             )}
                         </DialogContent>

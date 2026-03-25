@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\CRM\Services\EntitySchemaService;
 use App\Models\Agent;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -9,7 +10,7 @@ use Inertia\Response;
 
 class AgentController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request, EntitySchemaService $entitySchemaService): Response
     {
         $filters = $request->only(['search', 'status', 'specialization']);
 
@@ -37,23 +38,12 @@ class AgentController extends Controller
             ->latest()
             ->paginate(15)
             ->withQueryString()
-            ->through(function (Agent $agent) {
-                return [
-                    'id' => $agent->id,
-                    'name' => $agent->name,
-                    'email' => $agent->email,
-                    'phone' => $agent->phone,
-                    'license_number' => $agent->license_number,
-                    'status' => $agent->status,
-                    'specialization' => $agent->specialization,
-                    'created_at' => optional($agent->created_at)->toDateTimeString(),
-                    'updated_at' => optional($agent->updated_at)->toDateTimeString(),
-                ];
-            });
+            ->through(fn (Agent $agent) => $entitySchemaService->serializeModel($agent, 'agent'));
 
         return Inertia::render('crm/Agents', [
             'filters' => $filters,
             'agents' => $agents,
+            'entitySchema' => $entitySchemaService->getEntitySchema('agent'),
         ]);
     }
 }

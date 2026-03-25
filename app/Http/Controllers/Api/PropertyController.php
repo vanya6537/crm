@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\CRM\Services\EntitySchemaService;
 use App\Http\Controllers\Controller;
 use App\Models\Property;
 use Illuminate\Http\Request;
 
 class PropertyController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, EntitySchemaService $entitySchemaService)
     {
         $query = Property::query()->with('agent');
 
@@ -42,60 +43,66 @@ class PropertyController extends Controller
             ->paginate($request->integer('per_page', 15))
             ->withQueryString();
 
+        $properties->setCollection(
+            $properties->getCollection()->map(
+                fn (Property $property) => $entitySchemaService->serializeModel($property, 'property')
+            )
+        );
+
         return response()->json($properties);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, EntitySchemaService $entitySchemaService)
     {
-        $validated = $request->validate([
-            'agent_id' => 'required|exists:agents,id',
-            'address' => 'required|string|max:255',
-            'city' => 'required|string|max:255',
-            'type' => 'required|in:apartment,house,commercial',
-            'status' => 'required|in:available,sold,rented,archived',
-            'price' => 'required|numeric|min:0',
-            'area' => 'nullable|numeric|min:0',
-            'rooms' => 'nullable|integer|min:0',
-            'description' => 'nullable|string',
-            'photos_json' => 'nullable|array',
-            'features_json' => 'nullable|array',
-            'custom_fields' => 'nullable|array',
-            'amenities' => 'nullable|array',
-            'inspection_reports' => 'nullable|array',
-        ]);
+        $rules = $entitySchemaService->getValidationRules('property');
+        $rules['photos_json'] = ['nullable', 'array'];
+        $rules['features_json'] = ['nullable', 'array'];
+        $rules['amenities'] = ['nullable', 'array'];
+        $rules['inspection_reports'] = ['nullable', 'array'];
 
-        $property = Property::create($validated);
+        $validated = $request->validate($rules);
 
-        return response()->json($property->load('agent'), 201);
+        $payload = $entitySchemaService->normalizePayload('property', $validated);
+        foreach (['photos_json', 'features_json', 'amenities', 'inspection_reports'] as $field) {
+            if (array_key_exists($field, $validated)) {
+                $payload[$field] = $validated[$field];
+            }
+        }
+
+        $property = Property::create($payload);
+
+        return response()->json($entitySchemaService->serializeModel($property->load('agent'), 'property'), 201);
     }
 
-    public function show(Property $property)
+    public function show(Property $property, EntitySchemaService $entitySchemaService)
     {
-        return response()->json($property->load('agent'));
+        return response()->json($entitySchemaService->serializeModel($property->load('agent'), 'property'));
     }
 
-    public function update(Request $request, Property $property)
+    public function update(Request $request, Property $property, EntitySchemaService $entitySchemaService)
     {
-        $validated = $request->validate([
-            'agent_id' => 'sometimes|exists:agents,id',
-            'address' => 'sometimes|required|string|max:255',
-            'city' => 'sometimes|required|string|max:255',
-            'type' => 'sometimes|required|in:apartment,house,commercial',
-            'status' => 'sometimes|required|in:available,sold,rented,archived',
-            'price' => 'sometimes|required|numeric|min:0',
-            'area' => 'nullable|numeric|min:0',
-            'rooms' => 'nullable|integer|min:0',
-            'description' => 'nullable|string',
-            'photos_json' => 'nullable|array',
-            'features_json' => 'nullable|array',
-            'custom_fields' => 'nullable|array',
-            'amenities' => 'nullable|array',
-            'inspection_reports' => 'nullable|array',
-        ]);
+        $rules = $entitySchemaService->getValidationRules('property', true);
+        $rules['photos_json'] = ['nullable', 'array'];
+        $rules['features_json'] = ['nullable', 'array'];
+        $rules['amenities'] = ['nullable', 'array'];
+        $rules['inspection_reports'] = ['nullable', 'array'];
 
-        $property->update($validated);
+        $validated = $request->validate($rules);
 
-        return response()->json($property->load('agent'));
+        $payload = $entitySchemaService->normalizePayload('property', $validated);
+        foreach (['photos_json', 'features_json', 'amenities', 'inspection_reports'] as $field) {
+            if (array_key_exists($field, $validated)) {
+                $payload[$field] = $validated[$field];
+            }
+        }
+
+        if (array_key_exists('custom_fields', $payload)) {
+            $payload['custom_fields'] = array_merge($property->custom_fields ?? [], $payload['custom_fields']);
+        }
+
+        $property->update($payload);
+
+        return response()->json($entitySchemaService->serializeModel($property->fresh()->load('agent'), 'property'));
     }
 
     public function destroy(Property $property)

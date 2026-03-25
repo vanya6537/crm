@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\CRM\Services\EntitySchemaService;
 use App\Http\Controllers\Controller;
 use App\Models\Agent;
 use Illuminate\Http\Request;
 
 class AgentController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, EntitySchemaService $entitySchemaService)
     {
         $query = Agent::query();
 
@@ -35,48 +36,58 @@ class AgentController extends Controller
             ->paginate($request->integer('per_page', 15))
             ->withQueryString();
 
+        $agents->setCollection(
+            $agents->getCollection()->map(
+                fn (Agent $agent) => $entitySchemaService->serializeModel($agent, 'agent')
+            )
+        );
+
         return response()->json($agents);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, EntitySchemaService $entitySchemaService)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:agents',
-            'phone' => 'required|string|max:20',
-            'license_number' => 'nullable|string|max:255',
-            'status' => 'required|in:active,inactive',
-            'specialization' => 'required|in:residential,commercial,luxury',
-            'custom_fields' => 'nullable|array',
-            'metadata' => 'nullable|array',
-        ]);
+        $rules = $entitySchemaService->getValidationRules('agent');
+        $rules['email'][] = 'unique:agents,email';
+        $rules['metadata'] = ['nullable', 'array'];
 
-        $agent = Agent::create($validated);
+        $validated = $request->validate($rules);
 
-        return response()->json($agent, 201);
+        $payload = $entitySchemaService->normalizePayload('agent', $validated);
+        if (array_key_exists('metadata', $validated)) {
+            $payload['metadata'] = $validated['metadata'];
+        }
+
+        $agent = Agent::create($payload);
+
+        return response()->json($entitySchemaService->serializeModel($agent, 'agent'), 201);
     }
 
-    public function show(Agent $agent)
+    public function show(Agent $agent, EntitySchemaService $entitySchemaService)
     {
-        return response()->json($agent);
+        return response()->json($entitySchemaService->serializeModel($agent, 'agent'));
     }
 
-    public function update(Request $request, Agent $agent)
+    public function update(Request $request, Agent $agent, EntitySchemaService $entitySchemaService)
     {
-        $validated = $request->validate([
-            'name' => 'sometimes|required|string|max:255',
-            'email' => 'sometimes|required|email|unique:agents,email,' . $agent->id,
-            'phone' => 'sometimes|required|string|max:20',
-            'license_number' => 'nullable|string|max:255',
-            'status' => 'sometimes|required|in:active,inactive',
-            'specialization' => 'sometimes|required|in:residential,commercial,luxury',
-            'custom_fields' => 'nullable|array',
-            'metadata' => 'nullable|array',
-        ]);
+        $rules = $entitySchemaService->getValidationRules('agent', true);
+        $rules['email'][] = 'unique:agents,email,' . $agent->id;
+        $rules['metadata'] = ['nullable', 'array'];
 
-        $agent->update($validated);
+        $validated = $request->validate($rules);
 
-        return response()->json($agent);
+        $payload = $entitySchemaService->normalizePayload('agent', $validated);
+        if (array_key_exists('metadata', $validated)) {
+            $payload['metadata'] = $validated['metadata'];
+        }
+
+        if (array_key_exists('custom_fields', $payload)) {
+            $payload['custom_fields'] = array_merge($agent->custom_fields ?? [], $payload['custom_fields']);
+        }
+
+        $agent->update($payload);
+
+        return response()->json($entitySchemaService->serializeModel($agent->fresh(), 'agent'));
     }
 
     public function destroy(Agent $agent)

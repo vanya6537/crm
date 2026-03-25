@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { DynamicFieldsSection, getDefaultCustomFieldValues } from '@/components/forms/DynamicFieldsSection';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
@@ -13,6 +14,8 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { Textarea } from '@/components/ui/textarea';
+import type { EntitySchema } from '@/types/entity-schema';
 
 type Property = {
     id?: number;
@@ -26,7 +29,10 @@ type Property = {
     area?: number;
     rooms?: number;
     description?: string;
+    custom_fields?: Record<string, unknown>;
 };
+
+type AgentOption = { id: number; name: string };
 
 interface PropertyFormProps {
     initialData?: Property;
@@ -34,14 +40,9 @@ interface PropertyFormProps {
     onCancel?: () => void;
     isLoading: boolean;
     mode: 'create' | 'edit';
+    entitySchema: EntitySchema;
+    agents: AgentOption[];
 }
-
-// Mock agents - in production this would come from props or API
-const MOCK_AGENTS = [
-    { id: 1, name: 'Иван Петров' },
-    { id: 2, name: 'Мария Сидорова' },
-    { id: 3, name: 'Петр Иванов' },
-];
 
 export function PropertyForm({
     initialData,
@@ -49,19 +50,32 @@ export function PropertyForm({
     onCancel,
     isLoading,
     mode,
+    entitySchema,
+    agents,
 }: PropertyFormProps) {
+    const defaultCustomFields = getDefaultCustomFieldValues(entitySchema);
+
     const [formData, setFormData] = useState<Partial<Property>>(
-        initialData || {
-            agent_id: 1,
-            address: '',
-            city: '',
-            type: 'apartment',
-            status: 'available',
-            price: 0,
-            area: undefined,
-            rooms: undefined,
-            description: '',
-        }
+        initialData
+            ? {
+                  ...initialData,
+                  custom_fields: {
+                      ...defaultCustomFields,
+                      ...(initialData.custom_fields || {}),
+                  },
+              }
+            : {
+                  agent_id: agents[0]?.id ?? 0,
+                  address: '',
+                  city: '',
+                  type: 'apartment',
+                  status: 'available',
+                  price: 0,
+                  area: undefined,
+                  rooms: undefined,
+                  description: '',
+                  custom_fields: defaultCustomFields,
+              }
     );
 
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -73,6 +87,13 @@ export function PropertyForm({
         if (!formData.city?.trim()) newErrors.city = 'Город обязателен';
         if (!formData.agent_id) newErrors.agent_id = 'Агент обязателен';
         if (!formData.price || formData.price <= 0) newErrors.price = 'Цена должна быть больше 0';
+        for (const field of entitySchema.dynamic_fields) {
+            const value = formData.custom_fields?.[field.name];
+            const isEmptyArray = Array.isArray(value) && value.length === 0;
+            if (field.required && (value === undefined || value === null || value === '' || isEmptyArray)) {
+                newErrors[`custom_fields.${field.name}`] = `Поле "${field.label}" обязательно`;
+            }
+        }
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -91,7 +112,7 @@ export function PropertyForm({
         }
     };
 
-    const handleInputChange = (field: keyof Property, value: any) => {
+    const handleInputChange = (field: keyof Property, value: Property[keyof Property]) => {
         setFormData((prev) => ({
             ...prev,
             [field]: value,
@@ -102,6 +123,25 @@ export function PropertyForm({
                 const newErrors = { ...prev };
                 delete newErrors[field];
                 return newErrors;
+            });
+        }
+    };
+
+    const handleCustomFieldChange = (fieldName: string, value: unknown) => {
+        setFormData((prev) => ({
+            ...prev,
+            custom_fields: {
+                ...(prev.custom_fields || {}),
+                [fieldName]: value,
+            },
+        }));
+
+        const errorKey = `custom_fields.${fieldName}`;
+        if (errors[errorKey]) {
+            setErrors((prev) => {
+                const nextErrors = { ...prev };
+                delete nextErrors[errorKey];
+                return nextErrors;
             });
         }
     };
@@ -127,7 +167,7 @@ export function PropertyForm({
                                 <SelectValue placeholder="Выберите агента" />
                             </SelectTrigger>
                             <SelectContent>
-                                {MOCK_AGENTS.map((agent) => (
+                                {agents.map((agent) => (
                                     <SelectItem key={agent.id} value={String(agent.id)}>
                                         {agent.name}
                                     </SelectItem>
@@ -305,10 +345,9 @@ export function PropertyForm({
                 {/* Description */}
                 <div className="space-y-2">
                     <Label htmlFor="description">Описание</Label>
-                    <textarea
+                    <Textarea
                         id="description"
                         placeholder="Добавьте описание объекта..."
-                        className="w-full min-h-24 px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                         value={formData.description || ''}
                         onChange={(e) =>
                             handleInputChange('description', e.target.value)
@@ -316,6 +355,13 @@ export function PropertyForm({
                     />
                 </div>
             </div>
+
+            <DynamicFieldsSection
+                entitySchema={entitySchema}
+                values={formData.custom_fields || {}}
+                errors={errors}
+                onChange={handleCustomFieldChange}
+            />
 
             {/* Form Actions */}
             <div className="flex gap-2 justify-end pt-4 border-t">

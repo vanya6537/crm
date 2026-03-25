@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\CRM\Services\EntitySchemaService;
 use App\Http\Controllers\Controller;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
 
 class TransactionController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, EntitySchemaService $entitySchemaService)
     {
         $query = Transaction::query()->with(['property', 'buyer', 'agent']);
 
@@ -38,53 +39,62 @@ class TransactionController extends Controller
             ->paginate($request->integer('per_page', 15))
             ->withQueryString();
 
+        $transactions->setCollection(
+            $transactions->getCollection()->map(
+                fn (Transaction $transaction) => $entitySchemaService->serializeModel($transaction, 'transaction')
+            )
+        );
+
         return response()->json($transactions);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, EntitySchemaService $entitySchemaService)
     {
-        $validated = $request->validate([
-            'property_id' => 'required|exists:properties,id',
-            'buyer_id' => 'required|exists:buyers,id',
-            'agent_id' => 'required|exists:agents,id',
-            'status' => 'required|in:lead,negotiation,offer,accepted,closed,cancelled',
-            'offer_price' => 'nullable|numeric|min:0',
-            'final_price' => 'nullable|numeric|min:0',
-            'commission_percent' => 'nullable|numeric|min:0|max:100',
-            'commission_amount' => 'nullable|numeric|min:0',
-            'notes' => 'nullable|string',
-            'started_at' => 'required|date_format:Y-m-d H:i',
-            'closed_at' => 'nullable|date_format:Y-m-d H:i',
-        ]);
+        $rules = $entitySchemaService->getValidationRules('transaction');
+        $rules['timeline'] = ['nullable', 'array'];
+        $rules['escrow_details'] = ['nullable', 'array'];
 
-        $transaction = Transaction::create($validated);
+        $validated = $request->validate($rules);
 
-        return response()->json($transaction->load(['property', 'buyer', 'agent']), 201);
+        $payload = $entitySchemaService->normalizePayload('transaction', $validated);
+        foreach (['timeline', 'escrow_details'] as $field) {
+            if (array_key_exists($field, $validated)) {
+                $payload[$field] = $validated[$field];
+            }
+        }
+
+        $transaction = Transaction::create($payload);
+
+        return response()->json($entitySchemaService->serializeModel($transaction->load(['property', 'buyer', 'agent']), 'transaction'), 201);
     }
 
-    public function show(Transaction $transaction)
+    public function show(Transaction $transaction, EntitySchemaService $entitySchemaService)
     {
-        return response()->json($transaction->load(['property', 'buyer', 'agent']));
+        return response()->json($entitySchemaService->serializeModel($transaction->load(['property', 'buyer', 'agent']), 'transaction'));
     }
 
-    public function update(Request $request, Transaction $transaction)
+    public function update(Request $request, Transaction $transaction, EntitySchemaService $entitySchemaService)
     {
-        $validated = $request->validate([
-            'property_id' => 'sometimes|required|exists:properties,id',
-            'buyer_id' => 'sometimes|required|exists:buyers,id',
-            'agent_id' => 'sometimes|required|exists:agents,id',
-            'status' => 'sometimes|required|in:lead,negotiation,offer,accepted,closed,cancelled',
-            'offer_price' => 'nullable|numeric|min:0',
-            'final_price' => 'nullable|numeric|min:0',
-            'commission_percent' => 'nullable|numeric|min:0|max:100',
-            'commission_amount' => 'nullable|numeric|min:0',
-            'notes' => 'nullable|string',
-            'closed_at' => 'nullable|date_format:Y-m-d H:i',
-        ]);
+        $rules = $entitySchemaService->getValidationRules('transaction', true);
+        $rules['timeline'] = ['nullable', 'array'];
+        $rules['escrow_details'] = ['nullable', 'array'];
 
-        $transaction->update($validated);
+        $validated = $request->validate($rules);
 
-        return response()->json($transaction->load(['property', 'buyer', 'agent']));
+        $payload = $entitySchemaService->normalizePayload('transaction', $validated);
+        foreach (['timeline', 'escrow_details'] as $field) {
+            if (array_key_exists($field, $validated)) {
+                $payload[$field] = $validated[$field];
+            }
+        }
+
+        if (array_key_exists('custom_fields', $payload)) {
+            $payload['custom_fields'] = array_merge($transaction->custom_fields ?? [], $payload['custom_fields']);
+        }
+
+        $transaction->update($payload);
+
+        return response()->json($entitySchemaService->serializeModel($transaction->fresh()->load(['property', 'buyer', 'agent']), 'transaction'));
     }
 
     public function destroy(Transaction $transaction)
