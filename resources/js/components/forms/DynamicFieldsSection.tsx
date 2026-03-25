@@ -57,6 +57,12 @@ export function DynamicFieldsSection({
         const value = values[field.name];
         const errorKey = `custom_fields.${field.name}`;
         const fieldOptions = normalizeOptions(field.options);
+        const validation = field.validation || {};
+        const minValue = typeof validation.min === 'number' ? validation.min : undefined;
+        const maxValue = typeof validation.max === 'number' ? validation.max : undefined;
+        const minLength = typeof validation.minLength === 'number' ? validation.minLength : undefined;
+        const maxLength = typeof validation.maxLength === 'number' ? validation.maxLength : undefined;
+        const pattern = typeof validation.pattern === 'string' ? validation.pattern : undefined;
 
         const commonMeta = (
             <>
@@ -74,7 +80,31 @@ export function DynamicFieldsSection({
                         id={field.name}
                         placeholder={field.placeholder || ''}
                         value={String(value ?? '')}
+                        minLength={minLength}
+                        maxLength={maxLength}
                         onChange={(e) => onChange(field.name, e.target.value)}
+                    />
+                    {commonMeta}
+                </div>
+            );
+        }
+
+        if (field.field_type === 'json') {
+            const jsonValue = typeof value === 'string'
+                ? value
+                : value != null
+                ? JSON.stringify(value, null, 2)
+                : '';
+
+            return (
+                <div key={field.name} className="space-y-2 md:col-span-2">
+                    <Label htmlFor={field.name}>{field.label}{field.required ? ' *' : ''}</Label>
+                    <Textarea
+                        id={field.name}
+                        placeholder={field.placeholder || '{\n  "key": "value"\n}'}
+                        value={jsonValue}
+                        onChange={(e) => onChange(field.name, e.target.value)}
+                        className="font-mono text-xs"
                     />
                     {commonMeta}
                 </div>
@@ -151,6 +181,29 @@ export function DynamicFieldsSection({
             );
         }
 
+        if (['reference', 'relation', 'master_relation', 'many_to_many'].includes(field.field_type)) {
+            const isMultipleRelation = field.allow_multiple || field.field_type === 'many_to_many';
+
+            return (
+                <div key={field.name} className="space-y-2 md:col-span-2">
+                    <Label htmlFor={field.name}>{field.label}{field.required ? ' *' : ''}</Label>
+                    <Input
+                        id={field.name}
+                        type="text"
+                        placeholder={isMultipleRelation ? 'ID1, ID2, ID3' : 'ID связанной записи'}
+                        value={Array.isArray(value) ? value.join(', ') : String(value ?? '')}
+                        onChange={(e) => onChange(field.name, e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                        {isMultipleRelation
+                            ? 'Укажите идентификаторы связанных записей через запятую.'
+                            : 'Укажите идентификатор связанной записи.'}
+                    </p>
+                    {commonMeta}
+                </div>
+            );
+        }
+
         const inputType = field.field_type === 'email'
             ? 'email'
             : field.field_type === 'url'
@@ -165,6 +218,12 @@ export function DynamicFieldsSection({
             ? 'number'
             : 'text';
 
+        const normalizedValue = field.field_type === 'datetime' && typeof value === 'string'
+            ? value.replace(' ', 'T').slice(0, 16)
+            : Array.isArray(value)
+            ? value.join(', ')
+            : String(value ?? '');
+
         return (
             <div key={field.name} className="space-y-2">
                 <Label htmlFor={field.name}>{field.label}{field.required ? ' *' : ''}</Label>
@@ -172,7 +231,13 @@ export function DynamicFieldsSection({
                     id={field.name}
                     type={inputType}
                     placeholder={field.placeholder || ''}
-                    value={Array.isArray(value) ? value.join(', ') : String(value ?? '')}
+                    value={normalizedValue}
+                    min={minValue}
+                    max={maxValue}
+                    minLength={minLength}
+                    maxLength={maxLength}
+                    pattern={pattern}
+                    step={field.field_type === 'decimal' ? '0.01' : field.field_type === 'number' || field.field_type === 'integer' ? '1' : undefined}
                     onChange={(e) => onChange(field.name, e.target.value)}
                 />
                 {commonMeta}

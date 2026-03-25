@@ -59,6 +59,7 @@ const FieldModal: React.FC<FieldModalProps> = ({
         allow_multiple: field?.allow_multiple || false,
         max_items: field?.max_items || 50,
         validation: field?.validation || {},
+        default_value: field?.default_value ?? '',
         icon: field?.icon || '',
     });
 
@@ -92,6 +93,10 @@ const FieldModal: React.FC<FieldModalProps> = ({
     const isMasterRelationType = formData.field_type === 'master_relation';
     const isManyToManyType = formData.field_type === 'many_to_many';
     const isSelectType = ['select', 'radio', 'checkbox', 'multiselect'].includes(formData.field_type) || formData.field_type.includes('select');
+    const isTextType = ['text', 'short_text', 'textarea', 'long_text', 'big_text', 'email', 'phone', 'url'].includes(formData.field_type);
+    const isNumericType = ['number', 'integer', 'decimal'].includes(formData.field_type);
+    const isDateType = ['date', 'datetime', 'time'].includes(formData.field_type);
+    const isJsonType = formData.field_type === 'json';
 
     const getTypeIcon = (fieldTypeKey: string) => {
         if (['text', 'short_text'].includes(fieldTypeKey)) return Type;
@@ -138,6 +143,16 @@ const FieldModal: React.FC<FieldModalProps> = ({
         setFormData((prev) => ({
             ...prev,
             [key]: value,
+        }));
+    };
+
+    const updateValidation = (key: string, value: any) => {
+        setFormData((prev) => ({
+            ...prev,
+            validation: {
+                ...(prev.validation || {}),
+                [key]: value,
+            },
         }));
     };
 
@@ -188,7 +203,10 @@ const FieldModal: React.FC<FieldModalProps> = ({
                 throw new Error('Для связи множественного выбора максимум — 50 элементов');
             }
 
-            await onSave(formData);
+            await onSave({
+                ...formData,
+                default_value: formData.default_value === '' ? null : formData.default_value,
+            });
         } catch (err: any) {
             setError(err.message || 'Ошибка при сохранении');
         } finally {
@@ -453,6 +471,16 @@ const FieldModal: React.FC<FieldModalProps> = ({
                                             />
                                         </div>
                                         <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Значение по умолчанию</label>
+                                            <input
+                                                type={isNumericType ? 'number' : 'text'}
+                                                value={Array.isArray(formData.default_value) ? formData.default_value.join(', ') : String(formData.default_value ?? '')}
+                                                onChange={(e) => handleFieldChange('default_value', e.target.value)}
+                                                placeholder="Будет подставлено в новых записях"
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                            />
+                                        </div>
+                                        <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">Текст помощи</label>
                                             <input
                                                 type="text"
@@ -462,6 +490,110 @@ const FieldModal: React.FC<FieldModalProps> = ({
                                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                                             />
                                         </div>
+                                    </div>
+
+                                    <div className="border border-gray-200 rounded-lg p-4 space-y-4 bg-gray-50/60">
+                                        <div className="text-sm font-semibold text-gray-900">Правила и ограничения</div>
+
+                                        {isTextType && (
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Минимальная длина</label>
+                                                    <input
+                                                        type="number"
+                                                        value={String(formData.validation?.minLength ?? '')}
+                                                        onChange={(e) => updateValidation('minLength', e.target.value ? Number(e.target.value) : null)}
+                                                        min="0"
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Максимальная длина</label>
+                                                    <input
+                                                        type="number"
+                                                        value={String(formData.validation?.maxLength ?? '')}
+                                                        onChange={(e) => updateValidation('maxLength', e.target.value ? Number(e.target.value) : null)}
+                                                        min="0"
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                                    />
+                                                </div>
+                                                <div className="sm:col-span-2">
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Regex / pattern</label>
+                                                    <input
+                                                        type="text"
+                                                        value={String(formData.validation?.pattern ?? '')}
+                                                        onChange={(e) => updateValidation('pattern', e.target.value || null)}
+                                                        placeholder="Например: /^[A-Z0-9_-]+$/"
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {isNumericType && (
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Минимум</label>
+                                                    <input
+                                                        type="number"
+                                                        value={String(formData.validation?.min ?? '')}
+                                                        onChange={(e) => updateValidation('min', e.target.value ? Number(e.target.value) : null)}
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Максимум</label>
+                                                    <input
+                                                        type="number"
+                                                        value={String(formData.validation?.max ?? '')}
+                                                        onChange={(e) => updateValidation('max', e.target.value ? Number(e.target.value) : null)}
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {isDateType && (
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Минимальное значение</label>
+                                                    <input
+                                                        type={formData.field_type === 'datetime' ? 'datetime-local' : formData.field_type}
+                                                        value={String(formData.validation?.min ?? '')}
+                                                        onChange={(e) => updateValidation('min', e.target.value || null)}
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Максимальное значение</label>
+                                                    <input
+                                                        type={formData.field_type === 'datetime' ? 'datetime-local' : formData.field_type}
+                                                        value={String(formData.validation?.max ?? '')}
+                                                        onChange={(e) => updateValidation('max', e.target.value || null)}
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {isSelectType && formData.allow_multiple && (
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Максимум выбранных элементов</label>
+                                                <input
+                                                    type="number"
+                                                    value={String(formData.validation?.maxItems ?? formData.max_items ?? '')}
+                                                    onChange={(e) => updateValidation('maxItems', e.target.value ? Number(e.target.value) : null)}
+                                                    min="1"
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                                />
+                                            </div>
+                                        )}
+
+                                        {isJsonType && (
+                                            <div className="text-xs text-gray-600">
+                                                JSON-поля будут рендериться в runtime-интерфейсе как JSON textarea/editor и нормализоваться перед сохранением.
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>

@@ -4,8 +4,10 @@ namespace App\CRM\Services;
 
 use App\Models\Agent;
 use App\Models\Buyer;
+use App\Models\Communication;
 use App\Models\ModelField;
 use App\Models\Property;
+use App\Models\PropertyShowing;
 use App\Models\Transaction;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
@@ -72,6 +74,11 @@ class EntitySchemaService
             $dynamicRules['custom_fields.' . $field->name] = $partial
                 ? $this->buildDynamicRules($field, true)
                 : $this->buildDynamicRules($field, false);
+
+            $arrayItemRules = $this->buildDynamicArrayItemRules($field);
+            if (!empty($arrayItemRules)) {
+                $dynamicRules['custom_fields.' . $field->name . '.*'] = $arrayItemRules;
+            }
         }
 
         return [...$coreRules, ...$dynamicRules];
@@ -157,6 +164,9 @@ class EntitySchemaService
     protected function buildDynamicRules(ModelField $field, bool $partial): array
     {
         $rules = [];
+        $validation = is_array($field->validation) ? $field->validation : [];
+        $options = $this->extractOptionValues($field->options);
+        $referenceTable = $field->reference_table ? $this->getTableNameForEntity($field->reference_table) : null;
 
         if (!$partial && $field->required) {
             $rules[] = 'required';
@@ -167,6 +177,8 @@ class EntitySchemaService
         switch ($field->field_type) {
             case 'email':
                 $rules[] = 'email';
+                break;
+            case 'json':
                 break;
             case 'phone':
             case 'text':
@@ -201,14 +213,22 @@ class EntitySchemaService
             case 'radio':
                 $rules[] = 'string';
                 break;
+            case 'reference':
+            case 'relation':
+            case 'master_relation':
+                if ($field->allow_multiple) {
+                    $rules[] = 'array';
+                } else {
+                    $rules[] = 'integer';
+                    if ($referenceTable) {
+                        $rules[] = 'exists:' . $referenceTable . ',id';
+                    }
+                }
+                break;
+            case 'many_to_many':
             case 'multiselect':
             case 'checklist':
-            case 'relation':
-            case 'reference':
-            case 'master_relation':
-            case 'many_to_many':
             case 'file':
-            case 'json':
                 $rules[] = 'array';
                 break;
             default:
@@ -216,19 +236,55 @@ class EntitySchemaService
                 break;
         }
 
-        $validation = is_array($field->validation) ? $field->validation : [];
-
         if (isset($validation['min'])) {
             $rules[] = 'min:' . $validation['min'];
+        }
+
+        if (isset($validation['minLength'])) {
+            $rules[] = 'min:' . $validation['minLength'];
+        }
+
+        if (isset($validation['maxLength'])) {
+            $rules[] = 'max:' . $validation['maxLength'];
+        }
+
+        if (!empty($validation['pattern']) && is_string($validation['pattern'])) {
+            $rules[] = 'regex:' . $validation['pattern'];
         }
 
         if (isset($validation['max'])) {
             $rules[] = 'max:' . $validation['max'];
         }
 
-        $options = $this->extractOptionValues($field->options);
         if (!empty($options) && in_array($field->field_type, ['select', 'radio'], true)) {
             $rules[] = 'in:' . implode(',', $options);
+        }
+
+        if (isset($validation['maxItems']) || $field->max_items) {
+            $rules[] = 'max:' . ($validation['maxItems'] ?? $field->max_items);
+        }
+
+        return $rules;
+    }
+
+    protected function buildDynamicArrayItemRules(ModelField $field): array
+    {
+        $rules = [];
+        $options = $this->extractOptionValues($field->options);
+        $referenceTable = $field->reference_table ? $this->getTableNameForEntity($field->reference_table) : null;
+
+        if (in_array($field->field_type, ['multiselect', 'checklist'], true)) {
+            $rules[] = 'string';
+            if (!empty($options)) {
+                $rules[] = 'in:' . implode(',', $options);
+            }
+        }
+
+        if (in_array($field->field_type, ['many_to_many'], true) || ($field->allow_multiple && in_array($field->field_type, ['reference', 'relation', 'master_relation'], true))) {
+            $rules[] = 'integer';
+            if ($referenceTable) {
+                $rules[] = 'exists:' . $referenceTable . ',id';
+            }
         }
 
         return $rules;
@@ -237,15 +293,61 @@ class EntitySchemaService
     protected function castDynamicValue(ModelField $field, mixed $value): mixed
     {
         if ($value === null || $value === '') {
-            return $value;
+            return null;
         }
 
         return match ($field->field_type) {
-            'integer', 'number' => (int) $value,
-            'decimal' => (float) $value,
+            'integer', 'number' => is_numeric($value) ? (int) $value : $value,
+            'decimal' => is_numeric($value) ? (float) $value : $value,
             'checkbox' => filter_var($value, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE) ?? false,
-            'multiselect', 'checklist', 'relation', 'reference', 'master_relation', 'many_to_many', 'file', 'json' => is_array($value) ? $value : [$value],
+            'multiselect', 'checklist' => is_array($value) ? array_values($value) : array_values(array_filter(array_map('trim', explode(',', (string) $value)))),
+            'relation', 'reference', 'master_relation', 'many_to_many' => $this->castRelationValue($field, $value),
+            'file' => is_array($value) ? array_values($value) : array_values(array_filter(array_map('trim', explode(',', (string) $value)))),
+            'json' => $this->castJsonValue($value),
             default => $value,
+        };
+    }
+
+    protected function castRelationValue(ModelField $field, mixed $value): mixed
+    {
+        if ($field->allow_multiple || in_array($field->field_type, ['many_to_many'], true)) {
+            $items = is_array($value)
+                ? $value
+                : array_filter(array_map('trim', explode(',', (string) $value)), fn ($item) => $item !== '');
+
+            return array_values(array_map(
+                fn ($item) => is_numeric($item) ? (int) $item : $item,
+                $items
+            ));
+        }
+
+        return is_numeric($value) ? (int) $value : $value;
+    }
+
+    protected function castJsonValue(mixed $value): mixed
+    {
+        if (is_array($value)) {
+            return $value;
+        }
+
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            return json_last_error() === JSON_ERROR_NONE ? $decoded : $value;
+        }
+
+        return $value;
+    }
+
+    protected function getTableNameForEntity(string $entityType): ?string
+    {
+        return match ($entityType) {
+            'agent' => 'agents',
+            'property' => 'properties',
+            'buyer' => 'buyers',
+            'transaction' => 'transactions',
+            'property_showing' => 'property_showings',
+            'communication' => 'communications',
+            default => null,
         };
     }
 
@@ -428,6 +530,25 @@ class EntitySchemaService
                 ['name' => 'started_at', 'label' => 'Дата начала', 'field_type' => 'datetime', 'required' => true, 'rules' => ['required', 'date']],
                 ['name' => 'closed_at', 'label' => 'Дата закрытия', 'field_type' => 'datetime', 'required' => false, 'rules' => ['nullable', 'date']],
             ],
+            'property_showing' => [
+                ['name' => 'property_id', 'label' => 'Объект', 'field_type' => 'number', 'required' => true, 'rules' => ['required', 'exists:properties,id']],
+                ['name' => 'buyer_id', 'label' => 'Покупатель', 'field_type' => 'number', 'required' => true, 'rules' => ['required', 'exists:buyers,id']],
+                ['name' => 'agent_id', 'label' => 'Агент', 'field_type' => 'number', 'required' => true, 'rules' => ['required', 'exists:agents,id']],
+                ['name' => 'scheduled_at', 'label' => 'Запланировано', 'field_type' => 'datetime', 'required' => true, 'rules' => ['required', 'date']],
+                ['name' => 'completed_at', 'label' => 'Завершено', 'field_type' => 'datetime', 'required' => false, 'rules' => ['nullable', 'date']],
+                ['name' => 'status', 'label' => 'Статус', 'field_type' => 'select', 'required' => true, 'rules' => ['required', 'in:scheduled,completed,no_show,cancelled']],
+                ['name' => 'rating', 'label' => 'Оценка', 'field_type' => 'integer', 'required' => false, 'rules' => ['nullable', 'integer', 'min:1', 'max:5']],
+                ['name' => 'notes', 'label' => 'Заметки', 'field_type' => 'textarea', 'required' => false, 'rules' => ['nullable', 'string']],
+            ],
+            'communication' => [
+                ['name' => 'transaction_id', 'label' => 'Сделка', 'field_type' => 'number', 'required' => true, 'rules' => ['required', 'exists:transactions,id']],
+                ['name' => 'type', 'label' => 'Тип', 'field_type' => 'select', 'required' => true, 'rules' => ['required', 'in:email,call,meeting,offer,update']],
+                ['name' => 'direction', 'label' => 'Направление', 'field_type' => 'select', 'required' => true, 'rules' => ['required', 'in:inbound,outbound']],
+                ['name' => 'subject', 'label' => 'Тема', 'field_type' => 'text', 'required' => false, 'rules' => ['nullable', 'string', 'max:255']],
+                ['name' => 'body', 'label' => 'Сообщение', 'field_type' => 'textarea', 'required' => false, 'rules' => ['nullable', 'string']],
+                ['name' => 'status', 'label' => 'Статус', 'field_type' => 'select', 'required' => true, 'rules' => ['required', 'in:sent,delivered,read,pending_response']],
+                ['name' => 'next_follow_up_at', 'label' => 'Следующий контакт', 'field_type' => 'datetime', 'required' => false, 'rules' => ['nullable', 'date']],
+            ],
             default => [],
         };
     }
@@ -439,6 +560,8 @@ class EntitySchemaService
             'buyer' => Buyer::class,
             'property' => Property::class,
             'transaction' => Transaction::class,
+            'property_showing' => PropertyShowing::class,
+            'communication' => Communication::class,
             default => null,
         };
     }

@@ -5,6 +5,8 @@ use App\Http\Controllers\Api\ListOfValuesController;
 use App\Http\Controllers\Api\PropertyController;
 use App\Http\Controllers\Api\AgentController;
 use App\Http\Controllers\Api\BuyerController;
+use App\Http\Controllers\Api\CommunicationController;
+use App\Http\Controllers\Api\PropertyShowingController;
 use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\Api\ModelFieldController;
 use App\Http\Controllers\API\TriggerController;
@@ -117,6 +119,20 @@ Route::prefix('v1')->middleware($apiMiddleware)->group(function () {
     Route::get('/transactions/{transaction}', [TransactionController::class, 'show']);
     Route::put('/transactions/{transaction}', [TransactionController::class, 'update']);
     Route::delete('/transactions/{transaction}', [TransactionController::class, 'destroy']);
+
+    // ===== Property Showing Routes =====
+    Route::get('/property-showings', [PropertyShowingController::class, 'index']);
+    Route::post('/property-showings', [PropertyShowingController::class, 'store']);
+    Route::get('/property-showings/{propertyShowing}', [PropertyShowingController::class, 'show']);
+    Route::put('/property-showings/{propertyShowing}', [PropertyShowingController::class, 'update']);
+    Route::delete('/property-showings/{propertyShowing}', [PropertyShowingController::class, 'destroy']);
+
+    // ===== Communication Routes =====
+    Route::get('/communications', [CommunicationController::class, 'index']);
+    Route::post('/communications', [CommunicationController::class, 'store']);
+    Route::get('/communications/{communication}', [CommunicationController::class, 'show']);
+    Route::put('/communications/{communication}', [CommunicationController::class, 'update']);
+    Route::delete('/communications/{communication}', [CommunicationController::class, 'destroy']);
     
     // ===== Form Schema Routes =====
     Route::get('/forms', [FormController::class, 'index']);

@@ -5,8 +5,10 @@ import {
     Home, 
     Users, 
     Briefcase, 
+  CalendarClock,
     LogOut, 
     Menu, 
+  MessageSquare,
     Settings,
     UserCircle,
     Building2,
@@ -34,17 +36,19 @@ export const CRMAdaptivePill: React.FC = () => {
   const [expanded, setExpanded] = useState(false)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
-  const { csrf_token } = usePage().props
+  const { csrf_token } = usePage().props as { csrf_token?: string }
   
   const navItems: NavItem[] = [
     { label: 'Dashboard', id: 'dashboard', href: '/dashboard', icon: LayoutDashboard },
     { label: 'Agents', id: 'agents', href: '/agents', icon: Users },
     { label: 'Buyers', id: 'buyers', href: '/buyers', icon: UserCircle },
     { label: 'Transactions', id: 'transactions', href: '/transactions', icon: Briefcase },
+    { label: 'Showings', id: 'showings', href: '/property-showings', icon: CalendarClock },
+    { label: 'Messages', id: 'communications', href: '/communications', icon: MessageSquare },
     { label: 'Модели', id: 'models', href: '/model-manager', icon: Blocks },
     { label: 'Processes', id: 'processes', href: '/process-modeler', icon: GitBranch },
     { label: 'Settings', id: 'settings', href: '/settings', icon: Settings },
-    { label: 'Log out', id: 'logout', action: () => router.post(logout(), { _token: csrf_token }), icon: LogOut },
+    { label: 'Log out', id: 'logout', action: () => router.post(logout(), { _token: csrf_token ?? '' }), icon: LogOut },
   ]
 
   // Spring animations for smooth motion
@@ -55,7 +59,7 @@ export const CRMAdaptivePill: React.FC = () => {
     const updateWidth = () => {
       if (expanded) {
         // Use larger width for grid layout with small icons
-        const targetWidth = Math.min(window.innerWidth * 0.92, 340);
+        const targetWidth = Math.min(window.innerWidth * 0.96, 420);
         pillWidth.set(targetWidth);
       } else {
         pillWidth.set(56);

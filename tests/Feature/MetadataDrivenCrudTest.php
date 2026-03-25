@@ -4,8 +4,10 @@ namespace Tests\Feature;
 
 use App\Models\Agent;
 use App\Models\Buyer;
+use App\Models\Communication;
 use App\Models\ModelField;
 use App\Models\Property;
+use App\Models\PropertyShowing;
 use App\Models\Transaction;
 use App\Models\User;
 use Tests\TestCase;
@@ -207,5 +209,132 @@ class MetadataDrivenCrudTest extends TestCase
 
         $transaction = Transaction::query()->firstOrFail();
         $this->assertSame('telegram', $transaction->custom_fields['deal_origin']);
+    }
+
+    public function test_property_showing_api_persists_dynamic_fields_in_custom_fields(): void
+    {
+        $user = User::factory()->create();
+
+        ModelField::create([
+            'entity_type' => 'property_showing',
+            'name' => 'visitor_mood',
+            'label' => 'Настроение',
+            'field_type' => 'text',
+            'required' => false,
+            'created_by' => $user->id,
+        ]);
+
+        $agent = Agent::create([
+            'name' => 'Showing Agent',
+            'email' => 'showing.agent@example.test',
+            'phone' => '+79990000006',
+            'status' => 'active',
+            'specialization' => 'residential',
+        ]);
+
+        $buyer = Buyer::create([
+            'name' => 'Showing Buyer',
+            'email' => 'showing.buyer@example.test',
+            'phone' => '+79990000007',
+            'source' => 'website',
+            'status' => 'active',
+        ]);
+
+        $property = Property::create([
+            'agent_id' => $agent->id,
+            'address' => 'Arbat 10',
+            'city' => 'Moscow',
+            'type' => 'house',
+            'status' => 'available',
+            'price' => 22000000,
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->postJson('/api/v1/property-showings', [
+                'property_id' => $property->id,
+                'buyer_id' => $buyer->id,
+                'agent_id' => $agent->id,
+                'scheduled_at' => '2026-03-25T15:00',
+                'status' => 'scheduled',
+                'custom_fields' => [
+                    'visitor_mood' => 'excited',
+                ],
+            ]);
+
+        $response
+            ->assertCreated()
+            ->assertJsonPath('custom_fields.visitor_mood', 'excited');
+
+        $showing = PropertyShowing::query()->firstOrFail();
+        $this->assertSame('excited', $showing->custom_fields['visitor_mood']);
+    }
+
+    public function test_communication_api_persists_dynamic_fields_in_custom_fields(): void
+    {
+        $user = User::factory()->create();
+
+        ModelField::create([
+            'entity_type' => 'communication',
+            'name' => 'channel_template',
+            'label' => 'Шаблон канала',
+            'field_type' => 'text',
+            'required' => false,
+            'created_by' => $user->id,
+        ]);
+
+        $agent = Agent::create([
+            'name' => 'Communication Agent',
+            'email' => 'communication.agent@example.test',
+            'phone' => '+79990000008',
+            'status' => 'active',
+            'specialization' => 'commercial',
+        ]);
+
+        $buyer = Buyer::create([
+            'name' => 'Communication Buyer',
+            'email' => 'communication.buyer@example.test',
+            'phone' => '+79990000009',
+            'source' => 'referral',
+            'status' => 'active',
+        ]);
+
+        $property = Property::create([
+            'agent_id' => $agent->id,
+            'address' => 'Nevsky 18',
+            'city' => 'Saint Petersburg',
+            'type' => 'commercial',
+            'status' => 'available',
+            'price' => 32000000,
+        ]);
+
+        $transaction = Transaction::create([
+            'property_id' => $property->id,
+            'buyer_id' => $buyer->id,
+            'agent_id' => $agent->id,
+            'status' => 'lead',
+            'started_at' => '2026-03-25 10:00:00',
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->postJson('/api/v1/communications', [
+                'transaction_id' => $transaction->id,
+                'type' => 'email',
+                'direction' => 'outbound',
+                'status' => 'sent',
+                'subject' => 'Follow up',
+                'body' => 'Please review the proposal',
+                'custom_fields' => [
+                    'channel_template' => 'follow-up-email',
+                ],
+            ]);
+
+        $response
+            ->assertCreated()
+            ->assertJsonPath('custom_fields.channel_template', 'follow-up-email');
+
+        $communication = Communication::query()->firstOrFail();
+        $this->assertSame('follow-up-email', $communication->custom_fields['channel_template']);
     }
 }

@@ -2,7 +2,9 @@ import { Link } from '@inertiajs/react';
 import {
     Home,
     Building,
+    CalendarClock,
     Users,
+    MessageSquare,
     TrendingUp,
     FileText,
     Zap,
@@ -63,6 +65,16 @@ const crmNavItems: NavItem[] = [
         title: 'Сделки',
         href: '/transactions',
         icon: FileText,
+    },
+    {
+        title: 'Показы',
+        href: '/property-showings',
+        icon: CalendarClock,
+    },
+    {
+        title: 'Коммуникации',
+        href: '/communications',
+        icon: MessageSquare,
     },
     {
         title: 'Справочники',
