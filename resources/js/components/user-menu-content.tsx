@@ -18,10 +18,11 @@ type Props = {
 
 export function UserMenuContent({ user }: Props) {
     const { setOpenMobile, isMobile } = useSidebar();
+    const { csrf_token } = usePage().props;
 
     const handleLogout = () => {
         if (isMobile) setOpenMobile(false);
-        router.post(logout());
+        router.post(logout(), { _token: csrf_token });
     };
 
     const handleNavigation = () => {

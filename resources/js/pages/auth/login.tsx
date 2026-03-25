@@ -1,4 +1,4 @@
-import { Form, Head } from '@inertiajs/react';
+import { Form, Head, usePage } from '@inertiajs/react';
 import InputError from '@/components/input-error';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,6 @@ import AuthLayout from '@/layouts/auth-layout';
 import { register } from '@/routes';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
-import { getCsrfToken } from '@/lib/csrf';
 
 type Props = {
     status?: string;
@@ -23,6 +22,10 @@ export default function Login({
     canResetPassword,
     canRegister,
 }: Props) {
+    const { csrf_token } = usePage().props;
+    
+    console.debug('[Login] CSRF Token from props:', csrf_token ? csrf_token.substring(0, 20) + '...' : 'MISSING');
+    
     return (
         <AuthLayout
             title="Log in to your account"
@@ -34,12 +37,10 @@ export default function Login({
                 {...store.form()}
                 resetOnSuccess={['password']}
                 className="flex flex-col gap-6"
-                headers={{
-                    'X-CSRF-TOKEN': getCsrfToken() || '',
-                }}
             >
                 {({ processing, errors }) => (
                     <>
+                        <input type="hidden" name="_token" value={csrf_token as string} />
                         <div className="grid gap-6">
                             <div className="grid gap-2">
                                 <Label htmlFor="email">Email address</Label>

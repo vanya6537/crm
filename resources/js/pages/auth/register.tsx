@@ -8,7 +8,6 @@ import { Spinner } from '@/components/ui/spinner';
 import AuthLayout from '@/layouts/auth-layout';
 import { login } from '@/routes';
 import { store } from '@/routes/register';
-import { getCsrfToken } from '@/lib/csrf';
 
 export default function Register() {
     return (
@@ -22,9 +21,6 @@ export default function Register() {
                 resetOnSuccess={['password', 'password_confirmation']}
                 disableWhileProcessing
                 className="flex flex-col gap-6"
-                headers={{
-                    'X-CSRF-TOKEN': getCsrfToken() || '',
-                }}
             >
                 {({ processing, errors }) => (
                     <>

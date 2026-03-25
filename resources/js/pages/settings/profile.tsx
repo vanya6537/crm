@@ -19,7 +19,6 @@ import AppLayout from '@/layouts/app-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 import { edit } from '@/routes/profile';
 import { send } from '@/routes/verification';
-import { getCsrfToken } from '@/lib/csrf';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -57,9 +56,6 @@ export default function Profile({
                         {...ProfileController.update.form()}
                         options={{
                             preserveScroll: true,
-                        }}
-                        headers={{
-                            'X-CSRF-TOKEN': getCsrfToken() || '',
                         }}
                         className="space-y-6"
                     >

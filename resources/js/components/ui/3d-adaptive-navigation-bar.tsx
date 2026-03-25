@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { motion, useSpring, AnimatePresence } from 'framer-motion'
-import { Link, router } from '@inertiajs/react'
+import { Link, router, usePage } from '@inertiajs/react'
 import { 
     Home, 
     Users, 
@@ -34,6 +34,7 @@ export const CRMAdaptivePill: React.FC = () => {
   const [expanded, setExpanded] = useState(false)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
+  const { csrf_token } = usePage().props
   
   const navItems: NavItem[] = [
     { label: 'Dashboard', id: 'dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -43,7 +44,7 @@ export const CRMAdaptivePill: React.FC = () => {
     { label: 'Модели', id: 'models', href: '/model-manager', icon: Blocks },
     { label: 'Processes', id: 'processes', href: '/process-modeler', icon: GitBranch },
     { label: 'Settings', id: 'settings', href: '/settings', icon: Settings },
-    { label: 'Log out', id: 'logout', action: () => router.post(logout()), icon: LogOut },
+    { label: 'Log out', id: 'logout', action: () => router.post(logout(), { _token: csrf_token }), icon: LogOut },
   ]
 
   // Spring animations for smooth motion

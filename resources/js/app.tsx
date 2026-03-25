@@ -5,6 +5,7 @@ import { createRoot } from 'react-dom/client';
 import '../css/app.css';
 import { initializeTheme } from '@/hooks/use-appearance';
 import { initializeCsrf } from '@/lib/csrf';
+import { configureAxios } from '@/lib/axios-config';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -45,3 +46,8 @@ console.log('%c[App] Theme initialization complete', 'color: #ff0000');
 console.log('%c[App] About to initialize CSRF', 'color: #ff0000');
 initializeCsrf();
 console.log('%c[App] CSRF initialization complete', 'color: #ff0000');
+
+// Configure axios with CSRF headers for Inertia Form support
+console.log('%c[App] About to configure axios', 'color: #ff0000');
+configureAxios();
+console.log('%c[App] Axios configuration complete', 'color: #ff0000');
