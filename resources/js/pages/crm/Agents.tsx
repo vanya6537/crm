@@ -2,7 +2,7 @@
 
 import { Head } from '@inertiajs/react';
 import { useState } from 'react';
-import { AlertCircle, Edit2, Trash2, Plus } from 'lucide-react';
+import { AlertCircle, Edit2, Eye, Trash2, Plus } from 'lucide-react';
 import CRMLayout from '@/layouts/crm-layout';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/radix/dialog';
 import { Button } from '@/components/ui/button';
@@ -23,8 +23,9 @@ import { ResizableTable, type ResizableTableColumn } from '@/components/ui/resiz
 import { AgentForm } from './AgentForm';
 import { DeleteConfirmationDialog } from '@/components/dialogs/DeleteConfirmationDialog';
 import { DynamicEntityFilters, appendDynamicFilterParams } from '@/components/forms/DynamicEntityFilters';
+import { DynamicFieldValues } from '@/components/forms/DynamicFieldValues';
 import { apiRequest } from '@/lib/csrf';
-import type { EntitySchema } from '@/types/entity-schema';
+import type { EntitySchema, SerializedDynamicFieldValueMap } from '@/types/entity-schema';
 
 type Agent = {
     id: number;
@@ -36,7 +37,7 @@ type Agent = {
     specialization: 'residential' | 'commercial' | 'luxury';
     created_at: string;
     custom_fields?: Record<string, unknown>;
-    dynamic_field_values?: Record<string, { value: unknown }>;
+    dynamic_field_values?: SerializedDynamicFieldValueMap;
 };
 
 type PaginatedResponse = {
@@ -63,6 +64,7 @@ export default function Agents({ agents: initialAgents, filters: initialFilters,
     const [filters, setFilters] = useState(initialFilters);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
+        const [isViewOpen, setIsViewOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
     const [error, setError] = useState('');
@@ -261,6 +263,21 @@ export default function Agents({ agents: initialAgents, filters: initialFilters,
             ),
         },
         {
+            key: 'dynamic_fields',
+            header: 'Доп. поля',
+            width: 260,
+            headerClassName: 'hidden xl:flex',
+            cellClassName: 'hidden xl:flex',
+            cell: (agent) => (
+                <DynamicFieldValues
+                    entitySchema={entitySchema}
+                    values={agent.custom_fields || {}}
+                    dynamicFieldValues={agent.dynamic_field_values}
+                    variant="compact"
+                />
+            ),
+        },
+        {
             key: 'actions',
             header: 'Действия',
             width: 120,
@@ -270,6 +287,16 @@ export default function Agents({ agents: initialAgents, filters: initialFilters,
             cellClassName: 'justify-end',
             cell: (agent) => (
                 <div className="flex items-center justify-end gap-2">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                            setSelectedAgent(agent);
+                            setIsViewOpen(true);
+                        }}
+                    >
+                        <Eye className="h-4 w-4" />
+                    </Button>
                     <Button
                         variant="ghost"
                         size="sm"
@@ -451,4 +478,31 @@ export default function Agents({ agents: initialAgents, filters: initialFilters,
             </CRMLayout>
         </>
     );
+
+                    <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
+                        <DialogContent className="max-w-3xl">
+                            <DialogHeader>
+                                <DialogTitle>{selectedAgent?.name || 'Карточка агента'}</DialogTitle>
+                            </DialogHeader>
+                            {selectedAgent && (
+                                <div className="space-y-4">
+                                    <div className="grid gap-3 md:grid-cols-2">
+                                        <div className="rounded-md border p-3">
+                                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Email</p>
+                                            <p className="text-sm">{selectedAgent.email}</p>
+                                        </div>
+                                        <div className="rounded-md border p-3">
+                                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Телефон</p>
+                                            <p className="text-sm">{selectedAgent.phone}</p>
+                                        </div>
+                                    </div>
+                                    <DynamicFieldValues
+                                        entitySchema={entitySchema}
+                                        values={selectedAgent.custom_fields || {}}
+                                        dynamicFieldValues={selectedAgent.dynamic_field_values}
+                                    />
+                                </div>
+                            )}
+                        </DialogContent>
+                    </Dialog>
 }

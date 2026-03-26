@@ -2,7 +2,7 @@
 
 import { Head } from '@inertiajs/react';
 import { useState } from 'react';
-import { AlertCircle, Edit2, Trash2, Plus } from 'lucide-react';
+import { AlertCircle, Edit2, Eye, Trash2, Plus } from 'lucide-react';
 import CRMLayout from '@/layouts/crm-layout';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/radix/dialog';
 import { Button } from '@/components/ui/button';
@@ -23,8 +23,9 @@ import { ResizableTable, type ResizableTableColumn } from '@/components/ui/resiz
 import { CommunicationForm, type Communication } from './CommunicationForm';
 import { DeleteConfirmationDialog } from '@/components/dialogs/DeleteConfirmationDialog';
 import { DynamicEntityFilters, appendDynamicFilterParams } from '@/components/forms/DynamicEntityFilters';
+import { DynamicFieldValues } from '@/components/forms/DynamicFieldValues';
 import { apiRequest } from '@/lib/csrf';
-import type { EntitySchema } from '@/types/entity-schema';
+import type { EntitySchema, SerializedDynamicFieldValueMap } from '@/types/entity-schema';
 
 type TransactionOption = {
     id: number;
@@ -35,6 +36,7 @@ type TransactionOption = {
 type CommunicationRow = Communication & {
     id: number;
     transaction?: TransactionOption;
+    dynamic_field_values?: SerializedDynamicFieldValueMap;
 };
 
 type PaginatedResponse = {
@@ -70,6 +72,7 @@ export default function Communications({
     const [dynamicFilters, setDynamicFilters] = useState<Record<string, unknown>>(initialFilters.dynamic_filters || {});
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
+    const [isViewOpen, setIsViewOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     const [selectedCommunication, setSelectedCommunication] = useState<CommunicationRow | null>(null);
     const [error, setError] = useState('');
@@ -253,6 +256,21 @@ export default function Communications({
                 </span>
             ),
         },
+            {
+                key: 'dynamic_fields',
+                header: 'Доп. поля',
+                width: 260,
+                headerClassName: 'hidden xl:flex',
+                cellClassName: 'hidden xl:flex',
+                cell: (communication) => (
+                    <DynamicFieldValues
+                        entitySchema={entitySchema}
+                        values={communication.custom_fields || {}}
+                        dynamicFieldValues={communication.dynamic_field_values}
+                        variant="compact"
+                    />
+                ),
+            },
         {
             key: 'actions',
             header: 'Действия',
@@ -263,6 +281,12 @@ export default function Communications({
             cellClassName: 'justify-end',
             cell: (communication) => (
                 <div className="flex items-center justify-end gap-2">
+                    <Button variant="ghost" size="sm" onClick={() => {
+                        setSelectedCommunication(communication);
+                        setIsViewOpen(true);
+                    }}>
+                        <Eye className="h-4 w-4" />
+                    </Button>
                     <Button variant="ghost" size="sm" onClick={() => {
                         setSelectedCommunication(communication);
                         setIsEditOpen(true);
@@ -420,6 +444,33 @@ export default function Communications({
                         isLoading={isLoading}
                         onConfirm={handleDelete}
                     />
+
+                    <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
+                        <DialogContent className="max-w-3xl">
+                            <DialogHeader>
+                                <DialogTitle>{selectedCommunication?.subject || 'Карточка коммуникации'}</DialogTitle>
+                            </DialogHeader>
+                            {selectedCommunication && (
+                                <div className="space-y-4">
+                                    <div className="grid gap-3 md:grid-cols-2">
+                                        <div className="rounded-md border p-3">
+                                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Тип</p>
+                                            <p className="text-sm">{getTypeLabel(selectedCommunication.type)}</p>
+                                        </div>
+                                        <div className="rounded-md border p-3">
+                                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Статус</p>
+                                            <p className="text-sm">{getStatusLabel(selectedCommunication.status)}</p>
+                                        </div>
+                                    </div>
+                                    <DynamicFieldValues
+                                        entitySchema={entitySchema}
+                                        values={selectedCommunication.custom_fields || {}}
+                                        dynamicFieldValues={selectedCommunication.dynamic_field_values}
+                                    />
+                                </div>
+                            )}
+                        </DialogContent>
+                    </Dialog>
                 </div>
             </CRMLayout>
         </>

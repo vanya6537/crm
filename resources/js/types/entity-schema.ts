@@ -28,6 +28,14 @@ export interface EntityFieldSchema {
     filterable?: boolean;
 }
 
+export interface SerializedDynamicFieldValue {
+    field: EntityFieldSchema;
+    value: unknown;
+    display_value?: unknown;
+}
+
+export type SerializedDynamicFieldValueMap = Record<string, SerializedDynamicFieldValue>;
+
 export interface EntitySchema {
     entity_type: string;
     core_fields: EntityFieldSchema[];

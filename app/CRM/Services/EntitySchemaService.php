@@ -19,6 +19,8 @@ class EntitySchemaService
 
     protected array $dynamicFieldCache = [];
 
+    protected array $relationLabelCache = [];
+
     public function __construct(
         protected FieldTypeRegistry $fieldTypeRegistry,
     ) {}
@@ -122,9 +124,12 @@ class EntitySchemaService
         $payload['dynamic_field_values'] = [];
 
         foreach ($dynamicFields as $fieldName => $field) {
+            $value = $payload['custom_fields'][$fieldName] ?? null;
+
             $payload['dynamic_field_values'][$fieldName] = [
                 'field' => $this->transformDynamicField($field),
-                'value' => $payload['custom_fields'][$fieldName] ?? null,
+                'value' => $value,
+                'display_value' => $this->resolveDynamicFieldDisplayValue($field, $value),
             ];
         }
 
@@ -485,6 +490,104 @@ class EntitySchemaService
             ->filter(fn ($option) => $option !== null && $option !== '')
             ->map(fn ($option) => (string) $option)
             ->values()
+            ->all();
+    }
+
+    protected function resolveDynamicFieldDisplayValue(ModelField $field, mixed $value): mixed
+    {
+        if ($value === null || $value === '' || $value === []) {
+            return null;
+        }
+
+        $normalizedOptions = $this->normalizeFieldOptions($field->options);
+
+        if (in_array($field->field_type, ['select', 'radio'], true)) {
+            return $normalizedOptions[(string) $value] ?? (string) $value;
+        }
+
+        if (in_array($field->field_type, ['multiselect', 'checklist'], true)) {
+            $items = is_array($value) ? $value : [$value];
+
+            return array_values(array_map(
+                fn ($item) => $normalizedOptions[(string) $item] ?? (string) $item,
+                $items
+            ));
+        }
+
+        if ($field->field_type === 'checkbox') {
+            return (bool) $value;
+        }
+
+        if (in_array($field->field_type, ['reference', 'relation', 'master_relation', 'many_to_many'], true) && $field->reference_table) {
+            $isMultiple = $field->allow_multiple || $field->field_type === 'many_to_many';
+            $ids = is_array($value) ? $value : [$value];
+            $labelMap = $this->getRelationLabelMap($field->reference_table, $ids);
+            $labels = array_values(array_map(
+                fn ($item) => $labelMap[(string) $item] ?? (string) $item,
+                $ids
+            ));
+
+            return $isMultiple ? $labels : ($labels[0] ?? null);
+        }
+
+        return $value;
+    }
+
+    protected function normalizeFieldOptions(mixed $options): array
+    {
+        if (!is_array($options)) {
+            return [];
+        }
+
+        return collect($options)
+            ->mapWithKeys(function ($option) {
+                if (is_array($option)) {
+                    $value = $option['value'] ?? $option['label'] ?? null;
+                    $label = $option['label'] ?? $option['value'] ?? null;
+
+                    return $value !== null ? [(string) $value => (string) $label] : [];
+                }
+
+                return $option !== null && $option !== '' ? [(string) $option => (string) $option] : [];
+            })
+            ->all();
+    }
+
+    protected function getRelationLabelMap(string $entityType, array $ids): array
+    {
+        $normalizedIds = collect($ids)
+            ->filter(fn ($id) => $id !== null && $id !== '')
+            ->map(fn ($id) => (string) $id)
+            ->values()
+            ->all();
+
+        if (empty($normalizedIds)) {
+            return [];
+        }
+
+        if (!isset($this->relationLabelCache[$entityType])) {
+            $this->relationLabelCache[$entityType] = [];
+        }
+
+        $missingIds = array_values(array_filter(
+            $normalizedIds,
+            fn (string $id) => !array_key_exists($id, $this->relationLabelCache[$entityType])
+        ));
+
+        if (!empty($missingIds)) {
+            $options = $this->getRelationOptions($entityType, ids: $missingIds, limit: max(100, count($missingIds)));
+
+            foreach ($options as $option) {
+                if (!isset($option['value'])) {
+                    continue;
+                }
+
+                $this->relationLabelCache[$entityType][(string) $option['value']] = (string) ($option['label'] ?? $option['value']);
+            }
+        }
+
+        return collect($normalizedIds)
+            ->mapWithKeys(fn (string $id) => [$id => $this->relationLabelCache[$entityType][$id] ?? $id])
             ->all();
     }
 

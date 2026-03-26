@@ -2,7 +2,7 @@
 
 import { Head } from '@inertiajs/react';
 import { useState } from 'react';
-import { AlertCircle, Edit2, Trash2, Plus } from 'lucide-react';
+import { AlertCircle, Edit2, Eye, Trash2, Plus } from 'lucide-react';
 import CRMLayout from '@/layouts/crm-layout';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/radix/dialog';
 import { Button } from '@/components/ui/button';
@@ -23,8 +23,9 @@ import { ResizableTable, type ResizableTableColumn } from '@/components/ui/resiz
 import { TransactionForm } from './TransactionForm';
 import { DeleteConfirmationDialog } from '@/components/dialogs/DeleteConfirmationDialog';
 import { DynamicEntityFilters, appendDynamicFilterParams } from '@/components/forms/DynamicEntityFilters';
+import { DynamicFieldValues } from '@/components/forms/DynamicFieldValues';
 import { apiRequest } from '@/lib/csrf';
-import type { EntitySchema } from '@/types/entity-schema';
+import type { EntitySchema, SerializedDynamicFieldValueMap } from '@/types/entity-schema';
 
 type Agent = {
     id: number;
@@ -62,6 +63,7 @@ type Transaction = {
     started_at: string;
     closed_at?: string;
     custom_fields?: Record<string, unknown>;
+    dynamic_field_values?: SerializedDynamicFieldValueMap;
 };
 
 type PaginatedResponse = {
@@ -97,6 +99,7 @@ export default function Transactions({
     const [filters, setFilters] = useState(initialFilters);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
+    const [isViewOpen, setIsViewOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
     const [error, setError] = useState('');
@@ -317,6 +320,21 @@ export default function Transactions({
             ),
         },
         {
+            key: 'dynamic_fields',
+            header: 'Доп. поля',
+            width: 260,
+            headerClassName: 'hidden xl:flex',
+            cellClassName: 'hidden xl:flex',
+            cell: (transaction) => (
+                <DynamicFieldValues
+                    entitySchema={entitySchema}
+                    values={transaction.custom_fields || {}}
+                    dynamicFieldValues={transaction.dynamic_field_values}
+                    variant="compact"
+                />
+            ),
+        },
+        {
             key: 'actions',
             header: 'Действия',
             width: 120,
@@ -326,6 +344,16 @@ export default function Transactions({
             cellClassName: 'justify-end',
             cell: (transaction) => (
                 <div className="flex items-center justify-end gap-2">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                            setSelectedTransaction(transaction);
+                            setIsViewOpen(true);
+                        }}
+                    >
+                        <Eye className="h-4 w-4" />
+                    </Button>
                     <Button
                         variant="ghost"
                         size="sm"
@@ -498,6 +526,33 @@ export default function Transactions({
                         isLoading={isLoading}
                         onConfirm={handleDelete}
                     />
+
+                    <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
+                        <DialogContent className="max-w-3xl">
+                            <DialogHeader>
+                                <DialogTitle>{selectedTransaction ? `Сделка #${selectedTransaction.id}` : 'Карточка сделки'}</DialogTitle>
+                            </DialogHeader>
+                            {selectedTransaction && (
+                                <div className="space-y-4">
+                                    <div className="grid gap-3 md:grid-cols-2">
+                                        <div className="rounded-md border p-3">
+                                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Объект</p>
+                                            <p className="text-sm">{selectedTransaction.property?.address || selectedTransaction.property_address || '—'}</p>
+                                        </div>
+                                        <div className="rounded-md border p-3">
+                                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Клиент</p>
+                                            <p className="text-sm">{selectedTransaction.buyer?.name || selectedTransaction.buyer_name || '—'}</p>
+                                        </div>
+                                    </div>
+                                    <DynamicFieldValues
+                                        entitySchema={entitySchema}
+                                        values={selectedTransaction.custom_fields || {}}
+                                        dynamicFieldValues={selectedTransaction.dynamic_field_values}
+                                    />
+                                </div>
+                            )}
+                        </DialogContent>
+                    </Dialog>
                 </div>
             </CRMLayout>
         </>

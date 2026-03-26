@@ -2,7 +2,7 @@
 
 import { Head } from '@inertiajs/react';
 import { useState } from 'react';
-import { AlertCircle, Edit2, Trash2, Plus } from 'lucide-react';
+import { AlertCircle, Edit2, Eye, Trash2, Plus } from 'lucide-react';
 import CRMLayout from '@/layouts/crm-layout';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/radix/dialog';
 import { Button } from '@/components/ui/button';
@@ -23,8 +23,9 @@ import { ResizableTable, type ResizableTableColumn } from '@/components/ui/resiz
 import { PropertyShowingForm, type PropertyShowing } from './PropertyShowingForm';
 import { DeleteConfirmationDialog } from '@/components/dialogs/DeleteConfirmationDialog';
 import { DynamicEntityFilters, appendDynamicFilterParams } from '@/components/forms/DynamicEntityFilters';
+import { DynamicFieldValues } from '@/components/forms/DynamicFieldValues';
 import { apiRequest } from '@/lib/csrf';
-import type { EntitySchema } from '@/types/entity-schema';
+import type { EntitySchema, SerializedDynamicFieldValueMap } from '@/types/entity-schema';
 
 type Agent = { id: number; name: string };
 type Buyer = { id: number; name: string };
@@ -35,6 +36,7 @@ type PropertyShowingRow = PropertyShowing & {
     property?: Property;
     buyer?: Buyer;
     agent?: Agent;
+    dynamic_field_values?: SerializedDynamicFieldValueMap;
 };
 
 type PaginatedResponse = {
@@ -72,6 +74,7 @@ export default function PropertyShowings({
     const [dynamicFilters, setDynamicFilters] = useState<Record<string, unknown>>(initialFilters.dynamic_filters || {});
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
+    const [isViewOpen, setIsViewOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     const [selectedShowing, setSelectedShowing] = useState<PropertyShowingRow | null>(null);
     const [error, setError] = useState('');
@@ -243,6 +246,21 @@ export default function PropertyShowings({
             cell: (showing) => <span className="text-sm">{showing.rating || '—'}</span>,
         },
         {
+            key: 'dynamic_fields',
+            header: 'Доп. поля',
+            width: 260,
+            headerClassName: 'hidden xl:flex',
+            cellClassName: 'hidden xl:flex',
+            cell: (showing) => (
+                <DynamicFieldValues
+                    entitySchema={entitySchema}
+                    values={showing.custom_fields || {}}
+                    dynamicFieldValues={showing.dynamic_field_values}
+                    variant="compact"
+                />
+            ),
+        },
+        {
             key: 'actions',
             header: 'Действия',
             width: 120,
@@ -252,6 +270,12 @@ export default function PropertyShowings({
             cellClassName: 'justify-end',
             cell: (showing) => (
                 <div className="flex items-center justify-end gap-2">
+                    <Button variant="ghost" size="sm" onClick={() => {
+                        setSelectedShowing(showing);
+                        setIsViewOpen(true);
+                    }}>
+                        <Eye className="h-4 w-4" />
+                    </Button>
                     <Button variant="ghost" size="sm" onClick={() => {
                         setSelectedShowing(showing);
                         setIsEditOpen(true);
@@ -396,6 +420,33 @@ export default function PropertyShowings({
                         isLoading={isLoading}
                         onConfirm={handleDelete}
                     />
+
+                    <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
+                        <DialogContent className="max-w-3xl">
+                            <DialogHeader>
+                                <DialogTitle>{selectedShowing?.property?.address || 'Карточка показа'}</DialogTitle>
+                            </DialogHeader>
+                            {selectedShowing && (
+                                <div className="space-y-4">
+                                    <div className="grid gap-3 md:grid-cols-2">
+                                        <div className="rounded-md border p-3">
+                                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Покупатель</p>
+                                            <p className="text-sm">{selectedShowing.buyer?.name || '—'}</p>
+                                        </div>
+                                        <div className="rounded-md border p-3">
+                                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Дата</p>
+                                            <p className="text-sm">{selectedShowing.scheduled_at ? new Date(selectedShowing.scheduled_at).toLocaleString('ru-RU') : '—'}</p>
+                                        </div>
+                                    </div>
+                                    <DynamicFieldValues
+                                        entitySchema={entitySchema}
+                                        values={selectedShowing.custom_fields || {}}
+                                        dynamicFieldValues={selectedShowing.dynamic_field_values}
+                                    />
+                                </div>
+                            )}
+                        </DialogContent>
+                    </Dialog>
                 </div>
             </CRMLayout>
         </>

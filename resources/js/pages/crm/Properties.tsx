@@ -6,6 +6,7 @@ import {
     Home,
     Plus,
     Edit2,
+    Eye,
     Trash2,
     ChevronUp,
     ChevronDown,
@@ -37,8 +38,9 @@ import { Label } from '@/components/ui/label';
 import { PropertyForm } from './PropertyForm';
 import { DeleteConfirmationDialog } from '@/components/dialogs/DeleteConfirmationDialog';
 import { DynamicEntityFilters, appendDynamicFilterParams } from '@/components/forms/DynamicEntityFilters';
+import { DynamicFieldValues } from '@/components/forms/DynamicFieldValues';
 import { apiRequest } from '@/lib/csrf';
-import type { EntitySchema } from '@/types/entity-schema';
+import type { EntitySchema, SerializedDynamicFieldValueMap } from '@/types/entity-schema';
 
 type Property = {
     id: number;
@@ -54,6 +56,7 @@ type Property = {
     created_at?: string;
     updated_at?: string;
     custom_fields?: Record<string, unknown>;
+    dynamic_field_values?: SerializedDynamicFieldValueMap;
 };
 
 type AgentOption = {
@@ -119,6 +122,7 @@ export default function Properties({ properties, filters: initialFilters, agents
     // Modal states
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isViewModalOpen, setIsViewModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
 
@@ -333,6 +337,21 @@ export default function Properties({ properties, filters: initialFilters, agents
                 ),
             },
             {
+                key: 'dynamic_fields',
+                header: 'Доп. поля',
+                width: 260,
+                headerClassName: 'hidden xl:flex',
+                cellClassName: 'hidden xl:flex',
+                cell: (property) => (
+                    <DynamicFieldValues
+                        entitySchema={entitySchema}
+                        values={property.custom_fields || {}}
+                        dynamicFieldValues={property.dynamic_field_values}
+                        variant="compact"
+                    />
+                ),
+            },
+            {
                 key: 'actions',
                 header: 'Действия',
                 width: 120,
@@ -342,6 +361,16 @@ export default function Properties({ properties, filters: initialFilters, agents
                 cellClassName: 'justify-end',
                 cell: (property) => (
                     <div className="flex items-center justify-end gap-2">
+                        <button
+                            onClick={() => {
+                                setSelectedProperty(property);
+                                setIsViewModalOpen(true);
+                            }}
+                            className="p-2 hover:bg-sidebar rounded-md transition-colors"
+                            title="Просмотр"
+                        >
+                            <Eye className="h-4 w-4 text-muted-foreground" />
+                        </button>
                         <button
                             onClick={() => {
                                 setSelectedProperty(property);
@@ -366,7 +395,7 @@ export default function Properties({ properties, filters: initialFilters, agents
                 ),
             },
         ],
-        [setIsDeleteModalOpen, setIsEditModalOpen, setSelectedProperty]
+        [entitySchema, setIsDeleteModalOpen, setIsEditModalOpen, setIsViewModalOpen, setSelectedProperty]
     );
 
     return (
@@ -572,6 +601,34 @@ export default function Properties({ properties, filters: initialFilters, agents
                     </DialogContent>
                 </Dialog>
 
+
+                {selectedProperty && (
+                    <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
+                        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                            <DialogHeader>
+                                <DialogTitle>{selectedProperty.address}</DialogTitle>
+                                <DialogDescription>{selectedProperty.city}</DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                                <div className="grid gap-3 md:grid-cols-2">
+                                    <div className="rounded-md border p-3">
+                                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Тип</p>
+                                        <p className="text-sm">{typeLabels[selectedProperty.type]}</p>
+                                    </div>
+                                    <div className="rounded-md border p-3">
+                                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Статус</p>
+                                        <p className="text-sm">{statusLabels[selectedProperty.status]}</p>
+                                    </div>
+                                </div>
+                                <DynamicFieldValues
+                                    entitySchema={entitySchema}
+                                    values={selectedProperty.custom_fields || {}}
+                                    dynamicFieldValues={selectedProperty.dynamic_field_values}
+                                />
+                            </div>
+                        </DialogContent>
+                    </Dialog>
+                )}
                 {/* Edit Modal */}
                 {selectedProperty && (
                     <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>

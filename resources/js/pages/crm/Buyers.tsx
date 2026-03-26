@@ -2,7 +2,7 @@
 
 import { Head } from '@inertiajs/react';
 import { useState } from 'react';
-import { AlertCircle, Edit2, Trash2, Plus } from 'lucide-react';
+import { AlertCircle, Edit2, Eye, Trash2, Plus } from 'lucide-react';
 import CRMLayout from '@/layouts/crm-layout';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/radix/dialog';
 import { Button } from '@/components/ui/button';
@@ -23,8 +23,9 @@ import { ResizableTable, type ResizableTableColumn } from '@/components/ui/resiz
 import { BuyerForm } from './BuyerForm';
 import { DeleteConfirmationDialog } from '@/components/dialogs/DeleteConfirmationDialog';
 import { DynamicEntityFilters, appendDynamicFilterParams } from '@/components/forms/DynamicEntityFilters';
+import { DynamicFieldValues } from '@/components/forms/DynamicFieldValues';
 import { apiRequest } from '@/lib/csrf';
-import type { EntitySchema } from '@/types/entity-schema';
+import type { EntitySchema, SerializedDynamicFieldValueMap } from '@/types/entity-schema';
 
 type Buyer = {
     id: number;
@@ -38,6 +39,7 @@ type Buyer = {
     notes?: string;
     created_at: string;
     custom_fields?: Record<string, unknown>;
+    dynamic_field_values?: SerializedDynamicFieldValueMap;
 };
 
 type PaginatedResponse = {
@@ -64,6 +66,7 @@ export default function Buyers({ buyers: initialBuyers, filters: initialFilters,
     const [filters, setFilters] = useState(initialFilters);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
+    const [isViewOpen, setIsViewOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     const [selectedBuyer, setSelectedBuyer] = useState<Buyer | null>(null);
     const [error, setError] = useState('');
@@ -259,6 +262,21 @@ export default function Buyers({ buyers: initialBuyers, filters: initialFilters,
             ),
         },
         {
+            key: 'dynamic_fields',
+            header: 'Доп. поля',
+            width: 260,
+            headerClassName: 'hidden xl:flex',
+            cellClassName: 'hidden xl:flex',
+            cell: (buyer) => (
+                <DynamicFieldValues
+                    entitySchema={entitySchema}
+                    values={buyer.custom_fields || {}}
+                    dynamicFieldValues={buyer.dynamic_field_values}
+                    variant="compact"
+                />
+            ),
+        },
+        {
             key: 'actions',
             header: 'Действия',
             width: 120,
@@ -268,6 +286,16 @@ export default function Buyers({ buyers: initialBuyers, filters: initialFilters,
             cellClassName: 'justify-end',
             cell: (buyer) => (
                 <div className="flex items-center justify-end gap-2">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                            setSelectedBuyer(buyer);
+                            setIsViewOpen(true);
+                        }}
+                    >
+                        <Eye className="h-4 w-4" />
+                    </Button>
                     <Button
                         variant="ghost"
                         size="sm"
@@ -447,6 +475,33 @@ export default function Buyers({ buyers: initialBuyers, filters: initialFilters,
                         isLoading={isLoading}
                         onConfirm={handleDelete}
                     />
+
+                    <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
+                        <DialogContent className="max-w-3xl">
+                            <DialogHeader>
+                                <DialogTitle>{selectedBuyer?.name || 'Карточка клиента'}</DialogTitle>
+                            </DialogHeader>
+                            {selectedBuyer && (
+                                <div className="space-y-4">
+                                    <div className="grid gap-3 md:grid-cols-2">
+                                        <div className="rounded-md border p-3">
+                                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Email</p>
+                                            <p className="text-sm">{selectedBuyer.email}</p>
+                                        </div>
+                                        <div className="rounded-md border p-3">
+                                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Телефон</p>
+                                            <p className="text-sm">{selectedBuyer.phone}</p>
+                                        </div>
+                                    </div>
+                                    <DynamicFieldValues
+                                        entitySchema={entitySchema}
+                                        values={selectedBuyer.custom_fields || {}}
+                                        dynamicFieldValues={selectedBuyer.dynamic_field_values}
+                                    />
+                                </div>
+                            )}
+                        </DialogContent>
+                    </Dialog>
                 </div>
             </CRMLayout>
         </>

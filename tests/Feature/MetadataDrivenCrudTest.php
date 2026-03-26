@@ -72,6 +72,49 @@ class MetadataDrivenCrudTest extends TestCase
             ]);
     }
 
+    public function test_relation_dynamic_fields_serialize_display_labels_in_api_payload(): void
+    {
+        $user = User::factory()->create();
+
+        ModelField::create([
+            'entity_type' => 'buyer',
+            'name' => 'preferred_agent',
+            'label' => 'Предпочитаемый агент',
+            'field_type' => 'relation',
+            'reference_table' => 'agent',
+            'required' => false,
+            'created_by' => $user->id,
+        ]);
+
+        $agent = Agent::create([
+            'name' => 'Display Agent',
+            'email' => 'display.agent@example.test',
+            'phone' => '+79990000012',
+            'status' => 'active',
+            'specialization' => 'residential',
+        ]);
+
+        Buyer::create([
+            'name' => 'Display Buyer',
+            'email' => 'display.buyer@example.test',
+            'phone' => '+79990000013',
+            'source' => 'website',
+            'status' => 'active',
+            'custom_fields' => [
+                'preferred_agent' => $agent->id,
+            ],
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->getJson('/api/v1/buyers');
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('data.0.dynamic_field_values.preferred_agent.value', $agent->id)
+            ->assertJsonPath('data.0.dynamic_field_values.preferred_agent.display_value', 'Display Agent');
+    }
+
     public function test_agent_api_searches_and_filters_by_dynamic_metadata_flags(): void
     {
         $user = User::factory()->create();
