@@ -36,6 +36,7 @@ import { ResizableTable, type ResizableTableColumn } from '@/components/ui/resiz
 import { Label } from '@/components/ui/label';
 import { PropertyForm } from './PropertyForm';
 import { DeleteConfirmationDialog } from '@/components/dialogs/DeleteConfirmationDialog';
+import { DynamicEntityFilters, appendDynamicFilterParams } from '@/components/forms/DynamicEntityFilters';
 import { apiRequest } from '@/lib/csrf';
 import type { EntitySchema } from '@/types/entity-schema';
 
@@ -72,7 +73,12 @@ interface PropertiesProps {
     properties: PaginatedResponse;
     agents: AgentOption[];
     entitySchema: EntitySchema;
-    filters: Record<string, string>;
+    filters: {
+        search?: string;
+        status?: string;
+        type?: string;
+        dynamic_filters?: Record<string, unknown>;
+    };
 }
 
 const statusColors: Record<string, string> = {
@@ -97,9 +103,12 @@ const typeLabels: Record<string, string> = {
 
 export default function Properties({ properties, filters: initialFilters, agents, entitySchema }: PropertiesProps) {
     const [propertyList, setPropertyList] = useState<Property[]>(properties.data);
+    const [pagination, setPagination] = useState(properties);
+    const [filters, setFilters] = useState(initialFilters);
     const [search, setSearch] = useState(initialFilters.search || '');
     const [statusFilter, setStatusFilter] = useState(initialFilters.status || 'all');
     const [typeFilter, setTypeFilter] = useState(initialFilters.type || 'all');
+    const [dynamicFilters, setDynamicFilters] = useState<Record<string, unknown>>(initialFilters.dynamic_filters || {});
     const [sortBy, setSortBy] = useState<'price' | 'rooms' | 'created'>('created');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
@@ -112,6 +121,43 @@ export default function Properties({ properties, filters: initialFilters, agents
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+
+    const applyFilters = async () => {
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            const params = new URLSearchParams();
+            if (search) params.append('search', search);
+            if (statusFilter && statusFilter !== 'all') params.append('status', statusFilter);
+            if (typeFilter && typeFilter !== 'all') params.append('type', typeFilter);
+            appendDynamicFilterParams(params, dynamicFilters);
+
+            const response = await apiRequest(`/api/v1/properties?${params.toString()}`, {
+                method: 'GET',
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to load properties');
+            }
+
+            const data = await response.json();
+            setPropertyList(data.data || []);
+            setPagination(data);
+            setFilters({
+                search: search || undefined,
+                status: statusFilter !== 'all' ? statusFilter : undefined,
+                type: typeFilter !== 'all' ? typeFilter : undefined,
+                dynamic_filters: dynamicFilters,
+            });
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : 'Unknown error';
+            console.error('Filter error:', msg);
+            setError(msg);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     // Sort properties
     const sortedProperties = useMemo(() => {
@@ -153,8 +199,7 @@ export default function Properties({ properties, filters: initialFilters, agents
                 throw new Error(errorMsg);
             }
 
-            const newProperty = await response.json();
-            setPropertyList([...propertyList, newProperty.data || newProperty]);
+            await applyFilters();
             setIsCreateModalOpen(false);
             setSuccess('Объект успешно создан');
             setTimeout(() => setSuccess(null), 3000);
@@ -185,9 +230,7 @@ export default function Properties({ properties, filters: initialFilters, agents
                 throw new Error(errorMsg);
             }
 
-            const updatedProperty = await response.json();
-            const updated = updatedProperty.data || updatedProperty;
-            setPropertyList(propertyList.map(p => p.id === selectedProperty.id ? updated : p));
+            await applyFilters();
             setIsEditModalOpen(false);
             setSelectedProperty(null);
             setSuccess('Объект успешно обновлен');
@@ -218,7 +261,7 @@ export default function Properties({ properties, filters: initialFilters, agents
                 throw new Error(errorMsg);
             }
 
-            setPropertyList(propertyList.filter(p => p.id !== selectedProperty.id));
+            await applyFilters();
             setIsDeleteModalOpen(false);
             setSelectedProperty(null);
             setSuccess('Объект успешно удален');
@@ -366,49 +409,77 @@ export default function Properties({ properties, filters: initialFilters, agents
 
                     {/* Toolbar */}
                     <div className="flex flex-col gap-4">
-                        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                            {/* Search & Filters */}
-                            <div className="flex flex-col gap-3 md:flex-row md:gap-3 flex-1">
-                                <div className="relative flex-1 md:max-w-sm">
-                                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                    <Input
-                                        placeholder="Поиск по адресу или городу..."
-                                        value={search}
-                                        onChange={(e) => setSearch(e.target.value)}
-                                        className="pl-10"
-                                    />
+                        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                            <div className="flex-1 space-y-3">
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                                    <div className="relative md:col-span-2">
+                                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                        <Input
+                                            placeholder="Поиск по адресу или городу..."
+                                            value={search}
+                                            onChange={(e) => setSearch(e.target.value)}
+                                            onKeyPress={(e) => e.key === 'Enter' && applyFilters()}
+                                            className="pl-10"
+                                        />
+                                    </div>
+
+                                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                                        <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="Фильтр по статусу" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">Все статусы</SelectItem>
+                                            <SelectItem value="available">Доступны</SelectItem>
+                                            <SelectItem value="sold">Продано</SelectItem>
+                                            <SelectItem value="rented">Сдано</SelectItem>
+                                            <SelectItem value="archived">Архив</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+
+                                    <Select value={typeFilter} onValueChange={setTypeFilter}>
+                                        <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="Тип недвижимости" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">Все типы</SelectItem>
+                                            <SelectItem value="apartment">Квартира</SelectItem>
+                                            <SelectItem value="house">Дом</SelectItem>
+                                            <SelectItem value="commercial">Коммерческая</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </div>
 
-                                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                    <SelectTrigger className="w-full md:w-48">
-                                        <SelectValue placeholder="Фильтр по статусу" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">Все статусы</SelectItem>
-                                        <SelectItem value="available">Доступны</SelectItem>
-                                        <SelectItem value="sold">Продано</SelectItem>
-                                        <SelectItem value="rented">Сдано</SelectItem>
-                                        <SelectItem value="archived">Архив</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                <DynamicEntityFilters
+                                    entitySchema={entitySchema}
+                                    values={dynamicFilters}
+                                    onChange={(fieldName, value) =>
+                                        setDynamicFilters((prev) => ({ ...prev, [fieldName]: value }))
+                                    }
+                                />
 
-                                <Select value={typeFilter} onValueChange={setTypeFilter}>
-                                    <SelectTrigger className="w-full md:w-48">
-                                        <SelectValue placeholder="Тип недвижимости" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">Все типы</SelectItem>
-                                        <SelectItem value="apartment">Квартира</SelectItem>
-                                        <SelectItem value="house">Дом</SelectItem>
-                                        <SelectItem value="commercial">Коммерческая</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                <div className="flex gap-2">
+                                    <Button onClick={applyFilters} disabled={isLoading} variant="outline">
+                                        {isLoading ? <Spinner className="h-4 w-4" /> : 'Применить фильтры'}
+                                    </Button>
+                                    {(filters.search || filters.status || filters.type || Object.keys(filters.dynamic_filters || {}).length > 0) && (
+                                        <Button
+                                            variant="ghost"
+                                            onClick={() => {
+                                                setSearch('');
+                                                setStatusFilter('all');
+                                                setTypeFilter('all');
+                                                setDynamicFilters({});
+                                            }}
+                                        >
+                                            Сбросить
+                                        </Button>
+                                    )}
+                                </div>
                             </div>
 
-                            {/* Create Button */}
                             <Button
                                 onClick={() => setIsCreateModalOpen(true)}
-                                className="gap-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white"
+                                className="gap-2 bg-linear-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white"
                             >
                                 <Plus className="h-4 w-4" />
                                 Добавить объект
@@ -456,7 +527,7 @@ export default function Properties({ properties, filters: initialFilters, agents
                             </p>
                             <Button
                                 onClick={() => setIsCreateModalOpen(true)}
-                                className="gap-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white"
+                                className="gap-2 bg-linear-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white"
                             >
                                 <Plus className="h-4 w-4" />
                                 Добавить первый объект
@@ -475,7 +546,7 @@ export default function Properties({ properties, filters: initialFilters, agents
                     {sortedProperties.length > 0 && (
                         <div className="flex items-center justify-between text-sm text-muted-foreground">
                             <span>
-                                Показано {sortedProperties.length} из {propertyList.length} объектов
+                                Показано {sortedProperties.length} из {pagination.total} объектов
                             </span>
                         </div>
                     )}

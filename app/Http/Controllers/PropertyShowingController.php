@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\CRM\Services\EntityListQueryService;
 use App\CRM\Services\EntitySchemaService;
 use App\Models\Agent;
 use App\Models\Buyer;
@@ -13,19 +14,22 @@ use Inertia\Response;
 
 class PropertyShowingController extends Controller
 {
-    public function index(Request $request, EntitySchemaService $entitySchemaService): Response
+    public function index(Request $request, EntitySchemaService $entitySchemaService, EntityListQueryService $entityListQueryService): Response
     {
         $filters = $request->only(['search', 'status', 'property_id', 'buyer_id', 'agent_id']);
+        $filters['dynamic_filters'] = is_array($request->input('dynamic_filters')) ? $request->input('dynamic_filters') : [];
 
         $query = PropertyShowing::query()->with(['property', 'buyer', 'agent']);
 
         if (!empty($filters['search'])) {
             $search = $filters['search'];
-            $query->where(function ($builder) use ($search) {
+            $query->where(function ($builder) use ($search, $entityListQueryService) {
                 $builder
                     ->whereHas('property', fn ($q) => $q->where('address', 'like', "%{$search}%"))
                     ->orWhereHas('buyer', fn ($q) => $q->where('name', 'like', "%{$search}%"))
                     ->orWhereHas('agent', fn ($q) => $q->where('name', 'like', "%{$search}%"));
+
+                $entityListQueryService->appendDynamicSearchClauses($builder, 'property_showing', $search);
             });
         }
 
@@ -44,6 +48,8 @@ class PropertyShowingController extends Controller
         if (!empty($filters['agent_id'])) {
             $query->where('agent_id', $filters['agent_id']);
         }
+
+        $entityListQueryService->applyDynamicFilters($query, 'property_showing', $filters['dynamic_filters']);
 
         $propertyShowings = $query
             ->latest('scheduled_at')

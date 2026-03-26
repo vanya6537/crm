@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\CRM\Services\EntityListQueryService;
 use App\CRM\Services\EntitySchemaService;
 use App\Http\Controllers\Controller;
 use App\Models\Property;
@@ -9,16 +10,19 @@ use Illuminate\Http\Request;
 
 class PropertyController extends Controller
 {
-    public function index(Request $request, EntitySchemaService $entitySchemaService)
+    public function index(Request $request, EntitySchemaService $entitySchemaService, EntityListQueryService $entityListQueryService)
     {
         $query = Property::query()->with('agent');
+        $dynamicFilters = is_array($request->input('dynamic_filters')) ? $request->input('dynamic_filters') : [];
 
         if ($request->filled('search')) {
             $search = $request->string('search');
-            $query->where(function ($builder) use ($search) {
+            $query->where(function ($builder) use ($search, $entityListQueryService) {
                 $builder
                     ->where('address', 'like', "%{$search}%")
                     ->orWhere('city', 'like', "%{$search}%");
+
+                $entityListQueryService->appendDynamicSearchClauses($builder, 'property', $search->toString());
             });
         }
 
@@ -37,6 +41,8 @@ class PropertyController extends Controller
         if ($request->filled('agent_id')) {
             $query->where('agent_id', $request->get('agent_id'));
         }
+
+        $entityListQueryService->applyDynamicFilters($query, 'property', $dynamicFilters);
 
         $properties = $query
             ->latest()

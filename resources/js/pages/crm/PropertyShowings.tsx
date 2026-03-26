@@ -22,6 +22,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { ResizableTable, type ResizableTableColumn } from '@/components/ui/resizable-table';
 import { PropertyShowingForm, type PropertyShowing } from './PropertyShowingForm';
 import { DeleteConfirmationDialog } from '@/components/dialogs/DeleteConfirmationDialog';
+import { DynamicEntityFilters, appendDynamicFilterParams } from '@/components/forms/DynamicEntityFilters';
 import { apiRequest } from '@/lib/csrf';
 import type { EntitySchema } from '@/types/entity-schema';
 
@@ -52,6 +53,7 @@ interface PropertyShowingsPageProps {
     filters: {
         search?: string;
         status?: string;
+        dynamic_filters?: Record<string, unknown>;
     };
 }
 
@@ -67,6 +69,7 @@ export default function PropertyShowings({
     const [pagination, setPagination] = useState(initialPropertyShowings);
     const [search, setSearch] = useState(initialFilters.search || '');
     const [statusFilter, setStatusFilter] = useState(initialFilters.status || '');
+    const [dynamicFilters, setDynamicFilters] = useState<Record<string, unknown>>(initialFilters.dynamic_filters || {});
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -82,6 +85,7 @@ export default function PropertyShowings({
             const params = new URLSearchParams();
             if (search) params.append('search', search);
             if (statusFilter && statusFilter !== 'all_statuses') params.append('status', statusFilter);
+            appendDynamicFilterParams(params, dynamicFilters);
 
             const response = await apiRequest(`/api/v1/property-showings?${params.toString()}`, {
                 method: 'GET',
@@ -320,6 +324,14 @@ export default function PropertyShowings({
                                     </Button>
                                 </div>
                             </div>
+
+                            <DynamicEntityFilters
+                                entitySchema={entitySchema}
+                                values={dynamicFilters}
+                                onChange={(fieldName, value) =>
+                                    setDynamicFilters((prev) => ({ ...prev, [fieldName]: value }))
+                                }
+                            />
                         </div>
                     </Card>
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\CRM\Services\EntityListQueryService;
 use App\CRM\Services\EntitySchemaService;
 use App\Http\Controllers\Controller;
 use App\Models\Communication;
@@ -9,18 +10,21 @@ use Illuminate\Http\Request;
 
 class CommunicationController extends Controller
 {
-    public function index(Request $request, EntitySchemaService $entitySchemaService)
+    public function index(Request $request, EntitySchemaService $entitySchemaService, EntityListQueryService $entityListQueryService)
     {
         $query = Communication::query()->with(['transaction.property', 'transaction.buyer', 'transaction.agent']);
+        $dynamicFilters = is_array($request->input('dynamic_filters')) ? $request->input('dynamic_filters') : [];
 
         if ($request->filled('search')) {
             $search = $request->string('search');
-            $query->where(function ($builder) use ($search) {
+            $query->where(function ($builder) use ($search, $entityListQueryService) {
                 $builder
                     ->where('subject', 'like', "%{$search}%")
                     ->orWhere('body', 'like', "%{$search}%")
                     ->orWhereHas('transaction.property', fn ($q) => $q->where('address', 'like', "%{$search}%"))
                     ->orWhereHas('transaction.buyer', fn ($q) => $q->where('name', 'like', "%{$search}%"));
+
+                $entityListQueryService->appendDynamicSearchClauses($builder, 'communication', $search->toString());
             });
         }
 
@@ -35,6 +39,8 @@ class CommunicationController extends Controller
         if ($request->filled('transaction_id')) {
             $query->where('transaction_id', $request->integer('transaction_id'));
         }
+
+        $entityListQueryService->applyDynamicFilters($query, 'communication', $dynamicFilters);
 
         $communications = $query
             ->latest()

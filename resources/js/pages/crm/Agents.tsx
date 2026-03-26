@@ -22,6 +22,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { ResizableTable, type ResizableTableColumn } from '@/components/ui/resizable-table';
 import { AgentForm } from './AgentForm';
 import { DeleteConfirmationDialog } from '@/components/dialogs/DeleteConfirmationDialog';
+import { DynamicEntityFilters, appendDynamicFilterParams } from '@/components/forms/DynamicEntityFilters';
 import { apiRequest } from '@/lib/csrf';
 import type { EntitySchema } from '@/types/entity-schema';
 
@@ -52,6 +53,7 @@ interface AgentsPageProps {
         search?: string;
         status?: string;
         specialization?: string;
+        dynamic_filters?: Record<string, unknown>;
     };
 }
 
@@ -71,6 +73,7 @@ export default function Agents({ agents: initialAgents, filters: initialFilters,
     const [specializationFilter, setSpecializationFilter] = useState(
         filters.specialization || ''
     );
+    const [dynamicFilters, setDynamicFilters] = useState<Record<string, unknown>>(filters.dynamic_filters || {});
 
     const applyFilters = async () => {
         setIsLoading(true);
@@ -81,6 +84,7 @@ export default function Agents({ agents: initialAgents, filters: initialFilters,
             if (search) params.append('search', search);
             if (statusFilter && statusFilter !== 'all_statuses') params.append('status', statusFilter);
             if (specializationFilter && specializationFilter !== 'all_specs') params.append('specialization', specializationFilter);
+            appendDynamicFilterParams(params, dynamicFilters);
 
             const response = await apiRequest(`/api/v1/agents?${params.toString()}`, {
                 method: 'GET',
@@ -92,6 +96,7 @@ export default function Agents({ agents: initialAgents, filters: initialFilters,
                 search: search || undefined,
                 status: statusFilter || undefined,
                 specialization: specializationFilter || undefined,
+                dynamic_filters: dynamicFilters,
             });
         } catch (err) {
             setError('Ошибка при загрузке агентов');
@@ -370,6 +375,14 @@ export default function Agents({ agents: initialAgents, filters: initialFilters,
                                     </Button>
                                 </div>
                             </div>
+
+                            <DynamicEntityFilters
+                                entitySchema={entitySchema}
+                                values={dynamicFilters}
+                                onChange={(fieldName, value) =>
+                                    setDynamicFilters((prev) => ({ ...prev, [fieldName]: value }))
+                                }
+                            />
                         </div>
                     </Card>
 

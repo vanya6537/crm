@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\CRM\Services\EntityListQueryService;
 use App\CRM\Services\EntitySchemaService;
 use App\Models\Transaction;
 use App\Models\Communication;
@@ -11,20 +12,23 @@ use Inertia\Response;
 
 class CommunicationController extends Controller
 {
-    public function index(Request $request, EntitySchemaService $entitySchemaService): Response
+    public function index(Request $request, EntitySchemaService $entitySchemaService, EntityListQueryService $entityListQueryService): Response
     {
         $filters = $request->only(['search', 'status', 'type', 'transaction_id']);
+        $filters['dynamic_filters'] = is_array($request->input('dynamic_filters')) ? $request->input('dynamic_filters') : [];
 
         $query = Communication::query()->with(['transaction.property', 'transaction.buyer', 'transaction.agent']);
 
         if (!empty($filters['search'])) {
             $search = $filters['search'];
-            $query->where(function ($builder) use ($search) {
+            $query->where(function ($builder) use ($search, $entityListQueryService) {
                 $builder
                     ->where('subject', 'like', "%{$search}%")
                     ->orWhere('body', 'like', "%{$search}%")
                     ->orWhereHas('transaction.property', fn ($q) => $q->where('address', 'like', "%{$search}%"))
                     ->orWhereHas('transaction.buyer', fn ($q) => $q->where('name', 'like', "%{$search}%"));
+
+                $entityListQueryService->appendDynamicSearchClauses($builder, 'communication', $search);
             });
         }
 
@@ -39,6 +43,8 @@ class CommunicationController extends Controller
         if (!empty($filters['transaction_id'])) {
             $query->where('transaction_id', $filters['transaction_id']);
         }
+
+        $entityListQueryService->applyDynamicFilters($query, 'communication', $filters['dynamic_filters']);
 
         $communications = $query
             ->latest()

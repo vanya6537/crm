@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\CRM\Services\EntityListQueryService;
 use App\CRM\Services\EntitySchemaService;
 use App\Http\Controllers\Controller;
 use App\Models\Agent;
@@ -9,17 +10,20 @@ use Illuminate\Http\Request;
 
 class AgentController extends Controller
 {
-    public function index(Request $request, EntitySchemaService $entitySchemaService)
+    public function index(Request $request, EntitySchemaService $entitySchemaService, EntityListQueryService $entityListQueryService)
     {
         $query = Agent::query();
+        $dynamicFilters = is_array($request->input('dynamic_filters')) ? $request->input('dynamic_filters') : [];
 
         if ($request->filled('search')) {
             $search = $request->string('search');
-            $query->where(function ($builder) use ($search) {
+            $query->where(function ($builder) use ($search, $entityListQueryService) {
                 $builder
                     ->where('name', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%")
                     ->orWhere('phone', 'like', "%{$search}%");
+
+                $entityListQueryService->appendDynamicSearchClauses($builder, 'agent', $search->toString());
             });
         }
 
@@ -30,6 +34,8 @@ class AgentController extends Controller
         if ($request->filled('specialization')) {
             $query->where('specialization', $request->get('specialization'));
         }
+
+        $entityListQueryService->applyDynamicFilters($query, 'agent', $dynamicFilters);
 
         $agents = $query
             ->latest()

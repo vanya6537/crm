@@ -22,6 +22,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { ResizableTable, type ResizableTableColumn } from '@/components/ui/resizable-table';
 import { BuyerForm } from './BuyerForm';
 import { DeleteConfirmationDialog } from '@/components/dialogs/DeleteConfirmationDialog';
+import { DynamicEntityFilters, appendDynamicFilterParams } from '@/components/forms/DynamicEntityFilters';
 import { apiRequest } from '@/lib/csrf';
 import type { EntitySchema } from '@/types/entity-schema';
 
@@ -53,6 +54,7 @@ interface BuyersPageProps {
         search?: string;
         status?: string;
         source?: string;
+        dynamic_filters?: Record<string, unknown>;
     };
 }
 
@@ -70,6 +72,7 @@ export default function Buyers({ buyers: initialBuyers, filters: initialFilters,
     const [search, setSearch] = useState(filters.search || '');
     const [statusFilter, setStatusFilter] = useState(filters.status || '');
     const [sourceFilter, setSourceFilter] = useState(filters.source || '');
+    const [dynamicFilters, setDynamicFilters] = useState<Record<string, unknown>>(filters.dynamic_filters || {});
 
     const applyFilters = async () => {
         setIsLoading(true);
@@ -80,6 +83,7 @@ export default function Buyers({ buyers: initialBuyers, filters: initialFilters,
             if (search) params.append('search', search);
             if (statusFilter && statusFilter !== 'all_statuses') params.append('status', statusFilter);
             if (sourceFilter && sourceFilter !== 'all_sources') params.append('source', sourceFilter);
+            appendDynamicFilterParams(params, dynamicFilters);
 
             const response = await apiRequest(`/api/v1/buyers?${params.toString()}`, {
                 method: 'GET',
@@ -91,6 +95,7 @@ export default function Buyers({ buyers: initialBuyers, filters: initialFilters,
                 search: search || undefined,
                 status: statusFilter || undefined,
                 source: sourceFilter || undefined,
+                dynamic_filters: dynamicFilters,
             });
         } catch (err) {
             setError('Ошибка при загрузке клиентов');
@@ -370,6 +375,14 @@ export default function Buyers({ buyers: initialBuyers, filters: initialFilters,
                                     </Button>
                                 </div>
                             </div>
+
+                            <DynamicEntityFilters
+                                entitySchema={entitySchema}
+                                values={dynamicFilters}
+                                onChange={(fieldName, value) =>
+                                    setDynamicFilters((prev) => ({ ...prev, [fieldName]: value }))
+                                }
+                            />
                         </div>
                     </Card>
 

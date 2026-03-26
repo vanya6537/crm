@@ -72,6 +72,51 @@ class MetadataDrivenCrudTest extends TestCase
             ]);
     }
 
+    public function test_agent_api_searches_and_filters_by_dynamic_metadata_flags(): void
+    {
+        $user = User::factory()->create();
+
+        ModelField::create([
+            'entity_type' => 'agent',
+            'name' => 'telegram_handle',
+            'label' => 'Telegram',
+            'field_type' => 'text',
+            'required' => false,
+            'validation' => [
+                'searchable' => true,
+                'filterable' => true,
+            ],
+            'created_by' => $user->id,
+        ]);
+
+        Agent::create([
+            'name' => 'Dynamic Search Agent',
+            'email' => 'dynamic.search@example.test',
+            'phone' => '+79990000011',
+            'status' => 'active',
+            'specialization' => 'luxury',
+            'custom_fields' => [
+                'telegram_handle' => '@dynamic-search',
+            ],
+        ]);
+
+        $searchResponse = $this
+            ->actingAs($user)
+            ->getJson('/api/v1/agents?search=dynamic-search');
+
+        $searchResponse
+            ->assertOk()
+            ->assertJsonPath('data.0.custom_fields.telegram_handle', '@dynamic-search');
+
+        $filterResponse = $this
+            ->actingAs($user)
+            ->getJson('/api/v1/agents?dynamic_filters[telegram_handle]=@dynamic-search');
+
+        $filterResponse
+            ->assertOk()
+            ->assertJsonPath('data.0.custom_fields.telegram_handle', '@dynamic-search');
+    }
+
     public function test_agent_api_persists_dynamic_fields_in_custom_fields(): void
     {
         $user = User::factory()->create();

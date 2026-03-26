@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\CRM\Services\EntityListQueryService;
 use App\CRM\Services\EntitySchemaService;
 use App\Http\Controllers\Controller;
 use App\Models\Transaction;
@@ -9,16 +10,19 @@ use Illuminate\Http\Request;
 
 class TransactionController extends Controller
 {
-    public function index(Request $request, EntitySchemaService $entitySchemaService)
+    public function index(Request $request, EntitySchemaService $entitySchemaService, EntityListQueryService $entityListQueryService)
     {
         $query = Transaction::query()->with(['property', 'buyer', 'agent']);
+        $dynamicFilters = is_array($request->input('dynamic_filters')) ? $request->input('dynamic_filters') : [];
 
         if ($request->filled('search')) {
             $search = $request->string('search');
-            $query->where(function ($builder) use ($search) {
+            $query->where(function ($builder) use ($search, $entityListQueryService) {
                 $builder
                     ->whereHas('property', fn($q) => $q->where('address', 'like', "%{$search}%"))
                     ->orWhereHas('buyer', fn($q) => $q->where('name', 'like', "%{$search}%"));
+
+                $entityListQueryService->appendDynamicSearchClauses($builder, 'transaction', $search->toString());
             });
         }
 
@@ -33,6 +37,8 @@ class TransactionController extends Controller
         if ($request->filled('property_id')) {
             $query->where('property_id', $request->get('property_id'));
         }
+
+        $entityListQueryService->applyDynamicFilters($query, 'transaction', $dynamicFilters);
 
         $transactions = $query
             ->latest()
