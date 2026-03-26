@@ -35,6 +35,8 @@ type TriggerDefinition = {
     is_mvp: boolean;
     metadata?: {
         activation_ready?: boolean;
+        support_status?: 'runtime_ready' | 'catalog_only';
+        activation_blocker?: string | null;
     };
 };
 
@@ -299,13 +301,18 @@ export default function TriggersPage() {
                                                 <Badge className={priorityColors[definition.priority] ?? priorityColors.medium}>{definition.priority}</Badge>
                                                 {definition.is_mvp ? <Badge variant="secondary">MVP</Badge> : null}
                                                 {definition.metadata?.activation_ready ? <Badge variant="outline">Activation-ready</Badge> : null}
+                                                {!definition.metadata?.activation_ready ? <Badge variant="outline">Catalog-only</Badge> : null}
                                             </div>
                                             <h3 className="mt-2 text-lg font-semibold">{definition.title}</h3>
-                                            <p className="mt-1 text-sm text-muted-foreground">{definition.condition_summary}</p>
+                                            <p className="mt-1 text-sm text-muted-foreground">{definition.description}</p>
                                         </div>
                                     </div>
 
                                     <div className="mt-4 grid gap-3 text-sm md:grid-cols-2">
+                                        <div className="md:col-span-2">
+                                            <p className="font-medium text-muted-foreground">Условие</p>
+                                            <p>{definition.condition_summary}</p>
+                                        </div>
                                         <div>
                                             <p className="font-medium text-muted-foreground">Runtime</p>
                                             <p>{definition.runtime_entity_type || 'Требует отдельной модели/агрегации'}</p>
@@ -331,7 +338,7 @@ export default function TriggersPage() {
                                         </Button>
                                         {!definition.metadata?.activation_ready ? (
                                             <p className="text-xs text-muted-foreground">
-                                                Правило пока не привязано к текущей runtime-модели.
+                                                {definition.metadata?.activation_blocker || 'Правило пока не привязано к текущей runtime-модели.'}
                                             </p>
                                         ) : null}
                                     </div>

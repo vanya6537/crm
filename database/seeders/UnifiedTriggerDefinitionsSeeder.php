@@ -535,15 +535,18 @@ class UnifiedTriggerDefinitionsSeeder extends Seeder
             $activationReady = (bool) ($config['activation_ready'] ?? false);
             unset($config['activation_ready']);
 
+            $runtimeEntityType = $config['runtime_entity_type'] ?? $runtimeEntityType;
+            $sourceEvent = $config['source_event'] ?? 'updated';
+
             $definitions[] = [
                 'catalog_number' => $catalogNumber,
                 'code' => sprintf('%s_%03d', Str::slug($family, '_'), $catalogNumber),
                 'title' => $title,
-                'description' => $config['description'] ?? 'Нормализованное правило каталога триггеров CRM.',
+                'description' => $config['description'] ?? $this->buildDescription($family, $title),
                 'family' => $family,
                 'source_entity_type' => $sourceEntityType,
-                'runtime_entity_type' => $config['runtime_entity_type'] ?? $runtimeEntityType,
-                'source_event' => $config['source_event'] ?? 'updated',
+                'runtime_entity_type' => $runtimeEntityType,
+                'source_event' => $sourceEvent,
                 'trigger_type' => $config['trigger_type'] ?? 'entity_updated',
                 'attention_state' => $config['attention_state'] ?? 'need_action',
                 'priority' => $config['priority'] ?? 'medium',
@@ -556,12 +559,14 @@ class UnifiedTriggerDefinitionsSeeder extends Seeder
                 ],
                 'ttl_hours' => $config['ttl_hours'] ?? 72,
                 'dedupe_scope' => $config['dedupe_scope'] ?? 'entity',
-                'condition_summary' => $config['condition_summary'] ?? ('Срабатывает, когда CRM фиксирует состояние: ' . $title),
-                'action_summary' => $config['action_summary'] ?? ($config['default_action'] ?? 'Открыть карточку и выполнить следующее действие'),
+                'condition_summary' => $config['condition_summary'] ?? $this->buildConditionSummary($title, $sourceEvent),
+                'action_summary' => $config['action_summary'] ?? $this->buildActionSummary($family, $config['default_action'] ?? null),
                 'is_mvp' => $this->isMvpTitle($title),
                 'is_active' => true,
                 'metadata' => [
                     'activation_ready' => $activationReady,
+                    'support_status' => $activationReady ? 'runtime_ready' : 'catalog_only',
+                    'activation_blocker' => $this->buildActivationBlocker($activationReady, $runtimeEntityType, $sourceEvent),
                     'business_family' => $family,
                     'logical_catalog_number' => $catalogNumber,
                 ],
@@ -604,5 +609,63 @@ class UnifiedTriggerDefinitionsSeeder extends Seeder
             'Подборка устарела',
             'Сделка близка к дедлайну',
         ], true);
+    }
+
+    private function buildDescription(string $family, string $title): string
+    {
+        $familyLabel = match ($family) {
+            'leads' => 'лидов и квалификации',
+            'deals' => 'сделок и этапов воронки',
+            'showings' => 'показов и post-showing follow-up',
+            'properties' => 'объектов и витрины предложения',
+            'recommendations' => 'подборок и реакции клиента',
+            'documents' => 'документов и юридических блокеров',
+            'finance' => 'финансовых условий и оплат',
+            'tasks' => 'операционной дисциплины',
+            'communications' => 'коммуникаций и SLA ответа',
+            'owners' => 'собственников и условий размещения',
+            'data_quality' => 'качества CRM-данных',
+            'manager_efficiency' => 'эффективности менеджера',
+            'sales_management' => 'руководительских сигналов',
+            default => 'CRM-процессов',
+        };
+
+        return sprintf('Каталожное CRM-правило для семьи %s: %s. Используется в unified rule center и attention layer.', $familyLabel, $title);
+    }
+
+    private function buildConditionSummary(string $title, string $sourceEvent): string
+    {
+        return sprintf('Срабатывает при событии %s, если CRM фиксирует сценарий "%s".', $sourceEvent, $title);
+    }
+
+    private function buildActionSummary(string $family, ?string $defaultAction): string
+    {
+        if ($defaultAction) {
+            return $defaultAction;
+        }
+
+        return match ($family) {
+            'leads', 'communications' => 'Открыть контакт и выполнить следующее касание по клиенту',
+            'deals', 'documents', 'finance' => 'Открыть сделку и зафиксировать следующее действие по этапу',
+            'showings' => 'Подтвердить или закрыть показ с обязательным follow-up',
+            'properties', 'owners' => 'Проверить карточку объекта и связанные коммерческие условия',
+            'recommendations' => 'Обновить подборку и отправить следующий релевантный пакет',
+            'tasks', 'manager_efficiency', 'sales_management' => 'Открыть управленческий сценарий и скорректировать работу команды',
+            'data_quality' => 'Исправить данные в карточке и снять блокировку автоматизации',
+            default => 'Открыть карточку и выполнить следующее действие',
+        };
+    }
+
+    private function buildActivationBlocker(bool $activationReady, ?string $runtimeEntityType, string $sourceEvent): ?string
+    {
+        if ($activationReady) {
+            return null;
+        }
+
+        if (!$runtimeEntityType) {
+            return 'Для автоматической активации нужна отдельная runtime-сущность или агрегированный контекст, которого пока нет в текущей доменной модели.';
+        }
+
+        return sprintf('Правило сохранено в каталоге, но требует дополнительной runtime-логики для события %s на сущности %s.', $sourceEvent, $runtimeEntityType);
     }
 }
