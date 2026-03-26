@@ -14,6 +14,9 @@ class LOVSeeder extends Seeder
      */
     public function run(): void
     {
+        ListOfValuesItem::query()->delete();
+        ListOfValues::query()->delete();
+
         // ===== LEADS (ЛИДЫ) =====
         
         // Источники лидов

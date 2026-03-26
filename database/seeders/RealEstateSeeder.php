@@ -14,6 +14,13 @@ class RealEstateSeeder extends Seeder
 {
     public function run(): void
     {
+        Communication::query()->delete();
+        PropertyShowing::query()->delete();
+        Transaction::query()->delete();
+        Property::query()->delete();
+        Buyer::query()->delete();
+        Agent::query()->delete();
+
         // Create agents
         $agents = [];
         $agents[] = Agent::create([

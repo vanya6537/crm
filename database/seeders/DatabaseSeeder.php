@@ -16,9 +16,10 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Create test user directly without factory
-        User::create([
-            'name' => 'Test User',
+        User::updateOrCreate([
             'email' => 'test@example.com',
+        ], [
+            'name' => 'Test User',
             'password' => Hash::make('Password123'),
             'email_verified_at' => now(),
             'remember_token' => Str::random(10),

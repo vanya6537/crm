@@ -338,7 +338,7 @@ class TriggerService
     /**
      * Get summary stats for dashboard
      */
-    public function getTriggerStats(\Carbon\Carbon $since = null): array
+    public function getTriggerStats(?\Carbon\Carbon $since = null): array
     {
         $since = $since ?? now()->subDays(7);
 
