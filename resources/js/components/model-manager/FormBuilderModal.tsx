@@ -4,31 +4,7 @@ import { GripVertical, Info } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { DragDropProvider, useDraggable } from "@/components/dnd/drag-drop";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
-
-type FieldTypeMeta = {
-    label?: string;
-    category?: string;
-};
-
-export type ModelManagerField = {
-    uuid: string;
-    id: number;
-    entity_type: string;
-    name: string;
-    label: string;
-    description?: string;
-    field_type: string;
-    sort_order: number;
-    required: boolean;
-    is_active: boolean;
-
-    reference_table?: string;
-    is_master_relation?: boolean;
-    allow_multiple?: boolean;
-    max_items?: number;
-
-    validation?: Record<string, any>;
-};
+import type { ModelFieldTypeMeta, ModelManagerField } from '@/types/model-manager';
 
 export type FormBuilderModalProps = {
     open: boolean;
@@ -40,7 +16,7 @@ export type FormBuilderModalProps = {
 
     fields: ModelManagerField[];
     isLoading: boolean;
-    fieldTypes: Record<string, FieldTypeMeta>;
+    fieldTypes: Record<string, ModelFieldTypeMeta>;
 
     onReorder: (nextFields: ModelManagerField[]) => void | Promise<void>;
     onPatchField: (field: ModelManagerField, patch: Partial<ModelManagerField>) => Promise<void>;

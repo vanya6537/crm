@@ -15,32 +15,7 @@ import FieldModal from '@/components/model-manager/FieldModal';
 import DragDropFieldsList from '@/components/model-manager/DragDropFieldsList';
 import FormBuilderModal from '@/components/model-manager/FormBuilderModal';
 import { apiRequest, initializeCsrf } from '@/lib/csrf';
-
-interface ModelField {
-    uuid: string;
-    id: number;
-    entity_type: string;
-    name: string;
-    label: string;
-    description?: string;
-    field_type: string;
-    sort_order: number;
-    required: boolean;
-    is_active: boolean;
-    placeholder?: string;
-    help_text?: string;
-    options?: any[];
-    reference_table?: string;
-    validation?: Record<string, any>;
-    default_value?: any;
-    ui_config?: Record<string, any>;
-    is_master_relation?: boolean;
-    allow_multiple?: boolean;
-    max_items?: number;
-    icon?: string;
-    created_at?: string;
-    updated_at?: string;
-}
+import type { ModelManagerField, ModelFieldTypeMeta } from '@/types/model-manager';
 
 interface Props {
     entityType: string;
@@ -64,7 +39,7 @@ export default function ModelManager({
     const [status, setStatus] = useState<'active' | 'archived'>(initialStatus as 'active' | 'archived');
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
-    const [fieldTypes, setFieldTypes] = useState<Record<string, any>>({});
+    const [fieldTypes, setFieldTypes] = useState<Record<string, ModelFieldTypeMeta>>({});
     const [isSavingOrder, setIsSavingOrder] = useState(false);
     const [isBuilderOpen, setIsBuilderOpen] = useState(false);
 
@@ -170,8 +145,8 @@ export default function ModelManager({
             setTimeout(() => setSuccess(null), 3000);
             await loadFields();
             handleCloseModal();
-        } catch (err: any) {
-            const message = err.message || 'Ошибка при сохранении поля';
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Ошибка при сохранении поля';
             setError(message);
             throw err;
         }

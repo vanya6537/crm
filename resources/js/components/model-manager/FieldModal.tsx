@@ -16,19 +16,18 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import type { ModelFieldTypeMeta, ModelManagerField } from '@/types/model-manager';
+import type { FieldOption } from '@/types/entity-schema';
 
 interface FieldModalProps {
     entityType: string;
-    field?: any | null;
-    fieldTypes: Record<string, any>;
-    onSave: (data: any) => Promise<void>;
+    field?: ModelManagerField | null;
+    fieldTypes: Record<string, ModelFieldTypeMeta>;
+    onSave: (data: Partial<ModelManagerField>) => Promise<void>;
     onClose: () => void;
 }
 
-type SelectOption = {
-    label: string;
-    value: string;
-};
+type SelectOption = FieldOption;
 
 const FieldModal: React.FC<FieldModalProps> = ({
     entityType,
@@ -67,7 +66,7 @@ const FieldModal: React.FC<FieldModalProps> = ({
     const [error, setError] = useState<string | null>(null);
 
     const fieldTypeCards = useMemo(() => {
-        const items = Object.entries(fieldTypes).map(([key, meta]: [string, any]) => ({
+        const items = Object.entries(fieldTypes).map(([key, meta]) => ({
             key,
             label: meta?.label ?? key,
             description: meta?.description ?? '',
@@ -79,7 +78,7 @@ const FieldModal: React.FC<FieldModalProps> = ({
         const group3 = items.filter((t) => t.category === 'relations');
         const group4 = items.filter((t) => t.category === 'special');
 
-        const sort = (a: any, b: any) => a.label.localeCompare(b.label);
+        const sort = (a: { label: string }, b: { label: string }) => a.label.localeCompare(b.label);
         return {
             textAndDirectories: group1.sort(sort),
             numbersAndTime: group2.sort(sort),
@@ -114,7 +113,7 @@ const FieldModal: React.FC<FieldModalProps> = ({
         return Type;
     };
 
-    const handleFieldChange = (key: string, value: any) => {
+    const handleFieldChange = (key: string, value: unknown) => {
         if (key === 'field_type') {
             const nextType = String(value);
 

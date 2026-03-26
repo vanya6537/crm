@@ -16,6 +16,13 @@ interface DynamicFieldValuesProps {
 
 type RenderableValue = string | number | boolean | null | Array<string | number | boolean>;
 
+export interface DynamicFieldDisplayItem {
+    field: EntityFieldSchema;
+    formatted: RenderableValue;
+    rawValue: unknown;
+    displayValue: unknown;
+}
+
 function normalizeOptions(options?: Array<FieldOption | string> | null): Record<string, string> {
     if (!options) {
         return {};
@@ -81,16 +88,12 @@ function formatValue(field: EntityFieldSchema, value: unknown, displayValue: unk
     return fallback || JSON.stringify(source);
 }
 
-export function DynamicFieldValues({
-    entitySchema,
-    values = {},
-    dynamicFieldValues,
-    title = 'Дополнительные поля',
-    variant = 'section',
-    maxFields = 3,
-    emptyText = 'Нет дополнительных значений',
-}: DynamicFieldValuesProps) {
-    const items = entitySchema.dynamic_fields
+export function getDynamicFieldDisplayItems(
+    entitySchema: EntitySchema,
+    values: Record<string, unknown> = {},
+    dynamicFieldValues?: SerializedDynamicFieldValueMap,
+): DynamicFieldDisplayItem[] {
+    return entitySchema.dynamic_fields
         .map((field) => {
             const rawValue = dynamicFieldValues?.[field.name]?.value ?? values[field.name];
             const displayValue = dynamicFieldValues?.[field.name]?.display_value;
@@ -103,9 +106,23 @@ export function DynamicFieldValues({
             return {
                 field,
                 formatted,
+                rawValue,
+                displayValue,
             };
         })
-        .filter((item): item is { field: EntityFieldSchema; formatted: RenderableValue } => item !== null);
+        .filter((item): item is DynamicFieldDisplayItem => item !== null);
+}
+
+export function DynamicFieldValues({
+    entitySchema,
+    values = {},
+    dynamicFieldValues,
+    title = 'Дополнительные поля',
+    variant = 'section',
+    maxFields = 3,
+    emptyText = 'Нет дополнительных значений',
+}: DynamicFieldValuesProps) {
+    const items = getDynamicFieldDisplayItems(entitySchema, values, dynamicFieldValues);
 
     if (items.length === 0) {
         return variant === 'section' ? <p className="text-sm text-muted-foreground">{emptyText}</p> : null;

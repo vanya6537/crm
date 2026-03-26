@@ -3,31 +3,16 @@ import { GripVertical, Pencil, Trash2, Archive, RotateCcw, Info, Inbox } from 'l
 import { Button } from '@/components/ui/button';
 
 import { DragDropProvider, useDraggable } from '@/components/dnd/drag-drop';
-
-interface Field {
-    uuid: string;
-    id: number;
-    entity_type: string;
-    name: string;
-    label: string;
-    description?: string;
-    field_type: string;
-    required: boolean;
-    is_active: boolean;
-    sort_order: number;
-    reference_table?: string;
-    is_master_relation?: boolean;
-    allow_multiple?: boolean;
-}
+import type { ModelFieldTypeMeta, ModelManagerField } from '@/types/model-manager';
 
 interface DragDropFieldsListProps {
-    fields: Field[];
+    fields: ModelManagerField[];
     isLoading: boolean;
-    onEdit: (field: Field) => void | Promise<void>;
-    onDelete: (field: Field) => void | Promise<void>;
-    onToggleActive: (field: Field) => void | Promise<void>;
-    onReorder: (fields: Field[]) => void | Promise<void>;
-    fieldTypes: Record<string, any>;
+    onEdit: (field: ModelManagerField) => void | Promise<void>;
+    onDelete: (field: ModelManagerField) => void | Promise<void>;
+    onToggleActive: (field: ModelManagerField) => void | Promise<void>;
+    onReorder: (fields: ModelManagerField[]) => void | Promise<void>;
+    fieldTypes: Record<string, ModelFieldTypeMeta>;
     reorderDisabled?: boolean;
 }
 
@@ -50,7 +35,7 @@ const DragDropFieldsList: React.FC<DragDropFieldsListProps> = ({
     fieldTypes,
     reorderDisabled = false,
 }) => {
-    const [localFields, setLocalFields] = React.useState<Field[]>(fields);
+    const [localFields, setLocalFields] = React.useState<ModelManagerField[]>(fields);
 
     React.useEffect(() => {
         setLocalFields(fields);
@@ -69,7 +54,7 @@ const DragDropFieldsList: React.FC<DragDropFieldsListProps> = ({
             const byId = new Map(localFields.map((f) => [f.uuid, f] as const));
             const reordered = nextIds
                 .map((id) => byId.get(id))
-                .filter((f): f is Field => Boolean(f))
+                .filter((f): f is ModelManagerField => Boolean(f))
                 .map((f, idx) => ({
                     ...f,
                     sort_order: idx,
