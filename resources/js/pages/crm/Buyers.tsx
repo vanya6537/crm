@@ -22,6 +22,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { ResizableTable, type ResizableTableColumn } from '@/components/ui/resizable-table';
 import { BuyerForm } from './BuyerForm';
 import { DeleteConfirmationDialog } from '@/components/dialogs/DeleteConfirmationDialog';
+import { EntityDetailsDialog, type EntityDetailsSection } from '@/components/dialogs/EntityDetailsDialog';
 import { DynamicEntityFilters, appendDynamicFilterParams } from '@/components/forms/DynamicEntityFilters';
 import { DynamicFieldValues } from '@/components/forms/DynamicFieldValues';
 import { apiRequest } from '@/lib/csrf';
@@ -321,6 +322,41 @@ export default function Buyers({ buyers: initialBuyers, filters: initialFilters,
         },
     ];
 
+    const selectedBuyerSections: EntityDetailsSection[] = selectedBuyer
+        ? [
+              {
+                  title: 'Контакты',
+                  fields: [
+                      { label: 'Email', value: selectedBuyer.email },
+                      { label: 'Телефон', value: selectedBuyer.phone },
+                  ],
+              },
+              {
+                  title: 'Профиль',
+                  fields: [
+                      {
+                          label: 'Бюджет',
+                          value:
+                              selectedBuyer.budget_min && selectedBuyer.budget_max
+                                  ? `${(selectedBuyer.budget_min / 1000000).toFixed(1)} - ${(selectedBuyer.budget_max / 1000000).toFixed(1)}M ₽`
+                                  : '—',
+                      },
+                      { label: 'Источник', value: getSourceLabel(selectedBuyer.source) },
+                      {
+                          label: 'Статус',
+                          value:
+                              selectedBuyer.status === 'active'
+                                  ? 'Активный'
+                                  : selectedBuyer.status === 'converted'
+                                  ? 'Конвертирован'
+                                  : 'Потерян',
+                      },
+                      { label: 'Заметки', value: selectedBuyer.notes || '—' },
+                  ],
+              },
+          ]
+        : [];
+
     return (
         <>
             <Head title="клиенты и лиды" />
@@ -476,32 +512,17 @@ export default function Buyers({ buyers: initialBuyers, filters: initialFilters,
                         onConfirm={handleDelete}
                     />
 
-                    <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
-                        <DialogContent className="max-w-3xl">
-                            <DialogHeader>
-                                <DialogTitle>{selectedBuyer?.name || 'Карточка клиента'}</DialogTitle>
-                            </DialogHeader>
-                            {selectedBuyer && (
-                                <div className="space-y-4">
-                                    <div className="grid gap-3 md:grid-cols-2">
-                                        <div className="rounded-md border p-3">
-                                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Email</p>
-                                            <p className="text-sm">{selectedBuyer.email}</p>
-                                        </div>
-                                        <div className="rounded-md border p-3">
-                                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Телефон</p>
-                                            <p className="text-sm">{selectedBuyer.phone}</p>
-                                        </div>
-                                    </div>
-                                    <DynamicFieldValues
-                                        entitySchema={entitySchema}
-                                        values={selectedBuyer.custom_fields || {}}
-                                        dynamicFieldValues={selectedBuyer.dynamic_field_values}
-                                    />
-                                </div>
-                            )}
-                        </DialogContent>
-                    </Dialog>
+                    <EntityDetailsDialog
+                        open={isViewOpen}
+                        onOpenChange={setIsViewOpen}
+                        title={selectedBuyer?.name || 'Карточка клиента'}
+                        description="Metadata-driven detail view клиента"
+                        entitySchema={entitySchema}
+                        values={selectedBuyer?.custom_fields || {}}
+                        dynamicFieldValues={selectedBuyer?.dynamic_field_values}
+                        sections={selectedBuyerSections}
+                        exportFileName={selectedBuyer ? `buyer-${selectedBuyer.id}` : 'buyer-details'}
+                    />
                 </div>
             </CRMLayout>
         </>

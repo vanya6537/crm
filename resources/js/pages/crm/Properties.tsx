@@ -37,6 +37,7 @@ import { ResizableTable, type ResizableTableColumn } from '@/components/ui/resiz
 import { Label } from '@/components/ui/label';
 import { PropertyForm } from './PropertyForm';
 import { DeleteConfirmationDialog } from '@/components/dialogs/DeleteConfirmationDialog';
+import { EntityDetailsDialog, type EntityDetailsSection } from '@/components/dialogs/EntityDetailsDialog';
 import { DynamicEntityFilters, appendDynamicFilterParams } from '@/components/forms/DynamicEntityFilters';
 import { DynamicFieldValues } from '@/components/forms/DynamicFieldValues';
 import { apiRequest } from '@/lib/csrf';
@@ -398,6 +399,29 @@ export default function Properties({ properties, filters: initialFilters, agents
         [entitySchema, setIsDeleteModalOpen, setIsEditModalOpen, setIsViewModalOpen, setSelectedProperty]
     );
 
+    const selectedPropertySections: EntityDetailsSection[] = selectedProperty
+        ? [
+              {
+                  title: 'Объект',
+                  fields: [
+                      { label: 'Адрес', value: selectedProperty.address },
+                      { label: 'Город', value: selectedProperty.city },
+                      { label: 'Тип', value: typeLabels[selectedProperty.type] },
+                      { label: 'Статус', value: statusLabels[selectedProperty.status] },
+                  ],
+              },
+              {
+                  title: 'Параметры',
+                  fields: [
+                      { label: 'Цена', value: `₽ ${selectedProperty.price.toLocaleString()}` },
+                      { label: 'Площадь', value: selectedProperty.area ? `${selectedProperty.area} м²` : '—' },
+                      { label: 'Комнаты', value: selectedProperty.rooms || '—' },
+                      { label: 'Агент', value: selectedProperty.agent_name || '—' },
+                  ],
+              },
+          ]
+        : [];
+
     return (
         <>
             <Head title="Объекты недвижимости" />
@@ -602,33 +626,17 @@ export default function Properties({ properties, filters: initialFilters, agents
                 </Dialog>
 
 
-                {selectedProperty && (
-                    <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
-                        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-                            <DialogHeader>
-                                <DialogTitle>{selectedProperty.address}</DialogTitle>
-                                <DialogDescription>{selectedProperty.city}</DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-4">
-                                <div className="grid gap-3 md:grid-cols-2">
-                                    <div className="rounded-md border p-3">
-                                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Тип</p>
-                                        <p className="text-sm">{typeLabels[selectedProperty.type]}</p>
-                                    </div>
-                                    <div className="rounded-md border p-3">
-                                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Статус</p>
-                                        <p className="text-sm">{statusLabels[selectedProperty.status]}</p>
-                                    </div>
-                                </div>
-                                <DynamicFieldValues
-                                    entitySchema={entitySchema}
-                                    values={selectedProperty.custom_fields || {}}
-                                    dynamicFieldValues={selectedProperty.dynamic_field_values}
-                                />
-                            </div>
-                        </DialogContent>
-                    </Dialog>
-                )}
+                <EntityDetailsDialog
+                    open={isViewModalOpen}
+                    onOpenChange={setIsViewModalOpen}
+                    title={selectedProperty?.address || 'Карточка объекта'}
+                    description={selectedProperty?.city}
+                    entitySchema={entitySchema}
+                    values={selectedProperty?.custom_fields || {}}
+                    dynamicFieldValues={selectedProperty?.dynamic_field_values}
+                    sections={selectedPropertySections}
+                    exportFileName={selectedProperty ? `property-${selectedProperty.id}` : 'property-details'}
+                />
                 {/* Edit Modal */}
                 {selectedProperty && (
                     <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>

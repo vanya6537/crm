@@ -22,6 +22,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { ResizableTable, type ResizableTableColumn } from '@/components/ui/resizable-table';
 import { TransactionForm } from './TransactionForm';
 import { DeleteConfirmationDialog } from '@/components/dialogs/DeleteConfirmationDialog';
+import { EntityDetailsDialog, type EntityDetailsSection } from '@/components/dialogs/EntityDetailsDialog';
 import { DynamicEntityFilters, appendDynamicFilterParams } from '@/components/forms/DynamicEntityFilters';
 import { DynamicFieldValues } from '@/components/forms/DynamicFieldValues';
 import { apiRequest } from '@/lib/csrf';
@@ -379,6 +380,37 @@ export default function Transactions({
         },
     ];
 
+    const selectedTransactionSections: EntityDetailsSection[] = selectedTransaction
+        ? [
+              {
+                  title: 'Связи сделки',
+                  fields: [
+                      {
+                          label: 'Объект',
+                          value:
+                              selectedTransaction.property?.address
+                                  ? `${selectedTransaction.property.address}${selectedTransaction.property.city ? `, ${selectedTransaction.property.city}` : ''}`
+                                  : selectedTransaction.property_address || '—',
+                      },
+                      { label: 'Клиент', value: selectedTransaction.buyer?.name || selectedTransaction.buyer_name || '—' },
+                      { label: 'Агент', value: selectedTransaction.agent?.name || selectedTransaction.agent_name || '—' },
+                      { label: 'Статус', value: getStatusLabel(selectedTransaction.status) },
+                  ],
+              },
+              {
+                  title: 'Финансы и сроки',
+                  fields: [
+                      { label: 'Цена оффера', value: selectedTransaction.offer_price ? `₽ ${selectedTransaction.offer_price.toLocaleString()}` : '—' },
+                      { label: 'Финальная цена', value: selectedTransaction.final_price ? `₽ ${selectedTransaction.final_price.toLocaleString()}` : '—' },
+                      { label: 'Комиссия', value: selectedTransaction.commission_amount ? `₽ ${selectedTransaction.commission_amount.toLocaleString()}` : '—' },
+                      { label: 'Начата', value: selectedTransaction.started_at || '—' },
+                      { label: 'Закрыта', value: selectedTransaction.closed_at || '—' },
+                      { label: 'Заметки', value: selectedTransaction.notes || '—' },
+                  ],
+              },
+          ]
+        : [];
+
     return (
         <>
             <Head title="Реальные сделки" />
@@ -527,32 +559,17 @@ export default function Transactions({
                         onConfirm={handleDelete}
                     />
 
-                    <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
-                        <DialogContent className="max-w-3xl">
-                            <DialogHeader>
-                                <DialogTitle>{selectedTransaction ? `Сделка #${selectedTransaction.id}` : 'Карточка сделки'}</DialogTitle>
-                            </DialogHeader>
-                            {selectedTransaction && (
-                                <div className="space-y-4">
-                                    <div className="grid gap-3 md:grid-cols-2">
-                                        <div className="rounded-md border p-3">
-                                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Объект</p>
-                                            <p className="text-sm">{selectedTransaction.property?.address || selectedTransaction.property_address || '—'}</p>
-                                        </div>
-                                        <div className="rounded-md border p-3">
-                                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Клиент</p>
-                                            <p className="text-sm">{selectedTransaction.buyer?.name || selectedTransaction.buyer_name || '—'}</p>
-                                        </div>
-                                    </div>
-                                    <DynamicFieldValues
-                                        entitySchema={entitySchema}
-                                        values={selectedTransaction.custom_fields || {}}
-                                        dynamicFieldValues={selectedTransaction.dynamic_field_values}
-                                    />
-                                </div>
-                            )}
-                        </DialogContent>
-                    </Dialog>
+                    <EntityDetailsDialog
+                        open={isViewOpen}
+                        onOpenChange={setIsViewOpen}
+                        title={selectedTransaction ? `Сделка #${selectedTransaction.id}` : 'Карточка сделки'}
+                        description="Metadata-driven detail view сделки"
+                        entitySchema={entitySchema}
+                        values={selectedTransaction?.custom_fields || {}}
+                        dynamicFieldValues={selectedTransaction?.dynamic_field_values}
+                        sections={selectedTransactionSections}
+                        exportFileName={selectedTransaction ? `transaction-${selectedTransaction.id}` : 'transaction-details'}
+                    />
                 </div>
             </CRMLayout>
         </>

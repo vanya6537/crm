@@ -22,6 +22,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { ResizableTable, type ResizableTableColumn } from '@/components/ui/resizable-table';
 import { CommunicationForm, type Communication } from './CommunicationForm';
 import { DeleteConfirmationDialog } from '@/components/dialogs/DeleteConfirmationDialog';
+import { EntityDetailsDialog, type EntityDetailsSection } from '@/components/dialogs/EntityDetailsDialog';
 import { DynamicEntityFilters, appendDynamicFilterParams } from '@/components/forms/DynamicEntityFilters';
 import { DynamicFieldValues } from '@/components/forms/DynamicFieldValues';
 import { apiRequest } from '@/lib/csrf';
@@ -304,6 +305,34 @@ export default function Communications({
         },
     ];
 
+    const selectedCommunicationSections: EntityDetailsSection[] = selectedCommunication
+        ? [
+              {
+                  title: 'Коммуникация',
+                  fields: [
+                      { label: 'Тип', value: getTypeLabel(selectedCommunication.type) },
+                      { label: 'Направление', value: selectedCommunication.direction === 'inbound' ? 'Входящая' : 'Исходящая' },
+                      { label: 'Статус', value: getStatusLabel(selectedCommunication.status) },
+                      { label: 'Тема', value: selectedCommunication.subject || 'Без темы' },
+                  ],
+              },
+              {
+                  title: 'Содержимое',
+                  fields: [
+                      { label: 'Сообщение', value: selectedCommunication.body || '—' },
+                      {
+                          label: 'Следующий контакт',
+                          value: selectedCommunication.next_follow_up_at ? new Date(selectedCommunication.next_follow_up_at).toLocaleString('ru-RU') : '—',
+                      },
+                      {
+                          label: 'Сделка',
+                          value: selectedCommunication.transaction?.property?.address || selectedCommunication.transaction?.buyer?.name || '—',
+                      },
+                  ],
+              },
+          ]
+        : [];
+
     return (
         <>
             <Head title="Коммуникации" />
@@ -445,32 +474,17 @@ export default function Communications({
                         onConfirm={handleDelete}
                     />
 
-                    <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
-                        <DialogContent className="max-w-3xl">
-                            <DialogHeader>
-                                <DialogTitle>{selectedCommunication?.subject || 'Карточка коммуникации'}</DialogTitle>
-                            </DialogHeader>
-                            {selectedCommunication && (
-                                <div className="space-y-4">
-                                    <div className="grid gap-3 md:grid-cols-2">
-                                        <div className="rounded-md border p-3">
-                                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Тип</p>
-                                            <p className="text-sm">{getTypeLabel(selectedCommunication.type)}</p>
-                                        </div>
-                                        <div className="rounded-md border p-3">
-                                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Статус</p>
-                                            <p className="text-sm">{getStatusLabel(selectedCommunication.status)}</p>
-                                        </div>
-                                    </div>
-                                    <DynamicFieldValues
-                                        entitySchema={entitySchema}
-                                        values={selectedCommunication.custom_fields || {}}
-                                        dynamicFieldValues={selectedCommunication.dynamic_field_values}
-                                    />
-                                </div>
-                            )}
-                        </DialogContent>
-                    </Dialog>
+                    <EntityDetailsDialog
+                        open={isViewOpen}
+                        onOpenChange={setIsViewOpen}
+                        title={selectedCommunication?.subject || 'Карточка коммуникации'}
+                        description="Metadata-driven detail view коммуникации"
+                        entitySchema={entitySchema}
+                        values={selectedCommunication?.custom_fields || {}}
+                        dynamicFieldValues={selectedCommunication?.dynamic_field_values}
+                        sections={selectedCommunicationSections}
+                        exportFileName={selectedCommunication ? `communication-${selectedCommunication.id}` : 'communication-details'}
+                    />
                 </div>
             </CRMLayout>
         </>

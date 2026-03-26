@@ -22,6 +22,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { ResizableTable, type ResizableTableColumn } from '@/components/ui/resizable-table';
 import { PropertyShowingForm, type PropertyShowing } from './PropertyShowingForm';
 import { DeleteConfirmationDialog } from '@/components/dialogs/DeleteConfirmationDialog';
+import { EntityDetailsDialog, type EntityDetailsSection } from '@/components/dialogs/EntityDetailsDialog';
 import { DynamicEntityFilters, appendDynamicFilterParams } from '@/components/forms/DynamicEntityFilters';
 import { DynamicFieldValues } from '@/components/forms/DynamicFieldValues';
 import { apiRequest } from '@/lib/csrf';
@@ -293,6 +294,32 @@ export default function PropertyShowings({
         },
     ];
 
+    const selectedShowingSections: EntityDetailsSection[] = selectedShowing
+        ? [
+              {
+                  title: 'Показ',
+                  fields: [
+                      { label: 'Объект', value: selectedShowing.property?.address || '—' },
+                      { label: 'Покупатель', value: selectedShowing.buyer?.name || '—' },
+                      { label: 'Агент', value: selectedShowing.agent?.name || '—' },
+                      {
+                          label: 'Дата',
+                          value: selectedShowing.scheduled_at ? new Date(selectedShowing.scheduled_at).toLocaleString('ru-RU') : '—',
+                      },
+                  ],
+              },
+              {
+                  title: 'Результат',
+                  fields: [
+                      { label: 'Статус', value: getStatusLabel(selectedShowing.status) },
+                      { label: 'Оценка', value: selectedShowing.rating || '—' },
+                      { label: 'Заметки', value: selectedShowing.notes || '—' },
+                      { label: 'Завершен', value: selectedShowing.completed_at || '—' },
+                  ],
+              },
+          ]
+        : [];
+
     return (
         <>
             <Head title="Показы объектов" />
@@ -421,32 +448,17 @@ export default function PropertyShowings({
                         onConfirm={handleDelete}
                     />
 
-                    <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
-                        <DialogContent className="max-w-3xl">
-                            <DialogHeader>
-                                <DialogTitle>{selectedShowing?.property?.address || 'Карточка показа'}</DialogTitle>
-                            </DialogHeader>
-                            {selectedShowing && (
-                                <div className="space-y-4">
-                                    <div className="grid gap-3 md:grid-cols-2">
-                                        <div className="rounded-md border p-3">
-                                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Покупатель</p>
-                                            <p className="text-sm">{selectedShowing.buyer?.name || '—'}</p>
-                                        </div>
-                                        <div className="rounded-md border p-3">
-                                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Дата</p>
-                                            <p className="text-sm">{selectedShowing.scheduled_at ? new Date(selectedShowing.scheduled_at).toLocaleString('ru-RU') : '—'}</p>
-                                        </div>
-                                    </div>
-                                    <DynamicFieldValues
-                                        entitySchema={entitySchema}
-                                        values={selectedShowing.custom_fields || {}}
-                                        dynamicFieldValues={selectedShowing.dynamic_field_values}
-                                    />
-                                </div>
-                            )}
-                        </DialogContent>
-                    </Dialog>
+                    <EntityDetailsDialog
+                        open={isViewOpen}
+                        onOpenChange={setIsViewOpen}
+                        title={selectedShowing?.property?.address || 'Карточка показа'}
+                        description={selectedShowing?.buyer?.name ? `Покупатель: ${selectedShowing.buyer.name}` : 'Metadata-driven detail view показа'}
+                        entitySchema={entitySchema}
+                        values={selectedShowing?.custom_fields || {}}
+                        dynamicFieldValues={selectedShowing?.dynamic_field_values}
+                        sections={selectedShowingSections}
+                        exportFileName={selectedShowing ? `property-showing-${selectedShowing.id}` : 'property-showing-details'}
+                    />
                 </div>
             </CRMLayout>
         </>

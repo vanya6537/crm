@@ -22,6 +22,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { ResizableTable, type ResizableTableColumn } from '@/components/ui/resizable-table';
 import { AgentForm } from './AgentForm';
 import { DeleteConfirmationDialog } from '@/components/dialogs/DeleteConfirmationDialog';
+import { EntityDetailsDialog, type EntityDetailsSection } from '@/components/dialogs/EntityDetailsDialog';
 import { DynamicEntityFilters, appendDynamicFilterParams } from '@/components/forms/DynamicEntityFilters';
 import { DynamicFieldValues } from '@/components/forms/DynamicFieldValues';
 import { apiRequest } from '@/lib/csrf';
@@ -322,6 +323,38 @@ export default function Agents({ agents: initialAgents, filters: initialFilters,
         },
     ];
 
+    const selectedAgentSections: EntityDetailsSection[] = selectedAgent
+        ? [
+              {
+                  title: 'Контакты',
+                  fields: [
+                      { label: 'Email', value: selectedAgent.email },
+                      { label: 'Телефон', value: selectedAgent.phone },
+                      { label: 'Лицензия', value: selectedAgent.license_number || '—' },
+                  ],
+              },
+              {
+                  title: 'Профиль',
+                  fields: [
+                      {
+                          label: 'Статус',
+                          value: selectedAgent.status === 'active' ? 'Активный' : 'Неактивный',
+                      },
+                      {
+                          label: 'Специализация',
+                          value:
+                              selectedAgent.specialization === 'residential'
+                                  ? 'Жилая'
+                                  : selectedAgent.specialization === 'commercial'
+                                  ? 'Коммерческая'
+                                  : 'Люкс',
+                      },
+                      { label: 'Создан', value: selectedAgent.created_at },
+                  ],
+              },
+          ]
+        : [];
+
     return (
         <>
             <Head title="Полномочия и агенты" />
@@ -474,35 +507,20 @@ export default function Agents({ agents: initialAgents, filters: initialFilters,
                         isLoading={isLoading}
                         onConfirm={handleDelete}
                     />
+
+                    <EntityDetailsDialog
+                        open={isViewOpen}
+                        onOpenChange={setIsViewOpen}
+                        title={selectedAgent?.name || 'Карточка агента'}
+                        description="Metadata-driven detail view агента"
+                        entitySchema={entitySchema}
+                        values={selectedAgent?.custom_fields || {}}
+                        dynamicFieldValues={selectedAgent?.dynamic_field_values}
+                        sections={selectedAgentSections}
+                        exportFileName={selectedAgent ? `agent-${selectedAgent.id}` : 'agent-details'}
+                    />
                 </div>
             </CRMLayout>
         </>
     );
-
-                    <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
-                        <DialogContent className="max-w-3xl">
-                            <DialogHeader>
-                                <DialogTitle>{selectedAgent?.name || 'Карточка агента'}</DialogTitle>
-                            </DialogHeader>
-                            {selectedAgent && (
-                                <div className="space-y-4">
-                                    <div className="grid gap-3 md:grid-cols-2">
-                                        <div className="rounded-md border p-3">
-                                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Email</p>
-                                            <p className="text-sm">{selectedAgent.email}</p>
-                                        </div>
-                                        <div className="rounded-md border p-3">
-                                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Телефон</p>
-                                            <p className="text-sm">{selectedAgent.phone}</p>
-                                        </div>
-                                    </div>
-                                    <DynamicFieldValues
-                                        entitySchema={entitySchema}
-                                        values={selectedAgent.custom_fields || {}}
-                                        dynamicFieldValues={selectedAgent.dynamic_field_values}
-                                    />
-                                </div>
-                            )}
-                        </DialogContent>
-                    </Dialog>
 }

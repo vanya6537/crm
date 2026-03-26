@@ -20,7 +20,7 @@ import type { ModelManagerField, ModelFieldTypeMeta } from '@/types/model-manage
 interface Props {
     entityType: string;
     entityTypes: Record<string, string>;
-    fields: ModelField[];
+    fields: ModelManagerField[];
     initialStatus: string;
 }
 
@@ -32,9 +32,9 @@ export default function ModelManager({
 }: Props) {
     const { auth } = usePage().props;
     const [entityType, setEntityType] = useState(initialEntityType);
-    const [fields, setFields] = useState<ModelField[]>(initialFields);
+    const [fields, setFields] = useState<ModelManagerField[]>(initialFields);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedField, setSelectedField] = useState<ModelField | null>(null);
+    const [selectedField, setSelectedField] = useState<ModelManagerField | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [status, setStatus] = useState<'active' | 'archived'>(initialStatus as 'active' | 'archived');
     const [error, setError] = useState<string | null>(null);
@@ -104,7 +104,7 @@ export default function ModelManager({
         setIsModalOpen(true);
     };
 
-    const handleEditField = (field: ModelField) => {
+    const handleEditField = (field: ModelManagerField) => {
         setSelectedField(field);
         setIsModalOpen(true);
     };
@@ -114,7 +114,7 @@ export default function ModelManager({
         setSelectedField(null);
     };
 
-    const handleSaveField = async (fieldData: Partial<ModelField>) => {
+    const handleSaveField = async (fieldData: Partial<ModelManagerField>) => {
         try {
             if (selectedField) {
                 const response = await apiRequest(`/api/v1/model-fields/${entityType}/${selectedField.uuid}`, {
@@ -152,7 +152,7 @@ export default function ModelManager({
         }
     };
 
-    const handleDeleteField = async (field: ModelField) => {
+    const handleDeleteField = async (field: ModelManagerField) => {
         if (window.confirm(`Удалить поле "${field.label}"?`)) {
             try {
                 const response = await apiRequest(`/api/v1/model-fields/${entityType}/${field.uuid}`, {
@@ -172,7 +172,7 @@ export default function ModelManager({
         }
     };
 
-    const handleToggleActive = async (field: ModelField) => {
+    const handleToggleActive = async (field: ModelManagerField) => {
         try {
             const response = await apiRequest(`/api/v1/model-fields/${entityType}/${field.uuid}`, {
                 method: 'PUT',
@@ -193,8 +193,8 @@ export default function ModelManager({
     };
 
     const handlePatchField = async (
-        field: Pick<ModelField, 'uuid'>,
-        patch: Partial<ModelField>
+        field: Pick<ModelManagerField, 'uuid'>,
+        patch: Partial<ModelManagerField>
     ) => {
         const response = await apiRequest(`/api/v1/model-fields/${entityType}/${field.uuid}`, {
             method: 'PUT',
@@ -207,7 +207,7 @@ export default function ModelManager({
         }
 
         setFields((prev) =>
-            prev.map((f) => (f.uuid === field.uuid ? ({ ...f, ...patch } as ModelField) : f))
+            prev.map((f) => (f.uuid === field.uuid ? ({ ...f, ...patch } as ModelManagerField) : f))
         );
 
         if (patch.is_active !== undefined) {
@@ -215,7 +215,7 @@ export default function ModelManager({
         }
     };
 
-    const handleReorderFields = async (reorderedFields: ModelField[]) => {
+    const handleReorderFields = async (reorderedFields: ModelManagerField[]) => {
         setIsSavingOrder(true);
         try {
             const orderData = reorderedFields.map((f, idx) => ({
