@@ -1,7 +1,7 @@
 'use client';
 
 import { Head } from '@inertiajs/react';
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
     Home,
     Plus,
@@ -40,6 +40,7 @@ import { DeleteConfirmationDialog } from '@/components/dialogs/DeleteConfirmatio
 import { EntityDetailsDialog, type EntityDetailsSection } from '@/components/dialogs/EntityDetailsDialog';
 import { DynamicEntityFilters, appendDynamicFilterParams } from '@/components/forms/DynamicEntityFilters';
 import { DynamicFieldValues } from '@/components/forms/DynamicFieldValues';
+import { EntityAttentionPanel } from '@/components/attention/entity-attention-panel';
 import { apiRequest } from '@/lib/csrf';
 import type { EntitySchema, SerializedDynamicFieldValueMap } from '@/types/entity-schema';
 
@@ -187,6 +188,17 @@ export default function Properties({ properties, filters: initialFilters, agents
 
         return items;
     }, [propertyList, sortBy, sortOrder]);
+
+    useEffect(() => {
+        if (sortedProperties.length === 0) {
+            setSelectedProperty(null);
+            return;
+        }
+
+        if (!selectedProperty || !sortedProperties.some((property) => property.id === selectedProperty.id)) {
+            setSelectedProperty(sortedProperties[0]);
+        }
+    }, [selectedProperty, sortedProperties]);
 
     const handleCreate = async (data: Partial<Property>) => {
         setIsLoading(true);
@@ -587,20 +599,29 @@ export default function Properties({ properties, filters: initialFilters, agents
                             </Button>
                         </Card>
                     ) : (
-                        <ResizableTable
-                            data={sortedProperties}
-                            columns={columns}
-                            getRowId={(property) => String(property.id)}
-                            minTableWidth={980}
-                        />
-                    )}
+                        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+                            <div className="space-y-4">
+                                <ResizableTable
+                                    data={sortedProperties}
+                                    columns={columns}
+                                    getRowId={(property) => String(property.id)}
+                                    minTableWidth={980}
+                                    onRowClick={(property) => setSelectedProperty(property)}
+                                    rowClassName={(property) => selectedProperty?.id === property.id ? 'ring-1 ring-primary/30' : ''}
+                                />
 
-                    {/* Pagination Info */}
-                    {sortedProperties.length > 0 && (
-                        <div className="flex items-center justify-between text-sm text-muted-foreground">
-                            <span>
-                                Показано {sortedProperties.length} из {pagination.total} объектов
-                            </span>
+                                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                                    <span>
+                                        Показано {sortedProperties.length} из {pagination.total} объектов
+                                    </span>
+                                </div>
+                            </div>
+
+                            <EntityAttentionPanel
+                                entityType="Property"
+                                entityId={selectedProperty?.id}
+                                entityTitle={selectedProperty?.address}
+                            />
                         </div>
                     )}
                 </div>

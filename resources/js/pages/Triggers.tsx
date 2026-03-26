@@ -1,455 +1,399 @@
-import React, { useState, useEffect } from 'react'
-import { Head } from '@inertiajs/react'
-import { Plus, Settings, BarChart3, Zap, Filter, Search, CheckCircle2, AlertCircle } from 'lucide-react'
-import CRMLayout from '@/layouts/crm-layout'
-import { Button } from '@/components/ui/button'
+import { Head } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/radix/dialog'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+    Activity,
+    BarChart3,
+    CheckCircle2,
+    Filter,
+    Power,
+    Search,
+    ShieldAlert,
+    Sparkles,
+    Zap,
+} from 'lucide-react';
+import CRMLayout from '@/layouts/crm-layout';
+import { apiRequest } from '@/lib/csrf';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 
-interface TriggerTemplate {
-  id: number
-  code: string
-  name: string
-  description: string
-  category: string
-  event_type: string
-  entity_type: string
-  is_recommended: boolean
-  moscow_use_case: string
-  expected_impact: string
-  sample_notification?: any
-}
+type TriggerDefinition = {
+    id: number;
+    catalog_number: number;
+    code: string;
+    title: string;
+    family: string;
+    source_entity_type: string;
+    runtime_entity_type?: string | null;
+    source_event: string;
+    attention_state: string;
+    priority: string;
+    default_action?: string | null;
+    condition_summary?: string | null;
+    action_summary?: string | null;
+    is_mvp: boolean;
+    metadata?: {
+        activation_ready?: boolean;
+    };
+};
 
-interface ActiveTrigger {
-  id: number
-  trigger_template_id: number
-  name: string
-  description: string
-  category: string
-  is_enabled: boolean
-  execution_count: number
-  last_executed_at?: string
-}
+type TriggerCatalogResponse = {
+    data: {
+        data: TriggerDefinition[];
+    };
+};
 
-const categoryIcons: Record<string, string> = {
-  leads: '📞',
-  properties: '🏠',
-  buyers: '👤',
-  showings: '🚗',
-  owners: '👨‍💼',
-  deals: '💼',
-  messaging: '💬',
-  meta: '🎯',
-}
+type ActiveRule = {
+    id: number;
+    definition_id: number;
+    title: string;
+    family: string;
+    entity_type: string;
+    event_name: string;
+    attention_state: string;
+    priority: string;
+    is_active: boolean;
+    execution_count: number;
+    last_executed_at?: string | null;
+};
 
-const categoryLabels: Record<string, string> = {
-  leads: 'Лиды',
-  properties: 'Объекты',
-  buyers: 'Покупатели',
-  showings: 'Показы',
-  owners: 'Собственники',
-  deals: 'Сделки',
-  messaging: 'Мессенджеры',
-  meta: 'Комплексные',
-}
+type JournalRow = {
+    id: number;
+    title: string;
+    family: string;
+    status: string;
+    entity_type: string;
+    entity_id: number;
+    triggered_at: string;
+    error_message?: string | null;
+};
 
-export default function TriggersCatalog() {
-  const [templates, setTemplates] = useState<TriggerTemplate[]>([])
-  const [activeTriggers, setActiveTriggers] = useState<ActiveTrigger[]>([])
-  const [selectedCategory, setSelectedCategory] = useState<string>('leads')
-  const [searchTerm, setSearchTerm] = useState('')
-  const [loading, setLoading] = useState(true)
-  const [showSetupDialog, setShowSetupDialog] = useState(false)
-  const [selectedTemplate, setSelectedTemplate] = useState<TriggerTemplate | null>(null)
-  const [showStatsDialog, setShowStatsDialog] = useState(false)
-  const [stats, setStats] = useState<any>(null)
+type Overview = {
+    total_definitions: number;
+    mvp_definitions: number;
+    activation_ready: number;
+    active_rules: number;
+    active_rules_enabled: number;
+    executions_total: number;
+    families: Record<string, number>;
+    attention_states: Record<string, number>;
+    priorities: Record<string, number>;
+};
 
-  useEffect(() => {
-    loadTemplates()
-    loadActiveTriggers()
-    loadStats()
-  }, [selectedCategory])
+const familyLabels: Record<string, string> = {
+    leads: 'Лиды',
+    deals: 'Сделки',
+    showings: 'Показы',
+    properties: 'Объекты',
+    recommendations: 'Подборки',
+    documents: 'Документы',
+    finance: 'Финансы',
+    tasks: 'Дисциплина',
+    communications: 'Коммуникации',
+    owners: 'Собственники',
+    data_quality: 'Качество данных',
+    manager_efficiency: 'Эффективность менеджера',
+    sales_management: 'Руководитель',
+};
 
-  const loadTemplates = async () => {
-    try {
-      const response = await fetch(
-        `/api/v1/triggers/templates/category/${selectedCategory}`,
-        { headers: { 'Accept': 'application/json' } }
-      )
-      const data = await response.json()
-      setTemplates(data.templates || [])
-    } catch (error) {
-      console.error('Failed to load templates:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
+const priorityColors: Record<string, string> = {
+    critical: 'bg-red-100 text-red-800',
+    high: 'bg-orange-100 text-orange-800',
+    medium: 'bg-blue-100 text-blue-800',
+    low: 'bg-slate-100 text-slate-700',
+};
 
-  const loadActiveTriggers = async () => {
-    try {
-      const response = await fetch('/api/v1/triggers/', {
-        headers: { 'Accept': 'application/json' }
-      })
-      const data = await response.json()
-      setActiveTriggers(data)
-    } catch (error) {
-      console.error('Failed to load active triggers:', error)
-    }
-  }
+export default function TriggersPage() {
+    const [tab, setTab] = useState<'catalog' | 'active' | 'journal'>('catalog');
+    const [overview, setOverview] = useState<Overview | null>(null);
+    const [catalog, setCatalog] = useState<TriggerDefinition[]>([]);
+    const [activeRules, setActiveRules] = useState<ActiveRule[]>([]);
+    const [journal, setJournal] = useState<JournalRow[]>([]);
+    const [search, setSearch] = useState('');
+    const [family, setFamily] = useState('all');
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
 
-  const loadStats = async () => {
-    try {
-      const response = await fetch('/api/v1/triggers/stats', {
-        headers: { 'Accept': 'application/json' }
-      })
-      const data = await response.json()
-      setStats(data)
-    } catch (error) {
-      console.error('Failed to load stats:', error)
-    }
-  }
+    const loadData = async () => {
+        setLoading(true);
+        setError('');
 
-  const handleActivateTrigger = async (template: TriggerTemplate) => {
-    setSelectedTemplate(template)
-    setShowSetupDialog(true)
-  }
+        try {
+            const params = new URLSearchParams();
+            if (search) {
+                params.append('search', search);
+            }
+            if (family !== 'all') {
+                params.append('family', family);
+            }
 
-  const confirmActivate = async () => {
-    if (!selectedTemplate) return
+            const [overviewResponse, catalogResponse, activeResponse, journalResponse] = await Promise.all([
+                apiRequest('/api/v1/triggers/admin/overview'),
+                apiRequest(`/api/v1/triggers/catalog?${params.toString()}`),
+                apiRequest('/api/v1/triggers/admin/active'),
+                apiRequest('/api/v1/triggers/admin/journal?limit=30'),
+            ]);
 
-    try {
-      const response = await fetch('/api/v1/triggers/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          trigger_template_id: selectedTemplate.id,
-        }),
-      })
+            const overviewData = await overviewResponse.json();
+            const catalogData: TriggerCatalogResponse = await catalogResponse.json();
+            const activeData = await activeResponse.json();
+            const journalData = await journalResponse.json();
 
-      if (response.ok) {
-        await loadActiveTriggers()
-        setShowSetupDialog(false)
-        setSelectedTemplate(null)
-      }
-    } catch (error) {
-      console.error('Failed to activate trigger:', error)
-    }
-  }
+            setOverview(overviewData);
+            setCatalog(catalogData.data.data ?? []);
+            setActiveRules(activeData.data ?? []);
+            setJournal(journalData.data ?? []);
+        } catch (loadError) {
+            console.error(loadError);
+            setError('Не удалось загрузить центр правил.');
+        } finally {
+            setLoading(false);
+        }
+    };
 
-  const filteredTemplates = templates.filter(t =>
-    t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    t.description.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+    useEffect(() => {
+        void loadData();
+    }, [family]);
 
-  const isTemplateActive = (templateId: number) => {
-    return activeTriggers.some(t => t.trigger_template_id === templateId)
-  }
+    const activateDefinition = async (definitionId: number) => {
+        try {
+            const response = await apiRequest(`/api/v1/triggers/catalog/${definitionId}/activate`, {
+                method: 'POST',
+            });
 
-  return (
-    <>
-      <Head title="Триггеры для агентов" />
-      <CRMLayout
-        title="⚡ Каталог триггеров"
-        description="Готовые триггеры для московского агентства недвижимости"
-      >
-        <div className="space-y-6 p-6">
-          {/* Toolbar */}
-          <div className="flex justify-between items-start">
-            <Button onClick={() => setShowStatsDialog(true)} variant="outline" size="sm">
-              <BarChart3 className="h-4 w-4 mr-2" />
-              Статистика
-            </Button>
-          </div>
-        <Card className="bg-blue-50 border-blue-200">
-          <CardHeader>
-            <CardTitle className="text-blue-900">💡 Почему триггеры?</CardTitle>
-            <CardDescription className="text-blue-800">
-              Триггеры автоматизируют типовые рабочие процессы и увеличивают конверсию на 20-35%.
-              Выбирайте готовые триггеры или создавайте свои под вашу стратегию.
-            </CardDescription>
-          </CardHeader>
-        </Card>
+            if (!response.ok) {
+                const failure = await response.json();
+                throw new Error(failure.message || 'Не удалось активировать правило');
+            }
 
-        {/* Search and Filter */}
-        <div className="flex gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Поиск триггеров..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-            />
-          </div>
-          <Button variant="outline">
-            <Filter className="h-4 w-4 mr-2" />
-            Фильтры
-          </Button>
-        </div>
+            await loadData();
+        } catch (activationError) {
+            console.error(activationError);
+            setError(activationError instanceof Error ? activationError.message : 'Не удалось активировать правило.');
+        }
+    };
 
-        {/* Category Navigation */}
-        <div className="flex gap-2 overflow-x-auto pb-4">
-          {Object.entries(categoryLabels).map(([key, label]) => (
-            <Button
-              key={key}
-              variant={selectedCategory === key ? 'default' : 'outline'}
-              onClick={() => setSelectedCategory(key)}
-              className="shrink-0"
-            >
-              {categoryIcons[key]} {label}
-            </Button>
-          ))}
-        </div>
+    const toggleRule = async (ruleId: number) => {
+        try {
+            await apiRequest(`/api/v1/triggers/admin/active/${ruleId}/toggle`, {
+                method: 'POST',
+            });
 
-        {/* Trigger Cards */}
-        {loading ? (
-          <div className="text-center py-8 text-gray-500">Загрузка...</div>
-        ) : filteredTemplates.length > 0 ? (
-          <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
-            {filteredTemplates.map((template) => {
-              const isActive = isTemplateActive(template.id)
-              return (
-                <Card key={template.id} className={isActive ? 'border-green-500 bg-green-50' : ''}>
-                  <CardHeader>
-                    <div className="flex justify-between items-start gap-2">
-                      <div className="flex-1">
-                        <CardTitle className="text-lg">{template.name}</CardTitle>
-                        <CardDescription>{template.description}</CardDescription>
-                      </div>
-                      {isActive && (
-                        <Badge className="bg-green-600">Активен</Badge>
-                      )}
-                      {template.is_recommended && (
-                        <Badge variant="secondary">⭐ Рекомендуется</Badge>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="text-sm">
-                      <p className="font-semibold text-gray-700">Полезно для Москвы:</p>
-                      <p className="text-gray-600">{template.moscow_use_case}</p>
+            await loadData();
+        } catch (toggleError) {
+            console.error(toggleError);
+            setError('Не удалось переключить активное правило.');
+        }
+    };
+
+    return (
+        <>
+            <Head title="Настройки правил" />
+            <CRMLayout title="Настройки правил" description="Единый rule center для 215 CRM-триггеров, активных правил и журнала срабатываний.">
+                <div className="space-y-6 p-4 md:p-6">
+                    <div className="grid gap-4 md:grid-cols-4">
+                        <Card className="p-4">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Каталог</p>
+                                    <p className="text-2xl font-semibold">{overview?.total_definitions ?? 0}</p>
+                                </div>
+                                <Zap className="h-5 w-5 text-blue-500" />
+                            </div>
+                        </Card>
+                        <Card className="p-4">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm text-muted-foreground">MVP</p>
+                                    <p className="text-2xl font-semibold">{overview?.mvp_definitions ?? 0}</p>
+                                </div>
+                                <Sparkles className="h-5 w-5 text-green-500" />
+                            </div>
+                        </Card>
+                        <Card className="p-4">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Activation-ready</p>
+                                    <p className="text-2xl font-semibold">{overview?.activation_ready ?? 0}</p>
+                                </div>
+                                <CheckCircle2 className="h-5 w-5 text-orange-500" />
+                            </div>
+                        </Card>
+                        <Card className="p-4">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Активные правила</p>
+                                    <p className="text-2xl font-semibold">{overview?.active_rules_enabled ?? 0}</p>
+                                </div>
+                                <ShieldAlert className="h-5 w-5 text-red-500" />
+                            </div>
+                        </Card>
                     </div>
 
-                    <div className="text-sm">
-                      <p className="font-semibold text-gray-700">Ожидаемый эффект:</p>
-                      <p className="text-green-700 font-medium">{template.expected_impact}</p>
-                    </div>
+                    <Card className="p-4">
+                        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                            <div className="flex flex-wrap gap-2">
+                                <Button variant={tab === 'catalog' ? 'default' : 'outline'} onClick={() => setTab('catalog')}>
+                                    <Filter className="mr-2 h-4 w-4" />
+                                    Каталог
+                                </Button>
+                                <Button variant={tab === 'active' ? 'default' : 'outline'} onClick={() => setTab('active')}>
+                                    <Power className="mr-2 h-4 w-4" />
+                                    Активные
+                                </Button>
+                                <Button variant={tab === 'journal' ? 'default' : 'outline'} onClick={() => setTab('journal')}>
+                                    <Activity className="mr-2 h-4 w-4" />
+                                    Журнал
+                                </Button>
+                            </div>
 
-                    <div className="flex gap-2 pt-3 border-t">
-                      <Badge variant="outline" className="text-xs">
-                        {template.event_type === 'time_based' ? '⏰' : '🔔'} {template.event_type}
-                      </Badge>
-                      <Badge variant="outline" className="text-xs">
-                        {template.entity_type}
-                      </Badge>
-                    </div>
+                            <div className="flex flex-col gap-3 md:flex-row md:items-center">
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                    <Input
+                                        value={search}
+                                        onChange={(event) => setSearch(event.target.value)}
+                                        placeholder="Поиск по правилам"
+                                        className="pl-10 md:w-72"
+                                    />
+                                </div>
+                                <Button variant="outline" onClick={() => void loadData()}>
+                                    <BarChart3 className="mr-2 h-4 w-4" />
+                                    Обновить
+                                </Button>
+                            </div>
+                        </div>
 
-                    <div className="flex gap-2 pt-3">
-                      {!isActive && (
-                        <Button
-                          size="sm"
-                          onClick={() => handleActivateTrigger(template)}
-                          className="flex-1"
-                        >
-                          <Plus className="h-4 w-4 mr-1" />
-                          Активировать
-                        </Button>
-                      )}
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="flex-1"
-                      >
-                        <Settings className="h-4 w-4 mr-1" />
-                        Настроить
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div>
-        ) : (
-          <div className="text-center py-12 text-gray-500">
-            Триггеры в этой категории не найдены
-          </div>
-        )}
+                        <div className="mt-4 flex flex-wrap gap-2">
+                            <Button variant={family === 'all' ? 'default' : 'outline'} size="sm" onClick={() => setFamily('all')}>
+                                Все семьи
+                            </Button>
+                            {Object.entries(familyLabels).map(([key, label]) => (
+                                <Button key={key} variant={family === key ? 'default' : 'outline'} size="sm" onClick={() => setFamily(key)}>
+                                    {label}
+                                </Button>
+                            ))}
+                        </div>
+                    </Card>
 
-        {/* Active Triggers Section */}
-        {activeTriggers.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>✅ Активные триггеры</CardTitle>
-              <CardDescription>
-                {activeTriggers.length} триггер{activeTriggers.length % 10 === 1 ? '' : 'ов'} работает
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {activeTriggers.map((trigger) => (
-                  <div
-                    key={trigger.id}
-                    className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg"
-                  >
-                    <div className="flex-1">
-                      <p className="font-medium text-green-900">{trigger.name}</p>
-                      <p className="text-sm text-green-800">
-                        Выполнено: {trigger.execution_count} раз
-                        {trigger.last_executed_at && (
-                          <span className="ml-2">
-                            (последний раз: {new Date(trigger.last_executed_at).toLocaleDateString('ru-RU')})
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      {trigger.is_enabled && (
-                        <CheckCircle2 className="h-5 w-5 text-green-600" />
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-    </CRMLayout>
+                    {error ? (
+                        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                            {error}
+                        </div>
+                    ) : null}
 
-      {/* Setup Dialog */}
-      <Dialog open={showSetupDialog} onOpenChange={setShowSetupDialog}>
-        {selectedTemplate && (
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Активировать триггер</DialogTitle>
-              <DialogDescription>
-                {selectedTemplate.name}
-              </DialogDescription>
-            </DialogHeader>
+                    {loading ? (
+                        <Card className="p-10 text-center text-sm text-muted-foreground">Загрузка rule center...</Card>
+                    ) : null}
 
-            <div className="space-y-4 py-4">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-sm text-blue-900">
-                  {selectedTemplate.description}
-                </p>
-              </div>
+                    {!loading && tab === 'catalog' ? (
+                        <div className="grid gap-4 xl:grid-cols-2">
+                            {catalog.map((definition) => (
+                                <Card key={definition.id} className="p-4">
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div>
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <p className="text-sm text-muted-foreground">#{definition.catalog_number}</p>
+                                                <Badge>{familyLabels[definition.family] ?? definition.family}</Badge>
+                                                <Badge className={priorityColors[definition.priority] ?? priorityColors.medium}>{definition.priority}</Badge>
+                                                {definition.is_mvp ? <Badge variant="secondary">MVP</Badge> : null}
+                                                {definition.metadata?.activation_ready ? <Badge variant="outline">Activation-ready</Badge> : null}
+                                            </div>
+                                            <h3 className="mt-2 text-lg font-semibold">{definition.title}</h3>
+                                            <p className="mt-1 text-sm text-muted-foreground">{definition.condition_summary}</p>
+                                        </div>
+                                    </div>
 
-              <div>
-                <p className="font-semibold text-gray-700 mb-2">Как это работает:</p>
-                <p className="text-sm text-gray-600">
-                  Триггер будет автоматически активирован для вашей команды.
-                  Событие: <code className="bg-gray-100 px-2 py-1 rounded text-xs">{selectedTemplate.event_type}</code>
-                </p>
-              </div>
+                                    <div className="mt-4 grid gap-3 text-sm md:grid-cols-2">
+                                        <div>
+                                            <p className="font-medium text-muted-foreground">Runtime</p>
+                                            <p>{definition.runtime_entity_type || 'Требует отдельной модели/агрегации'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="font-medium text-muted-foreground">Событие</p>
+                                            <p>{definition.source_event}</p>
+                                        </div>
+                                        <div className="md:col-span-2">
+                                            <p className="font-medium text-muted-foreground">Действие по умолчанию</p>
+                                            <p>{definition.default_action || definition.action_summary || 'Без действия по умолчанию'}</p>
+                                        </div>
+                                    </div>
 
-              {selectedTemplate.sample_notification && (
-                <div>
-                  <p className="font-semibold text-gray-700 mb-2">Пример уведомления:</p>
-                  <div className="bg-gray-100 p-3 rounded text-sm text-gray-700 italic">
-                    {selectedTemplate.sample_notification.text}
-                  </div>
+                                    <div className="mt-4 flex flex-wrap gap-2">
+                                        <Button
+                                            size="sm"
+                                            onClick={() => void activateDefinition(definition.id)}
+                                            disabled={!definition.metadata?.activation_ready}
+                                        >
+                                            <Zap className="mr-2 h-4 w-4" />
+                                            Активировать правило
+                                        </Button>
+                                        {!definition.metadata?.activation_ready ? (
+                                            <p className="text-xs text-muted-foreground">
+                                                Правило пока не привязано к текущей runtime-модели.
+                                            </p>
+                                        ) : null}
+                                    </div>
+                                </Card>
+                            ))}
+                        </div>
+                    ) : null}
+
+                    {!loading && tab === 'active' ? (
+                        <div className="space-y-4">
+                            {activeRules.map((rule) => (
+                                <Card key={rule.id} className="p-4">
+                                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                                        <div>
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <h3 className="text-lg font-semibold">{rule.title}</h3>
+                                                <Badge>{familyLabels[rule.family] ?? rule.family}</Badge>
+                                                <Badge className={priorityColors[rule.priority] ?? priorityColors.medium}>{rule.priority}</Badge>
+                                                <Badge variant="outline">{rule.attention_state}</Badge>
+                                            </div>
+                                            <p className="mt-1 text-sm text-muted-foreground">
+                                                {rule.entity_type} • {rule.event_name} • Выполнено: {rule.execution_count}
+                                            </p>
+                                        </div>
+
+                                        <div className="flex flex-wrap gap-2">
+                                            <Button size="sm" variant={rule.is_active ? 'outline' : 'default'} onClick={() => void toggleRule(rule.id)}>
+                                                <Power className="mr-2 h-4 w-4" />
+                                                {rule.is_active ? 'Отключить' : 'Включить'}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </Card>
+                            ))}
+                        </div>
+                    ) : null}
+
+                    {!loading && tab === 'journal' ? (
+                        <div className="space-y-4">
+                            {journal.map((row) => (
+                                <Card key={row.id} className="p-4">
+                                    <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+                                        <div>
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <h3 className="text-base font-semibold">{row.title}</h3>
+                                                <Badge>{familyLabels[row.family] ?? row.family}</Badge>
+                                                <Badge variant={row.status === 'failed' ? 'destructive' : 'secondary'}>{row.status}</Badge>
+                                            </div>
+                                            <p className="mt-1 text-sm text-muted-foreground">
+                                                {row.entity_type} #{row.entity_id} • {new Date(row.triggered_at).toLocaleString('ru-RU')}
+                                            </p>
+                                        </div>
+                                        {row.error_message ? (
+                                            <p className="max-w-xl text-sm text-red-600">{row.error_message}</p>
+                                        ) : null}
+                                    </div>
+                                </Card>
+                            ))}
+                        </div>
+                    ) : null}
                 </div>
-              )}
-            </div>
-
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setShowSetupDialog(false)}
-              >
-                Отмена
-              </Button>
-              <Button onClick={confirmActivate} className="bg-green-600 hover:bg-green-700">
-                ✓ Активировать
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        )}
-      </Dialog>
-
-      {/* Statistics Dialog */}
-      <Dialog open={showStatsDialog} onOpenChange={setShowStatsDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Статистика триггеров</DialogTitle>
-          </DialogHeader>
-
-          {stats && (
-            <div className="space-y-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="text-3xl font-bold text-blue-600">
-                      {stats.total_templates}
-                    </div>
-                    <p className="text-sm text-gray-600">Всего триггеров</p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="text-3xl font-bold text-green-600">
-                      {stats.active_triggers}
-                    </div>
-                    <p className="text-sm text-gray-600">Активных</p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="text-3xl font-bold text-purple-600">
-                      {stats.total_executions}
-                    </div>
-                    <p className="text-sm text-gray-600">Всего выполнено</p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="text-3xl font-bold text-green-600">
-                      {stats.successful_executions}
-                    </div>
-                    <p className="text-sm text-gray-600">Успешно</p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {stats.by_category && stats.by_category.length > 0 && (
-                <div>
-                  <p className="font-semibold text-gray-700 mb-2">По категориям:</p>
-                  <div className="space-y-2">
-                    {stats.by_category.map((cat: any) => (
-                      <div key={cat.category} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                        <span className="text-sm">{categoryIcons[cat.category]} {categoryLabels[cat.category]}</span>
-                        <Badge>{cat.count}</Badge>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          <DialogFooter>
-            <Button onClick={() => setShowStatsDialog(false)}>Закрыть</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
-  )
+            </CRMLayout>
+        </>
+    );
 }

@@ -45,6 +45,7 @@ export type ResizableTableProps<TData> = {
     data: TData[];
     columns: Array<ResizableTableColumn<TData>>;
     getRowId: (row: TData) => string;
+    onRowClick?: (row: TData) => void;
 
     className?: string;
     minTableWidth?: number;
@@ -92,6 +93,7 @@ export function ResizableTable<TData>(props: ResizableTableProps<TData>) {
         data,
         columns,
         getRowId,
+        onRowClick,
         className,
         minTableWidth = 960,
         emptyState,
@@ -334,8 +336,10 @@ export function ResizableTable<TData>(props: ResizableTableProps<TData>) {
                                             className={cn(
                                                 "py-3.5 group relative transition-colors duration-150 border-b border-border flex",
                                                 isSelected ? "bg-muted/30" : "bg-muted/5 hover:bg-muted/20",
+                                                onRowClick ? 'cursor-pointer' : null,
                                                 rowClassName?.(row)
                                             )}
+                                            onClick={() => onRowClick?.(row)}
                                         >
                                             {enableRowSelection && (
                                                 <div
@@ -346,6 +350,7 @@ export function ResizableTable<TData>(props: ResizableTableProps<TData>) {
                                                         type="checkbox"
                                                         className="w-4 h-4 rounded border-border/40 cursor-pointer"
                                                         checked={isSelected}
+                                                        onClick={(event) => event.stopPropagation()}
                                                         onChange={() => toggleRowSelection(rowId)}
                                                     />
                                                 </div>

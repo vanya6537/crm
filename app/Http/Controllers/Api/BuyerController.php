@@ -6,6 +6,7 @@ use App\CRM\Services\EntityListQueryService;
 use App\CRM\Services\EntitySchemaService;
 use App\Http\Controllers\Controller;
 use App\Models\Buyer;
+use App\ProcessManagement\Services\TriggerService;
 use Illuminate\Http\Request;
 
 class BuyerController extends Controller
@@ -51,7 +52,7 @@ class BuyerController extends Controller
         return response()->json($buyers);
     }
 
-    public function store(Request $request, EntitySchemaService $entitySchemaService)
+    public function store(Request $request, EntitySchemaService $entitySchemaService, TriggerService $triggerService)
     {
         $rules = $entitySchemaService->getValidationRules('buyer');
         $rules['email'][] = 'unique:buyers,email';
@@ -66,7 +67,10 @@ class BuyerController extends Controller
 
         $buyer = Buyer::create($payload);
 
-        return response()->json($entitySchemaService->serializeModel($buyer, 'buyer'), 201);
+        $serialized = $entitySchemaService->serializeModel($buyer->fresh(), 'buyer');
+        $triggerService->dispatchLifecycleEvents('Buyer', $serialized, 'created');
+
+        return response()->json($serialized, 201);
     }
 
     public function show(Buyer $buyer, EntitySchemaService $entitySchemaService)
@@ -74,8 +78,10 @@ class BuyerController extends Controller
         return response()->json($entitySchemaService->serializeModel($buyer, 'buyer'));
     }
 
-    public function update(Request $request, Buyer $buyer, EntitySchemaService $entitySchemaService)
+    public function update(Request $request, Buyer $buyer, EntitySchemaService $entitySchemaService, TriggerService $triggerService)
     {
+        $previous = $entitySchemaService->serializeModel($buyer, 'buyer');
+
         $rules = $entitySchemaService->getValidationRules('buyer', true);
         $rules['email'][] = 'unique:buyers,email,' . $buyer->id;
         $rules['preferences_json'] = ['nullable', 'array'];
@@ -93,12 +99,18 @@ class BuyerController extends Controller
 
         $buyer->update($payload);
 
-        return response()->json($entitySchemaService->serializeModel($buyer->fresh(), 'buyer'));
+        $serialized = $entitySchemaService->serializeModel($buyer->fresh(), 'buyer');
+        $triggerService->dispatchLifecycleEvents('Buyer', $serialized, 'updated', $previous);
+
+        return response()->json($serialized);
     }
 
-    public function destroy(Buyer $buyer)
+    public function destroy(Buyer $buyer, EntitySchemaService $entitySchemaService, TriggerService $triggerService)
     {
+        $serialized = $entitySchemaService->serializeModel($buyer, 'buyer');
         $buyer->delete();
+
+        $triggerService->dispatchLifecycleEvents('Buyer', $serialized, 'deleted');
 
         return response()->json(null, 204);
     }

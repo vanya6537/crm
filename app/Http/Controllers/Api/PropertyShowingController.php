@@ -6,6 +6,7 @@ use App\CRM\Services\EntityListQueryService;
 use App\CRM\Services\EntitySchemaService;
 use App\Http\Controllers\Controller;
 use App\Models\PropertyShowing;
+use App\ProcessManagement\Services\TriggerService;
 use Illuminate\Http\Request;
 
 class PropertyShowingController extends Controller
@@ -59,7 +60,7 @@ class PropertyShowingController extends Controller
         return response()->json($showings);
     }
 
-    public function store(Request $request, EntitySchemaService $entitySchemaService)
+    public function store(Request $request, EntitySchemaService $entitySchemaService, TriggerService $triggerService)
     {
         $rules = $entitySchemaService->getValidationRules('property_showing');
         $rules['feedback'] = ['nullable', 'array'];
@@ -76,8 +77,11 @@ class PropertyShowingController extends Controller
 
         $showing = PropertyShowing::create($payload);
 
+        $serialized = $entitySchemaService->serializeModel($showing->load(['property', 'buyer', 'agent']), 'property_showing');
+        $triggerService->dispatchLifecycleEvents('PropertyShowing', $serialized, 'created');
+
         return response()->json(
-            $entitySchemaService->serializeModel($showing->load(['property', 'buyer', 'agent']), 'property_showing'),
+            $serialized,
             201
         );
     }
@@ -89,8 +93,10 @@ class PropertyShowingController extends Controller
         );
     }
 
-    public function update(Request $request, PropertyShowing $propertyShowing, EntitySchemaService $entitySchemaService)
+    public function update(Request $request, PropertyShowing $propertyShowing, EntitySchemaService $entitySchemaService, TriggerService $triggerService)
     {
+        $previous = $entitySchemaService->serializeModel($propertyShowing->load(['property', 'buyer', 'agent']), 'property_showing');
+
         $rules = $entitySchemaService->getValidationRules('property_showing', true);
         $rules['feedback'] = ['nullable', 'array'];
         $rules['photos'] = ['nullable', 'array'];
@@ -110,14 +116,20 @@ class PropertyShowingController extends Controller
 
         $propertyShowing->update($payload);
 
+        $serialized = $entitySchemaService->serializeModel($propertyShowing->fresh()->load(['property', 'buyer', 'agent']), 'property_showing');
+        $triggerService->dispatchLifecycleEvents('PropertyShowing', $serialized, 'updated', $previous);
+
         return response()->json(
-            $entitySchemaService->serializeModel($propertyShowing->fresh()->load(['property', 'buyer', 'agent']), 'property_showing')
+            $serialized
         );
     }
 
-    public function destroy(PropertyShowing $propertyShowing)
+    public function destroy(PropertyShowing $propertyShowing, EntitySchemaService $entitySchemaService, TriggerService $triggerService)
     {
+        $serialized = $entitySchemaService->serializeModel($propertyShowing->load(['property', 'buyer', 'agent']), 'property_showing');
         $propertyShowing->delete();
+
+        $triggerService->dispatchLifecycleEvents('PropertyShowing', $serialized, 'deleted');
 
         return response()->json(null, 204);
     }

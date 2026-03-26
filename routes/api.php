@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\AgentController;
 use App\Http\Controllers\Api\BuyerController;
 use App\Http\Controllers\Api\CommunicationController;
 use App\Http\Controllers\Api\AttentionController;
+use App\Http\Controllers\Api\TriggerCatalogController;
 use App\Http\Controllers\Api\PropertyShowingController;
 use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\Api\ModelFieldController;
@@ -92,6 +93,16 @@ Route::prefix('v1')->middleware($apiMiddleware)->group(function () {
         // Analytics
         Route::get('/logs/executions', [TriggerController::class, 'getExecutionLogs']);
         Route::get('/stats', [TriggerController::class, 'getStatistics']);
+
+        // Unified catalog
+        Route::get('/catalog', [TriggerCatalogController::class, 'catalog']);
+        Route::get('/catalog/families', [TriggerCatalogController::class, 'families']);
+        Route::get('/catalog/{definition}', [TriggerCatalogController::class, 'showDefinition']);
+        Route::post('/catalog/{definition}/activate', [TriggerCatalogController::class, 'activateDefinition']);
+        Route::get('/admin/overview', [TriggerCatalogController::class, 'overview']);
+        Route::get('/admin/active', [TriggerCatalogController::class, 'activeRules']);
+        Route::get('/admin/journal', [TriggerCatalogController::class, 'journal']);
+        Route::post('/admin/active/{trigger}/toggle', [TriggerCatalogController::class, 'toggleActiveRule']);
     });
 
     // ===== Property Routes =====

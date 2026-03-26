@@ -6,6 +6,7 @@ use App\CRM\Services\EntityListQueryService;
 use App\CRM\Services\EntitySchemaService;
 use App\Http\Controllers\Controller;
 use App\Models\Communication;
+use App\ProcessManagement\Services\TriggerService;
 use Illuminate\Http\Request;
 
 class CommunicationController extends Controller
@@ -56,7 +57,7 @@ class CommunicationController extends Controller
         return response()->json($communications);
     }
 
-    public function store(Request $request, EntitySchemaService $entitySchemaService)
+    public function store(Request $request, EntitySchemaService $entitySchemaService, TriggerService $triggerService)
     {
         $rules = $entitySchemaService->getValidationRules('communication');
         $rules['metadata_json'] = ['nullable', 'array'];
@@ -74,8 +75,11 @@ class CommunicationController extends Controller
 
         $communication = Communication::create($payload);
 
+        $serialized = $entitySchemaService->serializeModel($communication->load(['transaction.property', 'transaction.buyer', 'transaction.agent']), 'communication');
+        $triggerService->dispatchLifecycleEvents('Communication', $serialized, 'created');
+
         return response()->json(
-            $entitySchemaService->serializeModel($communication->load(['transaction.property', 'transaction.buyer', 'transaction.agent']), 'communication'),
+            $serialized,
             201
         );
     }
@@ -87,8 +91,10 @@ class CommunicationController extends Controller
         );
     }
 
-    public function update(Request $request, Communication $communication, EntitySchemaService $entitySchemaService)
+    public function update(Request $request, Communication $communication, EntitySchemaService $entitySchemaService, TriggerService $triggerService)
     {
+        $previous = $entitySchemaService->serializeModel($communication->load(['transaction.property', 'transaction.buyer', 'transaction.agent']), 'communication');
+
         $rules = $entitySchemaService->getValidationRules('communication', true);
         $rules['metadata_json'] = ['nullable', 'array'];
         $rules['attachments'] = ['nullable', 'array'];
@@ -109,14 +115,20 @@ class CommunicationController extends Controller
 
         $communication->update($payload);
 
+        $serialized = $entitySchemaService->serializeModel($communication->fresh()->load(['transaction.property', 'transaction.buyer', 'transaction.agent']), 'communication');
+        $triggerService->dispatchLifecycleEvents('Communication', $serialized, 'updated', $previous);
+
         return response()->json(
-            $entitySchemaService->serializeModel($communication->fresh()->load(['transaction.property', 'transaction.buyer', 'transaction.agent']), 'communication')
+            $serialized
         );
     }
 
-    public function destroy(Communication $communication)
+    public function destroy(Communication $communication, EntitySchemaService $entitySchemaService, TriggerService $triggerService)
     {
+        $serialized = $entitySchemaService->serializeModel($communication->load(['transaction.property', 'transaction.buyer', 'transaction.agent']), 'communication');
         $communication->delete();
+
+        $triggerService->dispatchLifecycleEvents('Communication', $serialized, 'deleted');
 
         return response()->json(null, 204);
     }

@@ -1,7 +1,7 @@
 'use client';
 
 import { Head } from '@inertiajs/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AlertCircle, Edit2, Eye, Trash2, Plus } from 'lucide-react';
 import CRMLayout from '@/layouts/crm-layout';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/radix/dialog';
@@ -25,6 +25,7 @@ import { DeleteConfirmationDialog } from '@/components/dialogs/DeleteConfirmatio
 import { EntityDetailsDialog, type EntityDetailsSection } from '@/components/dialogs/EntityDetailsDialog';
 import { DynamicEntityFilters, appendDynamicFilterParams } from '@/components/forms/DynamicEntityFilters';
 import { DynamicFieldValues } from '@/components/forms/DynamicFieldValues';
+import { EntityAttentionPanel } from '@/components/attention/entity-attention-panel';
 import { apiRequest } from '@/lib/csrf';
 import type { EntitySchema, SerializedDynamicFieldValueMap } from '@/types/entity-schema';
 
@@ -109,6 +110,17 @@ export default function Transactions({
     const [search, setSearch] = useState(filters.search || '');
     const [statusFilter, setStatusFilter] = useState(filters.status || '');
     const [dynamicFilters, setDynamicFilters] = useState<Record<string, unknown>>(filters.dynamic_filters || {});
+
+    useEffect(() => {
+        if (transactions.length === 0) {
+            setSelectedTransaction(null);
+            return;
+        }
+
+        if (!selectedTransaction || !transactions.some((transaction) => transaction.id === selectedTransaction.id)) {
+            setSelectedTransaction(transactions[0]);
+        }
+    }, [selectedTransaction, transactions]);
 
     const applyFilters = async () => {
         setIsLoading(true);
@@ -491,22 +503,32 @@ export default function Transactions({
                         </div>
                     </Card>
 
-                    {/* Table */}
-                    <ResizableTable
-                        data={transactions}
-                        columns={columns}
-                        getRowId={(transaction) => String(transaction.id)}
-                        emptyState="Нет сделок"
-                        minTableWidth={1100}
-                    />
+                    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+                        <div className="space-y-4">
+                            <ResizableTable
+                                data={transactions}
+                                columns={columns}
+                                getRowId={(transaction) => String(transaction.id)}
+                                emptyState="Нет сделок"
+                                minTableWidth={1100}
+                                onRowClick={(transaction) => setSelectedTransaction(transaction)}
+                                rowClassName={(transaction) => selectedTransaction?.id === transaction.id ? 'ring-1 ring-primary/30' : ''}
+                            />
 
-                    {/* Pagination Info */}
-                    {transactions.length > 0 && (
-                        <div className="text-sm text-muted-foreground text-center">
-                            Страница {pagination.current_page} из {pagination.last_page} •{' '}
-                            {pagination.total} сделок
+                            {transactions.length > 0 && (
+                                <div className="text-sm text-muted-foreground text-center">
+                                    Страница {pagination.current_page} из {pagination.last_page} •{' '}
+                                    {pagination.total} сделок
+                                </div>
+                            )}
                         </div>
-                    )}
+
+                        <EntityAttentionPanel
+                            entityType="Transaction"
+                            entityId={selectedTransaction?.id}
+                            entityTitle={selectedTransaction ? `Сделка #${selectedTransaction.id}` : undefined}
+                        />
+                    </div>
 
                     {/* Create Dialog */}
                     <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>

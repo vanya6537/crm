@@ -31,6 +31,7 @@ class DatabaseSeeder extends Seeder
             LOVSeeder::class,
             RealEstateSeeder::class,
             MoscowTriggerTemplatesSeeder::class,
+            UnifiedTriggerDefinitionsSeeder::class,
         ]);
     }
 }

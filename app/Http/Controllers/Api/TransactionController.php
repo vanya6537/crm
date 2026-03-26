@@ -6,6 +6,7 @@ use App\CRM\Services\EntityListQueryService;
 use App\CRM\Services\EntitySchemaService;
 use App\Http\Controllers\Controller;
 use App\Models\Transaction;
+use App\ProcessManagement\Services\TriggerService;
 use Illuminate\Http\Request;
 
 class TransactionController extends Controller
@@ -54,7 +55,7 @@ class TransactionController extends Controller
         return response()->json($transactions);
     }
 
-    public function store(Request $request, EntitySchemaService $entitySchemaService)
+    public function store(Request $request, EntitySchemaService $entitySchemaService, TriggerService $triggerService)
     {
         $rules = $entitySchemaService->getValidationRules('transaction');
         $rules['timeline'] = ['nullable', 'array'];
@@ -71,7 +72,10 @@ class TransactionController extends Controller
 
         $transaction = Transaction::create($payload);
 
-        return response()->json($entitySchemaService->serializeModel($transaction->load(['property', 'buyer', 'agent']), 'transaction'), 201);
+        $serialized = $entitySchemaService->serializeModel($transaction->load(['property', 'buyer', 'agent']), 'transaction');
+        $triggerService->dispatchLifecycleEvents('Transaction', $serialized, 'created');
+
+        return response()->json($serialized, 201);
     }
 
     public function show(Transaction $transaction, EntitySchemaService $entitySchemaService)
@@ -79,8 +83,10 @@ class TransactionController extends Controller
         return response()->json($entitySchemaService->serializeModel($transaction->load(['property', 'buyer', 'agent']), 'transaction'));
     }
 
-    public function update(Request $request, Transaction $transaction, EntitySchemaService $entitySchemaService)
+    public function update(Request $request, Transaction $transaction, EntitySchemaService $entitySchemaService, TriggerService $triggerService)
     {
+        $previous = $entitySchemaService->serializeModel($transaction->load(['property', 'buyer', 'agent']), 'transaction');
+
         $rules = $entitySchemaService->getValidationRules('transaction', true);
         $rules['timeline'] = ['nullable', 'array'];
         $rules['escrow_details'] = ['nullable', 'array'];
@@ -100,12 +106,18 @@ class TransactionController extends Controller
 
         $transaction->update($payload);
 
-        return response()->json($entitySchemaService->serializeModel($transaction->fresh()->load(['property', 'buyer', 'agent']), 'transaction'));
+        $serialized = $entitySchemaService->serializeModel($transaction->fresh()->load(['property', 'buyer', 'agent']), 'transaction');
+        $triggerService->dispatchLifecycleEvents('Transaction', $serialized, 'updated', $previous);
+
+        return response()->json($serialized);
     }
 
-    public function destroy(Transaction $transaction)
+    public function destroy(Transaction $transaction, EntitySchemaService $entitySchemaService, TriggerService $triggerService)
     {
+        $serialized = $entitySchemaService->serializeModel($transaction->load(['property', 'buyer', 'agent']), 'transaction');
         $transaction->delete();
+
+        $triggerService->dispatchLifecycleEvents('Transaction', $serialized, 'deleted');
 
         return response()->json(null, 204);
     }

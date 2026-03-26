@@ -1,7 +1,7 @@
 'use client';
 
 import { Head } from '@inertiajs/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AlertCircle, Edit2, Eye, Trash2, Plus } from 'lucide-react';
 import CRMLayout from '@/layouts/crm-layout';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/radix/dialog';
@@ -25,6 +25,7 @@ import { DeleteConfirmationDialog } from '@/components/dialogs/DeleteConfirmatio
 import { EntityDetailsDialog, type EntityDetailsSection } from '@/components/dialogs/EntityDetailsDialog';
 import { DynamicEntityFilters, appendDynamicFilterParams } from '@/components/forms/DynamicEntityFilters';
 import { DynamicFieldValues } from '@/components/forms/DynamicFieldValues';
+import { EntityAttentionPanel } from '@/components/attention/entity-attention-panel';
 import { apiRequest } from '@/lib/csrf';
 import type { EntitySchema, SerializedDynamicFieldValueMap } from '@/types/entity-schema';
 
@@ -77,6 +78,17 @@ export default function Buyers({ buyers: initialBuyers, filters: initialFilters,
     const [statusFilter, setStatusFilter] = useState(filters.status || '');
     const [sourceFilter, setSourceFilter] = useState(filters.source || '');
     const [dynamicFilters, setDynamicFilters] = useState<Record<string, unknown>>(filters.dynamic_filters || {});
+
+    useEffect(() => {
+        if (buyers.length === 0) {
+            setSelectedBuyer(null);
+            return;
+        }
+
+        if (!selectedBuyer || !buyers.some((buyer) => buyer.id === selectedBuyer.id)) {
+            setSelectedBuyer(buyers[0]);
+        }
+    }, [buyers, selectedBuyer]);
 
     const applyFilters = async () => {
         setIsLoading(true);
@@ -450,21 +462,31 @@ export default function Buyers({ buyers: initialBuyers, filters: initialFilters,
                         </div>
                     </Card>
 
-                    {/* Table */}
-                    <ResizableTable
-                        data={buyers}
-                        columns={columns}
-                        getRowId={(buyer) => String(buyer.id)}
-                        emptyState="Нет клиентов"
-                    />
+                    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+                        <div className="space-y-4">
+                            <ResizableTable
+                                data={buyers}
+                                columns={columns}
+                                getRowId={(buyer) => String(buyer.id)}
+                                emptyState="Нет клиентов"
+                                onRowClick={(buyer) => setSelectedBuyer(buyer)}
+                                rowClassName={(buyer) => selectedBuyer?.id === buyer.id ? 'ring-1 ring-primary/30' : ''}
+                            />
 
-                    {/* Pagination Info */}
-                    {buyers.length > 0 && (
-                        <div className="text-sm text-muted-foreground text-center">
-                            Страница {pagination.current_page} из {pagination.last_page} •{' '}
-                            {pagination.total} клиентов
+                            {buyers.length > 0 && (
+                                <div className="text-sm text-muted-foreground text-center">
+                                    Страница {pagination.current_page} из {pagination.last_page} •{' '}
+                                    {pagination.total} клиентов
+                                </div>
+                            )}
                         </div>
-                    )}
+
+                        <EntityAttentionPanel
+                            entityType="Buyer"
+                            entityId={selectedBuyer?.id}
+                            entityTitle={selectedBuyer?.name}
+                        />
+                    </div>
 
                     {/* Create Dialog */}
                     <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>

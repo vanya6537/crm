@@ -5,6 +5,9 @@ namespace App\ProcessManagement\Services;
 use App\ProcessManagement\Models\ProcessTrigger;
 use App\ProcessManagement\Models\ProcessTriggerExecution;
 use App\ProcessManagement\Models\ProcessDefinition;
+use App\ProcessManagement\Models\TriggerActionItem;
+use App\ProcessManagement\Models\TriggerEvent;
+use App\ProcessManagement\Models\TriggerSuppression;
 use App\Models\CrmTriggerBinding;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -17,7 +20,7 @@ class TriggerService
     public function createTrigger(array $data): ProcessTrigger
     {
         return ProcessTrigger::create([
-            'process_id' => $data['process_id'],
+            'process_id' => $data['process_id'] ?? null,
             'trigger_type' => $data['trigger_type'] ?? 'entity_event',
             'entity_type' => $data['entity_type'],
             'entity_id' => $data['entity_id'] ?? null,
@@ -106,6 +109,7 @@ class TriggerService
         array $contextData
     ): ProcessTriggerExecution {
         $startTime = microtime(true);
+        $execution = null;
 
         try {
             // Create execution record
@@ -122,7 +126,11 @@ class TriggerService
             $processInput = $this->mapContextToProcess($trigger, $contextData);
             $execution->update(['process_input' => $processInput]);
 
-            if ($trigger->execution_mode === 'sync') {
+            $this->createAttentionArtifacts($trigger, $execution, $entityType, $entityId, $contextData);
+
+            if (!$trigger->process_id) {
+                $execution->markAsCompleted(intval((microtime(true) - $startTime) * 1000));
+            } elseif ($trigger->execution_mode === 'sync') {
                 // Execute synchronously
                 $instance = $this->createProcessInstance(
                     $trigger->process_id,
@@ -150,9 +158,70 @@ class TriggerService
 
             return $execution;
         } catch (\Exception $e) {
-            $execution->markAsFailed($e->getMessage());
+            if ($execution) {
+                $execution->markAsFailed($e->getMessage());
+            }
             throw $e;
         }
+    }
+
+    public function dispatchLifecycleEvents(string $entityType, array $entityData, string $mutation, ?array $previousData = null): Collection
+    {
+        $entityId = (int) ($entityData['id'] ?? 0);
+        if ($entityId <= 0) {
+            return collect();
+        }
+
+        $events = collect([$mutation]);
+
+        if ($mutation === 'updated' && $previousData) {
+            if ($this->valueChanged($previousData, $entityData, 'status')) {
+                $events->push('status_changed');
+            }
+
+            if ($entityType === 'Property' && $this->valueChanged($previousData, $entityData, 'price')) {
+                $events->push('price_changed');
+            }
+
+            if ($entityType === 'Buyer' && ($this->valueChanged($previousData, $entityData, 'budget_min') || $this->valueChanged($previousData, $entityData, 'budget_max'))) {
+                $events->push('budget_updated');
+            }
+
+            if ($entityType === 'Transaction' && ($entityData['status'] ?? null) === 'closed') {
+                $events->push('completed');
+            }
+
+            if ($entityType === 'PropertyShowing' && $this->valueChanged($previousData, $entityData, 'status')) {
+                $status = (string) ($entityData['status'] ?? '');
+                if (in_array($status, ['scheduled', 'completed', 'cancelled'], true)) {
+                    $events->push($status);
+                }
+            }
+
+            if ($entityType === 'Communication' && ($entityData['status'] ?? null) === 'pending_response') {
+                $events->push('response_needed');
+            }
+        }
+
+        if ($entityType === 'Communication' && ($entityData['direction'] ?? null) === 'inbound') {
+            $events->push('message_received');
+        }
+
+        return $events
+            ->unique()
+            ->flatMap(function (string $event) use ($entityType, $entityData, $previousData, $entityId) {
+                return $this->evaluateTriggersForEntityEvent($entityType, $event, $entityData, $previousData)
+                    ->map(fn (CrmTriggerBinding $binding) => $this->executeTrigger(
+                        $binding->processTrigger,
+                        $entityType,
+                        $entityId,
+                        array_merge($entityData, [
+                            '_event' => $event,
+                            '_previous' => $previousData,
+                        ])
+                    ));
+            })
+            ->values();
     }
 
     /**
@@ -335,10 +404,180 @@ class TriggerService
      */
     public function cloneTriggerToProcess(ProcessTrigger $trigger, int $targetProcessId): ProcessTrigger
     {
-        return $trigger->replicate()->fill([
+        $clone = $trigger->replicate()->fill([
             'process_id' => $targetProcessId,
             'execution_count' => 0,
             'last_executed_at' => null,
-        ])->save();
+        ]);
+
+        $clone->save();
+
+        return $clone;
+    }
+
+    private function createAttentionArtifacts(
+        ProcessTrigger $trigger,
+        ProcessTriggerExecution $execution,
+        string $entityType,
+        int $entityId,
+        array $contextData
+    ): void {
+        $attention = $this->buildAttentionConfig($trigger, $entityType, $entityId, $contextData);
+
+        $existingSuppression = TriggerSuppression::query()
+            ->active()
+            ->where('dedupe_key', $attention['dedupe_key'])
+            ->first();
+
+        $event = TriggerEvent::query()->firstOrNew([
+            'dedupe_key' => $attention['dedupe_key'],
+            'status' => $existingSuppression ? 'suppressed' : 'active',
+        ]);
+
+        $event->fill([
+            'process_trigger_id' => $trigger->id,
+            'process_trigger_execution_id' => $execution->id,
+            'trigger_code' => data_get($trigger->metadata, 'definition.code'),
+            'family' => $attention['family'],
+            'source_entity_type' => $entityType,
+            'source_entity_id' => $entityId,
+            'subject_entity_type' => $attention['subject_entity_type'],
+            'subject_entity_id' => $attention['subject_entity_id'],
+            'attention_state' => $attention['attention_state'],
+            'priority' => $attention['priority'],
+            'title' => $attention['title'],
+            'summary' => $attention['summary'],
+            'reason' => $attention['reason'],
+            'recommended_action' => $attention['recommended_action'],
+            'payload' => $contextData,
+            'occurred_at' => now(),
+            'expires_at' => $attention['expires_at'],
+        ]);
+        $event->save();
+
+        if ($existingSuppression) {
+            return;
+        }
+
+        $actionItem = TriggerActionItem::query()
+            ->where('status', 'open')
+            ->where('source_entity_type', $entityType)
+            ->where('source_entity_id', $entityId)
+            ->where('title', $attention['title'])
+            ->first();
+
+        if (!$actionItem) {
+            $actionItem = new TriggerActionItem();
+        }
+
+        $actionItem->fill([
+            'trigger_event_id' => $event->id,
+            'process_trigger_execution_id' => $execution->id,
+            'owner_role' => $attention['owner_role'],
+            'source_entity_type' => $entityType,
+            'source_entity_id' => $entityId,
+            'subject_entity_type' => $attention['subject_entity_type'],
+            'subject_entity_id' => $attention['subject_entity_id'],
+            'title' => $attention['title'],
+            'summary' => $attention['summary'],
+            'attention_state' => $attention['attention_state'],
+            'priority' => $attention['priority'],
+            'recommended_action' => $attention['recommended_action'],
+            'primary_action_label' => $attention['primary_action_label'],
+            'action_payload' => $contextData,
+            'status' => 'open',
+            'due_at' => $attention['due_at'],
+            'metadata' => [
+                'reason' => $attention['reason'],
+                'definition_id' => data_get($trigger->metadata, 'definition_id'),
+            ],
+        ]);
+        $actionItem->save();
+    }
+
+    private function buildAttentionConfig(ProcessTrigger $trigger, string $entityType, int $entityId, array $contextData): array
+    {
+        $definition = data_get($trigger->metadata, 'definition', []);
+        $attention = data_get($trigger->metadata, 'attention', []);
+
+        [$subjectEntityType, $subjectEntityId] = $this->resolveSubjectContext($entityType, $entityId, $contextData);
+
+        $priority = (string) ($attention['priority'] ?? 'medium');
+        $ttlHours = $attention['ttl_hours'] ?? 72;
+        $title = $this->interpolateTemplate(
+            (string) ($attention['title'] ?? $definition['title'] ?? $trigger->event_name),
+            $contextData
+        );
+
+        return [
+            'family' => (string) ($definition['family'] ?? 'general'),
+            'subject_entity_type' => $subjectEntityType,
+            'subject_entity_id' => $subjectEntityId,
+            'attention_state' => (string) ($attention['attention_state'] ?? 'need_action'),
+            'priority' => $priority,
+            'title' => $title,
+            'summary' => $this->interpolateTemplate((string) ($attention['summary'] ?? 'Сработало правило CRM.'), $contextData),
+            'reason' => $this->interpolateTemplate((string) ($attention['reason'] ?? $trigger->event_name), $contextData),
+            'recommended_action' => $this->interpolateTemplate((string) ($attention['recommended_action'] ?? 'Открыть карточку и выполнить действие'), $contextData),
+            'primary_action_label' => (string) ($attention['primary_action_label'] ?? 'Сделать'),
+            'owner_role' => (string) ($attention['owner_role'] ?? 'manager'),
+            'due_at' => now()->addMinutes($this->defaultDueMinutes($priority, $attention)),
+            'expires_at' => $ttlHours ? now()->addHours((int) $ttlHours) : null,
+            'dedupe_key' => $this->buildDedupeKey($trigger, $entityType, $entityId, $subjectEntityType, $subjectEntityId, $attention),
+        ];
+    }
+
+    private function resolveSubjectContext(string $entityType, int $entityId, array $contextData): array
+    {
+        return match ($entityType) {
+            'Communication' => ['Transaction', (int) ($contextData['transaction_id'] ?? $entityId)],
+            'PropertyShowing' => isset($contextData['buyer_id']) ? ['Buyer', (int) $contextData['buyer_id']] : ['PropertyShowing', $entityId],
+            'Transaction' => isset($contextData['buyer_id']) ? ['Buyer', (int) $contextData['buyer_id']] : ['Transaction', $entityId],
+            default => [$entityType, $entityId],
+        };
+    }
+
+    private function interpolateTemplate(string $template, array $contextData): string
+    {
+        return preg_replace_callback('/{{\s*([a-zA-Z0-9_\.]+)\s*}}/', function (array $matches) use ($contextData) {
+            return (string) data_get($contextData, $matches[1], $matches[0]);
+        }, $template) ?? $template;
+    }
+
+    private function defaultDueMinutes(string $priority, array $attention): int
+    {
+        if (isset($attention['due_in_minutes'])) {
+            return (int) $attention['due_in_minutes'];
+        }
+
+        return match ($priority) {
+            'critical' => 15,
+            'high' => 60,
+            'medium' => 240,
+            'low' => 1440,
+            default => 240,
+        };
+    }
+
+    private function buildDedupeKey(
+        ProcessTrigger $trigger,
+        string $entityType,
+        int $entityId,
+        string $subjectEntityType,
+        int $subjectEntityId,
+        array $attention
+    ): string {
+        $scope = (string) ($attention['dedupe_scope'] ?? 'entity');
+
+        return match ($scope) {
+            'subject' => implode(':', [$trigger->id, $subjectEntityType, $subjectEntityId]),
+            'family' => implode(':', [data_get($trigger->metadata, 'definition.family', 'general'), $entityType, $entityId]),
+            default => implode(':', [$trigger->id, $entityType, $entityId]),
+        };
+    }
+
+    private function valueChanged(array $previousData, array $entityData, string $field): bool
+    {
+        return data_get($previousData, $field) !== data_get($entityData, $field);
     }
 }
