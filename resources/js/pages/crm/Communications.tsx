@@ -1,7 +1,7 @@
 'use client';
 
 import { Head } from '@inertiajs/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AlertCircle, Edit2, Eye, Trash2, Plus } from 'lucide-react';
 import CRMLayout from '@/layouts/crm-layout';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/radix/dialog';
@@ -25,6 +25,7 @@ import { DeleteConfirmationDialog } from '@/components/dialogs/DeleteConfirmatio
 import { EntityDetailsDialog, type EntityDetailsSection } from '@/components/dialogs/EntityDetailsDialog';
 import { DynamicEntityFilters, appendDynamicFilterParams } from '@/components/forms/DynamicEntityFilters';
 import { DynamicFieldValues } from '@/components/forms/DynamicFieldValues';
+import { EntityAttentionPanel } from '@/components/attention/entity-attention-panel';
 import { apiRequest } from '@/lib/csrf';
 import type { EntitySchema, SerializedDynamicFieldValueMap } from '@/types/entity-schema';
 
@@ -78,6 +79,17 @@ export default function Communications({
     const [selectedCommunication, setSelectedCommunication] = useState<CommunicationRow | null>(null);
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        if (communications.length === 0) {
+            setSelectedCommunication(null);
+            return;
+        }
+
+        if (!selectedCommunication || !communications.some((communication) => communication.id === selectedCommunication.id)) {
+            setSelectedCommunication(communications[0]);
+        }
+    }, [communications, selectedCommunication]);
 
     const applyFilters = async () => {
         setIsLoading(true);
@@ -416,19 +428,31 @@ export default function Communications({
                         </div>
                     </Card>
 
-                    <ResizableTable
-                        data={communications}
-                        columns={columns}
-                        getRowId={(communication) => String(communication.id)}
-                        emptyState="Нет коммуникаций"
-                        minTableWidth={1100}
-                    />
+                    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+                        <div className="space-y-4">
+                            <ResizableTable
+                                data={communications}
+                                columns={columns}
+                                getRowId={(communication) => String(communication.id)}
+                                emptyState="Нет коммуникаций"
+                                minTableWidth={1100}
+                                onRowClick={(communication) => setSelectedCommunication(communication)}
+                                rowClassName={(communication) => selectedCommunication?.id === communication.id ? 'ring-1 ring-primary/30' : ''}
+                            />
 
-                    {communications.length > 0 && (
-                        <div className="text-center text-sm text-muted-foreground">
-                            Страница {pagination.current_page} из {pagination.last_page} • {pagination.total} коммуникаций
+                            {communications.length > 0 && (
+                                <div className="text-center text-sm text-muted-foreground">
+                                    Страница {pagination.current_page} из {pagination.last_page} • {pagination.total} коммуникаций
+                                </div>
+                            )}
                         </div>
-                    )}
+
+                        <EntityAttentionPanel
+                            entityType="Communication"
+                            entityId={selectedCommunication?.id}
+                            entityTitle={selectedCommunication?.subject || selectedCommunication?.transaction?.buyer?.name || `Коммуникация #${selectedCommunication?.id ?? ''}`}
+                        />
+                    </div>
 
                     <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
                         <DialogContent className="max-w-2xl">

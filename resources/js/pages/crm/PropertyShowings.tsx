@@ -1,7 +1,7 @@
 'use client';
 
 import { Head } from '@inertiajs/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AlertCircle, Edit2, Eye, Trash2, Plus } from 'lucide-react';
 import CRMLayout from '@/layouts/crm-layout';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/radix/dialog';
@@ -25,6 +25,7 @@ import { DeleteConfirmationDialog } from '@/components/dialogs/DeleteConfirmatio
 import { EntityDetailsDialog, type EntityDetailsSection } from '@/components/dialogs/EntityDetailsDialog';
 import { DynamicEntityFilters, appendDynamicFilterParams } from '@/components/forms/DynamicEntityFilters';
 import { DynamicFieldValues } from '@/components/forms/DynamicFieldValues';
+import { EntityAttentionPanel } from '@/components/attention/entity-attention-panel';
 import { apiRequest } from '@/lib/csrf';
 import type { EntitySchema, SerializedDynamicFieldValueMap } from '@/types/entity-schema';
 
@@ -80,6 +81,17 @@ export default function PropertyShowings({
     const [selectedShowing, setSelectedShowing] = useState<PropertyShowingRow | null>(null);
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        if (propertyShowings.length === 0) {
+            setSelectedShowing(null);
+            return;
+        }
+
+        if (!selectedShowing || !propertyShowings.some((showing) => showing.id === selectedShowing.id)) {
+            setSelectedShowing(propertyShowings[0]);
+        }
+    }, [propertyShowings, selectedShowing]);
 
     const applyFilters = async () => {
         setIsLoading(true);
@@ -386,19 +398,31 @@ export default function PropertyShowings({
                         </div>
                     </Card>
 
-                    <ResizableTable
-                        data={propertyShowings}
-                        columns={columns}
-                        getRowId={(showing) => String(showing.id)}
-                        emptyState="Нет показов"
-                        minTableWidth={1050}
-                    />
+                    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+                        <div className="space-y-4">
+                            <ResizableTable
+                                data={propertyShowings}
+                                columns={columns}
+                                getRowId={(showing) => String(showing.id)}
+                                emptyState="Нет показов"
+                                minTableWidth={1050}
+                                onRowClick={(showing) => setSelectedShowing(showing)}
+                                rowClassName={(showing) => selectedShowing?.id === showing.id ? 'ring-1 ring-primary/30' : ''}
+                            />
 
-                    {propertyShowings.length > 0 && (
-                        <div className="text-center text-sm text-muted-foreground">
-                            Страница {pagination.current_page} из {pagination.last_page} • {pagination.total} показов
+                            {propertyShowings.length > 0 && (
+                                <div className="text-center text-sm text-muted-foreground">
+                                    Страница {pagination.current_page} из {pagination.last_page} • {pagination.total} показов
+                                </div>
+                            )}
                         </div>
-                    )}
+
+                        <EntityAttentionPanel
+                            entityType="PropertyShowing"
+                            entityId={selectedShowing?.id}
+                            entityTitle={selectedShowing?.property?.address || selectedShowing?.buyer?.name || `Показ #${selectedShowing?.id ?? ''}`}
+                        />
+                    </div>
 
                     <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
                         <DialogContent className="max-w-2xl">
