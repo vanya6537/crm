@@ -54,6 +54,11 @@ class ProcessTrigger extends Model
         return $this->hasMany(ProcessTriggerExecution::class);
     }
 
+    public function triggerEvents(): HasMany
+    {
+        return $this->hasMany(TriggerEvent::class);
+    }
+
     public function bindings(): HasMany
     {
         return $this->hasMany(CrmTriggerBinding::class);

@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\PropertyController;
 use App\Http\Controllers\Api\AgentController;
 use App\Http\Controllers\Api\BuyerController;
 use App\Http\Controllers\Api\CommunicationController;
+use App\Http\Controllers\Api\AttentionController;
 use App\Http\Controllers\Api\PropertyShowingController;
 use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\Api\ModelFieldController;
@@ -134,6 +135,15 @@ Route::prefix('v1')->middleware($apiMiddleware)->group(function () {
     Route::get('/communications/{communication}', [CommunicationController::class, 'show']);
     Route::put('/communications/{communication}', [CommunicationController::class, 'update']);
     Route::delete('/communications/{communication}', [CommunicationController::class, 'destroy']);
+
+    // ===== Attention / Action Inbox Routes =====
+    Route::prefix('attention')->group(function () {
+        Route::get('/summary', [AttentionController::class, 'summary']);
+        Route::get('/inbox', [AttentionController::class, 'inbox']);
+        Route::get('/entities/{entityType}/{entityId}', [AttentionController::class, 'entityPanel']);
+        Route::post('/items/{item}/resolve', [AttentionController::class, 'resolve']);
+        Route::post('/items/{item}/snooze', [AttentionController::class, 'snooze']);
+    });
     
     // ===== Form Schema Routes =====
     Route::get('/forms', [FormController::class, 'index']);

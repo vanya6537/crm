@@ -26,6 +26,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('transactions', [TransactionController::class, 'index'])->name('crm.transactions');
     Route::get('property-showings', [PropertyShowingController::class, 'index'])->name('crm.property-showings');
     Route::get('communications', [CommunicationController::class, 'index'])->name('crm.communications');
+    Route::inertia('actions', 'crm/AttentionInbox')->name('crm.actions');
     Route::inertia('settings', 'crm/Settings')->name('crm.settings');
     Route::inertia('list-of-values', 'crm/ListOfValuesAdvanced')->name('crm.list-of-values');
     Route::get('model-manager', [ModelManagerController::class, 'index'])->name('crm.model-manager');

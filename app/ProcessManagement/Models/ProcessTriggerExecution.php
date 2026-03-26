@@ -4,6 +4,7 @@ namespace App\ProcessManagement\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class ProcessTriggerExecution extends Model
@@ -48,6 +49,11 @@ class ProcessTriggerExecution extends Model
     public function processInstance(): BelongsTo
     {
         return $this->belongsTo(ProcessInstance::class, 'process_instance_id');
+    }
+
+    public function actionItems(): HasMany
+    {
+        return $this->hasMany(TriggerActionItem::class, 'process_trigger_execution_id');
     }
 
     // Scopes

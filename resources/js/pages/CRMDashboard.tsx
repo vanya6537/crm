@@ -1,15 +1,19 @@
 import { Head, router } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
 import { Building2, Home, TrendingUp, Users, Calendar } from 'lucide-react';
 import CRMLayout from '@/layouts/crm-layout';
 import { StatCard } from '@/components/stat-card';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { apiRequest } from '@/lib/csrf';
 import {
     ArrowRight,
     Clock,
     CheckCircle,
     AlertCircle,
+    BellRing,
+    CircleAlert,
 } from 'lucide-react';
 
 type Transaction = {
@@ -30,6 +34,13 @@ interface CRMDashboardProps {
     transactions_trend: number;
     recent_transactions?: Transaction[];
 }
+
+type AttentionSummary = {
+    open_count: number;
+    overdue_count: number;
+    due_today_count: number;
+    critical_count: number;
+};
 
 const statusIcons = {
     pending: <AlertCircle className="h-4 w-4 text-orange-500" />,
@@ -58,6 +69,8 @@ export default function CRMDashboard({
     transactions_trend = -2,
     recent_transactions = [],
 }: CRMDashboardProps) {
+    const [attentionSummary, setAttentionSummary] = useState<AttentionSummary | null>(null);
+
     console.log('%c[CRMDashboard] Rendering with props:', 'color: #00ff00; font-weight: bold', {
         properties_count,
         buyers_count,
@@ -67,6 +80,32 @@ export default function CRMDashboard({
         transactions_trend,
         recent_transactions: recent_transactions?.length || 0,
     });
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const loadAttentionSummary = async () => {
+            try {
+                const response = await apiRequest('/api/v1/attention/summary');
+                if (!response.ok) {
+                    return;
+                }
+
+                const data = await response.json();
+                if (isMounted) {
+                    setAttentionSummary(data);
+                }
+            } catch (error) {
+                console.error('[CRMDashboard] Failed to load attention summary', error);
+            }
+        };
+
+        void loadAttentionSummary();
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
 
     return (
         <>
@@ -114,6 +153,62 @@ export default function CRMDashboard({
                         />
                     </div>
 
+                    <Card className="p-6 border-sidebar-border/70 dark:border-sidebar-border">
+                        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                            <div>
+                                <h3 className="text-lg font-semibold text-foreground">
+                                    Что требует внимания
+                                </h3>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                    Новый action-centric слой собирает риски, срочные задачи и возможности в одной рабочей ленте.
+                                </p>
+                            </div>
+                            <Button onClick={() => router.visit('/actions')}>
+                                Открыть центр действий
+                                <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                        </div>
+
+                        <div className="mt-4 grid gap-4 md:grid-cols-4">
+                            <div className="rounded-lg border border-sidebar-border/50 p-4">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm text-muted-foreground">Открыто</span>
+                                    <BellRing className="h-4 w-4 text-blue-500" />
+                                </div>
+                                <p className="mt-2 text-2xl font-semibold text-foreground">
+                                    {attentionSummary?.open_count ?? 0}
+                                </p>
+                            </div>
+                            <div className="rounded-lg border border-sidebar-border/50 p-4">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm text-muted-foreground">Просрочено</span>
+                                    <AlertCircle className="h-4 w-4 text-red-500" />
+                                </div>
+                                <p className="mt-2 text-2xl font-semibold text-foreground">
+                                    {attentionSummary?.overdue_count ?? 0}
+                                </p>
+                            </div>
+                            <div className="rounded-lg border border-sidebar-border/50 p-4">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm text-muted-foreground">На сегодня</span>
+                                    <Clock className="h-4 w-4 text-orange-500" />
+                                </div>
+                                <p className="mt-2 text-2xl font-semibold text-foreground">
+                                    {attentionSummary?.due_today_count ?? 0}
+                                </p>
+                            </div>
+                            <div className="rounded-lg border border-sidebar-border/50 p-4">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm text-muted-foreground">Критично</span>
+                                    <CircleAlert className="h-4 w-4 text-red-600" />
+                                </div>
+                                <p className="mt-2 text-2xl font-semibold text-foreground">
+                                    {attentionSummary?.critical_count ?? 0}
+                                </p>
+                            </div>
+                        </div>
+                    </Card>
+
                     {/* Quick Actions & Recent Activity */}
                     <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
                         {/* Quick Actions */}
@@ -158,7 +253,7 @@ export default function CRMDashboard({
                         </Card>
 
                         {/* Recent Transactions */}
-                        <Card className="min-w-[450px] p-6 border-sidebar-border/70 dark:border-sidebar-border md:col-span-2">
+                        <Card className="min-w-112.5 p-6 border-sidebar-border/70 dark:border-sidebar-border md:col-span-2">
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="text-lg font-semibold text-foreground">
                                     Недавние сделки
@@ -249,7 +344,7 @@ export default function CRMDashboard({
                                     </Badge>
                                 </div>
                                 <div className="mt-2 h-2 w-full rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
-                                    <div className="h-full w-[68%] bg-gradient-to-r from-green-500 to-emerald-500"></div>
+                                    <div className="h-full w-[68%] bg-linear-to-r from-green-500 to-emerald-500"></div>
                                 </div>
                             </div>
                             <div>
@@ -265,7 +360,7 @@ export default function CRMDashboard({
                                     </Badge>
                                 </div>
                                 <div className="mt-2 h-2 w-full rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
-                                    <div className="h-full w-[82%] bg-gradient-to-r from-blue-500 to-cyan-500"></div>
+                                    <div className="h-full w-[82%] bg-linear-to-r from-blue-500 to-cyan-500"></div>
                                 </div>
                             </div>
                             <div>
@@ -281,7 +376,7 @@ export default function CRMDashboard({
                                     </Badge>
                                 </div>
                                 <div className="mt-2 h-2 w-full rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
-                                    <div className="h-full w-[75%] bg-gradient-to-r from-purple-500 to-pink-500"></div>
+                                    <div className="h-full w-[75%] bg-linear-to-r from-purple-500 to-pink-500"></div>
                                 </div>
                             </div>
                         </div>

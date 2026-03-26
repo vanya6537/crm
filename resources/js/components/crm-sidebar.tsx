@@ -8,6 +8,7 @@ import {
     TrendingUp,
     FileText,
     Zap,
+    Inbox,
     Settings,
     LogOut,
     ChevronDown,
@@ -75,6 +76,11 @@ const crmNavItems: NavItem[] = [
         title: 'Коммуникации',
         href: '/communications',
         icon: MessageSquare,
+    },
+    {
+        title: 'Действия',
+        href: '/actions',
+        icon: Inbox,
     },
     {
         title: 'Справочники',
