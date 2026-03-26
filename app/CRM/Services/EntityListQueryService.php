@@ -118,7 +118,7 @@ class EntityListQueryService
             ],
             'sqlite' => [
                 "COALESCE(json_extract(custom_fields, ?), '') = ?",
-                [$this->jsonPath($fieldName), $isBoolean ? ($value ? 1 : 0) : (string) $value],
+                [$this->jsonPath($fieldName), $this->normalizeSqliteComparisonValue($value, $isBoolean)],
             ],
             'mysql' => [
                 "COALESCE(JSON_UNQUOTE(JSON_EXTRACT(custom_fields, ?)), '') = ?",
@@ -167,5 +167,22 @@ class EntityListQueryService
     protected function jsonPath(string $fieldName): string
     {
         return '$.' . $fieldName;
+    }
+
+    protected function normalizeSqliteComparisonValue(mixed $value, bool $isBoolean): mixed
+    {
+        if ($isBoolean) {
+            return $value ? 1 : 0;
+        }
+
+        if (is_int($value) || is_float($value)) {
+            return $value;
+        }
+
+        if (is_string($value) && is_numeric($value)) {
+            return str_contains($value, '.') ? (float) $value : (int) $value;
+        }
+
+        return (string) $value;
     }
 }

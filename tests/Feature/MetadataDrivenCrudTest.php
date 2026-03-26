@@ -10,10 +10,202 @@ use App\Models\Property;
 use App\Models\PropertyShowing;
 use App\Models\Transaction;
 use App\Models\User;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class MetadataDrivenCrudTest extends TestCase
 {
+    public function test_model_manager_supports_full_field_lifecycle_like_ui_workflow(): void
+    {
+        $user = User::factory()->create();
+
+        $this
+            ->actingAs($user)
+            ->get('/model-manager?entity_type=agent&status=active')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('crm/ModelManager')
+                ->where('entityType', 'agent')
+                ->where('initialStatus', 'active')
+                ->has('fields', 0)
+            );
+
+        $channelFieldResponse = $this
+            ->actingAs($user)
+            ->postJson('/api/v1/model-fields/agent', [
+                'name' => 'preferred_channel',
+                'label' => 'Предпочитаемый канал',
+                'description' => 'Основной канал коммуникации агента',
+                'field_type' => 'select',
+                'required' => false,
+                'placeholder' => 'Выберите канал',
+                'help_text' => 'Используется в карточках и фильтрах',
+                'options' => [
+                    ['value' => 'telegram', 'label' => 'Telegram'],
+                    ['value' => 'phone', 'label' => 'Телефон'],
+                ],
+                'validation' => [
+                    'searchable' => true,
+                    'filterable' => true,
+                ],
+                'default_value' => 'telegram',
+                'icon' => 'message-circle',
+            ]);
+
+        $channelFieldResponse
+            ->assertCreated()
+            ->assertJsonPath('data.name', 'preferred_channel')
+            ->assertJsonPath('data.default_value', 'telegram');
+
+        $channelFieldId = $channelFieldResponse->json('data.id');
+        $channelFieldUuid = $channelFieldResponse->json('data.uuid');
+
+        $mentorFieldResponse = $this
+            ->actingAs($user)
+            ->postJson('/api/v1/model-fields/agent', [
+                'name' => 'mentor_agent',
+                'label' => 'Наставник',
+                'field_type' => 'relation',
+                'reference_table' => 'agent',
+                'required' => false,
+                'validation' => [
+                    'filterable' => true,
+                ],
+            ]);
+
+        $mentorFieldResponse
+            ->assertCreated()
+            ->assertJsonPath('data.name', 'mentor_agent')
+            ->assertJsonPath('data.reference_table', 'agent');
+
+        $mentorFieldId = $mentorFieldResponse->json('data.id');
+        $mentorFieldUuid = $mentorFieldResponse->json('data.uuid');
+
+        $this
+            ->actingAs($user)
+            ->get('/model-manager?entity_type=agent&status=active')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('crm/ModelManager')
+                ->where('entityType', 'agent')
+                ->where('initialStatus', 'active')
+                ->has('fields', 2)
+            );
+
+        $this
+            ->actingAs($user)
+            ->postJson('/api/v1/model-fields/agent/reorder', [
+                'fields' => [
+                    ['id' => $mentorFieldUuid, 'sort_order' => 0],
+                    ['id' => $channelFieldUuid, 'sort_order' => 1],
+                ],
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.0.name', 'mentor_agent')
+            ->assertJsonPath('data.1.name', 'preferred_channel');
+
+        $this
+            ->actingAs($user)
+            ->putJson("/api/v1/model-fields/agent/{$channelFieldId}", [
+                'label' => 'Основной канал связи',
+                'default_value' => 'phone',
+                'validation' => [
+                    'searchable' => true,
+                    'filterable' => true,
+                ],
+                'is_active' => false,
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.label', 'Основной канал связи')
+            ->assertJsonPath('data.is_active', false);
+
+        $this
+            ->actingAs($user)
+            ->get('/model-manager?entity_type=agent&status=archived')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('crm/ModelManager')
+                ->where('entityType', 'agent')
+                ->where('initialStatus', 'archived')
+                ->has('fields', 2)
+            );
+
+        $this
+            ->actingAs($user)
+            ->getJson('/api/v1/model-fields/agent?status=archived')
+            ->assertOk()
+            ->assertJsonPath('count', 1)
+            ->assertJsonPath('data.0.name', 'preferred_channel')
+            ->assertJsonPath('data.0.is_active', false);
+
+        $this
+            ->actingAs($user)
+            ->putJson("/api/v1/model-fields/agent/{$channelFieldId}", [
+                'is_active' => true,
+                'default_value' => 'phone',
+                'validation' => [
+                    'searchable' => true,
+                    'filterable' => true,
+                ],
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.is_active', true);
+
+        $schemaResponse = $this
+            ->actingAs($user)
+            ->getJson('/api/v1/model-fields/agent/schema');
+
+        $schemaResponse
+            ->assertOk()
+            ->assertJsonPath('data.dynamic_fields.0.name', 'mentor_agent')
+            ->assertJsonPath('data.dynamic_fields.1.name', 'preferred_channel')
+            ->assertJsonPath('data.dynamic_fields.1.label', 'Основной канал связи')
+            ->assertJsonPath('data.dynamic_fields.1.default_value', 'phone')
+            ->assertJsonPath('data.dynamic_fields.1.searchable', true)
+            ->assertJsonPath('data.dynamic_fields.1.filterable', true);
+
+        $mentorAgent = Agent::create([
+            'name' => 'Mentor Agent',
+            'email' => 'mentor.agent@example.test',
+            'phone' => '+79990000021',
+            'status' => 'active',
+            'specialization' => 'commercial',
+        ]);
+
+        $agentResponse = $this
+            ->actingAs($user)
+            ->postJson('/api/v1/agents', [
+                'name' => 'Lifecycle Agent',
+                'email' => 'lifecycle.agent@example.test',
+                'phone' => '+79990000022',
+                'status' => 'active',
+                'specialization' => 'luxury',
+                'custom_fields' => [
+                    'preferred_channel' => 'phone',
+                    'mentor_agent' => $mentorAgent->id,
+                ],
+            ]);
+
+        $agentResponse
+            ->assertCreated()
+            ->assertJsonPath('custom_fields.preferred_channel', 'phone')
+            ->assertJsonPath('custom_fields.mentor_agent', $mentorAgent->id)
+            ->assertJsonPath('dynamic_field_values.preferred_channel.display_value', 'Телефон')
+            ->assertJsonPath('dynamic_field_values.mentor_agent.display_value', 'Mentor Agent');
+
+        $this
+            ->actingAs($user)
+            ->getJson('/api/v1/agents?search=phone')
+            ->assertOk()
+            ->assertJsonPath('data.0.dynamic_field_values.preferred_channel.display_value', 'Телефон');
+
+        $this
+            ->actingAs($user)
+            ->getJson('/api/v1/agents?dynamic_filters[mentor_agent]=' . $mentorAgent->id)
+            ->assertOk()
+            ->assertJsonPath('data.0.dynamic_field_values.mentor_agent.display_value', 'Mentor Agent');
+    }
+
     public function test_entity_schema_endpoint_returns_dynamic_fields_from_model_manager(): void
     {
         $user = User::factory()->create();
