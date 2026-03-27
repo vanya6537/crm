@@ -2,7 +2,7 @@
 
 import { Head } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
-import { AlertCircle, Edit2, Eye, Trash2, Plus } from 'lucide-react';
+import { AlertCircle, Edit2, Eye, Trash2, Plus, Lightbulb, Clock } from 'lucide-react';
 import CRMLayout from '@/layouts/crm-layout';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/radix/dialog';
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,8 @@ import { EntityDetailsDialog, type EntityDetailsSection } from '@/components/dia
 import { DynamicEntityFilters, appendDynamicFilterParams } from '@/components/forms/DynamicEntityFilters';
 import { DynamicFieldValues } from '@/components/forms/DynamicFieldValues';
 import { EntityAttentionPanel } from '@/components/attention/entity-attention-panel';
+import { SnoozeDialog } from '@/components/dialogs/SnoozeDialog';
+import { CreateLeadDialog } from '@/components/dialogs/CreateLeadDialog';
 import { apiRequest } from '@/lib/csrf';
 import type { EntitySchema, SerializedDynamicFieldValueMap } from '@/types/entity-schema';
 
@@ -70,7 +72,10 @@ export default function Buyers({ buyers: initialBuyers, filters: initialFilters,
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [isViewOpen, setIsViewOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+    const [isSnoozeOpen, setIsSnoozeOpen] = useState(false);
+    const [isCreateLeadOpen, setIsCreateLeadOpen] = useState(false);
     const [selectedBuyer, setSelectedBuyer] = useState<Buyer | null>(null);
+    const [selectedBuyerAttentionCount, setSelectedBuyerAttentionCount] = useState(0);
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
@@ -89,6 +94,27 @@ export default function Buyers({ buyers: initialBuyers, filters: initialFilters,
             setSelectedBuyer(buyers[0]);
         }
     }, [buyers, selectedBuyer]);
+
+    // Load attention items for selected buyer
+    useEffect(() => {
+        const loadAttentionItems = async () => {
+            if (!selectedBuyer || !isViewOpen) {
+                setSelectedBuyerAttentionCount(0);
+                return;
+            }
+
+            try {
+                const response = await apiRequest(`/api/v1/attention/entities/buyer/${selectedBuyer.id}`);
+                const data = await response.json();
+                setSelectedBuyerAttentionCount(data.data?.length ?? 0);
+            } catch (err) {
+                console.error('Error loading attention items:', err);
+                setSelectedBuyerAttentionCount(0);
+            }
+        };
+
+        void loadAttentionItems();
+    }, [selectedBuyer, isViewOpen]);
 
     const applyFilters = async () => {
         setIsLoading(true);
@@ -198,6 +224,109 @@ export default function Buyers({ buyers: initialBuyers, filters: initialFilters,
         }
     };
 
+    const handleSnooze = async (duration: string, reason?: string) => {
+        if (!selectedBuyer) return;
+
+        setIsLoading(true);
+        setError('');
+
+        try {
+            const response = await apiRequest(`/api/v1/buyers/${selectedBuyer.id}/snooze`, {
+                method: 'POST',
+                body: JSON.stringify({ duration, reason }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Ошибка при отложении');
+            }
+
+            setIsSnoozeOpen(false);
+            await applyFilters();
+        } catch (err) {
+            setError('Ошибка при отложении действия');
+            console.error(err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleCreateLead = async (leadData: {
+        contact_name: string;
+        contact_email?: string;
+        contact_phone?: string;
+        priority: 'low' | 'medium' | 'high';
+        description: string;
+    }) => {
+        if (!selectedBuyer) return;
+
+        setIsLoading(true);
+        setError('');
+
+        try {
+            const response = await apiRequest('/api/v1/leads', {
+                method: 'POST',
+                body: JSON.stringify({
+                    ...leadData,
+                    related_buyer_id: selectedBuyer.id,
+                    source: 'buyer_conversion',
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Ошибка при создании лида');
+            }
+
+            setIsCreateLeadOpen(false);
+            // Optionally show success message
+            console.log('Lead created successfully');
+        } catch (err) {
+            setError('Ошибка при создании лида');
+            console.error(err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleResolveMainTrigger = async () => {
+        if (!selectedBuyer) return;
+
+        setIsLoading(true);
+        setError('');
+
+        try {
+            // Find the first active attention item for this buyer
+            const response = await apiRequest(`/api/v1/attention/entities/buyer/${selectedBuyer.id}`);
+            const data = await response.json();
+            const items = data.data ?? [];
+
+            if (items.length === 0) {
+                setError('Нет активных действий для выполнения');
+                return;
+            }
+
+            // Resolve the first item
+            const firstItem = items[0];
+            const resolveResponse = await apiRequest(`/api/v1/attention/items/${firstItem.id}/resolve`, {
+                method: 'POST',
+                body: JSON.stringify({ resolution_type: 'completed' }),
+            });
+
+            if (!resolveResponse.ok) {
+                throw new Error('Ошибка при выполнении действия');
+            }
+
+            // Reload attention count
+            const freshResponse = await apiRequest(`/api/v1/attention/entities/buyer/${selectedBuyer.id}`);
+            const freshData = await freshResponse.json();
+            setSelectedBuyerAttentionCount(freshData.data?.length ?? 0);
+        } catch (err) {
+            setError('Ошибка при выполнении действия');
+            console.error(err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'active':
@@ -295,8 +424,6 @@ export default function Buyers({ buyers: initialBuyers, filters: initialFilters,
             width: 140,
             minWidth: 110,
             maxWidth: 220,
-            headerClassName: 'justify-end',
-            cellClassName: 'justify-end',
             cell: (buyer) => (
                 <div className="flex items-center justify-end gap-2">
                     <Button
@@ -306,6 +433,7 @@ export default function Buyers({ buyers: initialBuyers, filters: initialFilters,
                             setSelectedBuyer(buyer);
                             setIsViewOpen(true);
                         }}
+                        title="Просмотр"
                     >
                         <Eye className="h-4 w-4" />
                     </Button>
@@ -316,8 +444,9 @@ export default function Buyers({ buyers: initialBuyers, filters: initialFilters,
                             setSelectedBuyer(buyer);
                             setIsEditOpen(true);
                         }}
+                        title="Редактировать"
                     >
-                        <Edit2 className="h-4 w-4" />
+                        <Edit2 className="h-4 w-4 text-blue-500" />
                     </Button>
                     <Button
                         variant="ghost"
@@ -326,6 +455,7 @@ export default function Buyers({ buyers: initialBuyers, filters: initialFilters,
                             setSelectedBuyer(buyer);
                             setIsDeleteOpen(true);
                         }}
+                        title="Удалить"
                     >
                         <Trash2 className="h-4 w-4 text-red-500" />
                     </Button>
@@ -544,6 +674,33 @@ export default function Buyers({ buyers: initialBuyers, filters: initialFilters,
                         dynamicFieldValues={selectedBuyer?.dynamic_field_values}
                         sections={selectedBuyerSections}
                         exportFileName={selectedBuyer ? `buyer-${selectedBuyer.id}` : 'buyer-details'}
+                        // Trigger system
+                        entityType="buyer"
+                        entityId={selectedBuyer?.id}
+                        attentionCount={selectedBuyerAttentionCount}
+                        onSnooze={() => setIsSnoozeOpen(true)}
+                        onResolve={() => handleResolveMainTrigger()}
+                        onCreateLead={() => setIsCreateLeadOpen(true)}
+                        triggerActionsLoading={isLoading}
+                    />
+
+                    <SnoozeDialog
+                        open={isSnoozeOpen}
+                        onOpenChange={setIsSnoozeOpen}
+                        onConfirm={handleSnooze}
+                        isLoading={isLoading}
+                    />
+
+                    <CreateLeadDialog
+                        open={isCreateLeadOpen}
+                        onOpenChange={setIsCreateLeadOpen}
+                        onConfirm={handleCreateLead}
+                        isLoading={isLoading}
+                        relatedEntity={
+                            selectedBuyer
+                                ? { name: selectedBuyer.name, type: 'buyer' }
+                                : undefined
+                        }
                     />
                 </div>
             </CRMLayout>

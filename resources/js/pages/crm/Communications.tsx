@@ -2,7 +2,7 @@
 
 import { Head } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
-import { AlertCircle, Edit2, Eye, Trash2, Plus } from 'lucide-react';
+import { AlertCircle, Edit2, Eye, Trash2, Plus, Lightbulb, Clock } from 'lucide-react';
 import CRMLayout from '@/layouts/crm-layout';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/radix/dialog';
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,8 @@ import { EntityDetailsDialog, type EntityDetailsSection } from '@/components/dia
 import { DynamicEntityFilters, appendDynamicFilterParams } from '@/components/forms/DynamicEntityFilters';
 import { DynamicFieldValues } from '@/components/forms/DynamicFieldValues';
 import { EntityAttentionPanel } from '@/components/attention/entity-attention-panel';
+import { SnoozeDialog } from '@/components/dialogs/SnoozeDialog';
+import { CreateLeadDialog } from '@/components/dialogs/CreateLeadDialog';
 import { apiRequest } from '@/lib/csrf';
 import type { EntitySchema, SerializedDynamicFieldValueMap } from '@/types/entity-schema';
 
@@ -76,7 +78,10 @@ export default function Communications({
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [isViewOpen, setIsViewOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+    const [isSnoozeOpen, setIsSnoozeOpen] = useState(false);
+    const [isCreateLeadOpen, setIsCreateLeadOpen] = useState(false);
     const [selectedCommunication, setSelectedCommunication] = useState<CommunicationRow | null>(null);
+    const [selectedCommunicationAttentionCount, setSelectedCommunicationAttentionCount] = useState(0);
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
@@ -90,6 +95,27 @@ export default function Communications({
             setSelectedCommunication(communications[0]);
         }
     }, [communications, selectedCommunication]);
+
+    // Load attention items for selected communication
+    useEffect(() => {
+        const loadAttentionItems = async () => {
+            if (!selectedCommunication || !isViewOpen) {
+                setSelectedCommunicationAttentionCount(0);
+                return;
+            }
+
+            try {
+                const response = await apiRequest(`/api/v1/attention/entities/communication/${selectedCommunication.id}`);
+                const data = await response.json();
+                setSelectedCommunicationAttentionCount(data.data?.length ?? 0);
+            } catch (err) {
+                console.error('Error loading attention items:', err);
+                setSelectedCommunicationAttentionCount(0);
+            }
+        };
+
+        void loadAttentionItems();
+    }, [selectedCommunication, isViewOpen]);
 
     const applyFilters = async () => {
         setIsLoading(true);
@@ -191,6 +217,63 @@ export default function Communications({
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const handleSnooze = async (duration: string, reason?: string) => {
+        if (!selectedCommunication) return;
+        setIsLoading(true);
+        setError('');
+        try {
+            const response = await apiRequest(`/api/v1/attention/entities/communication/${selectedCommunication.id}`);
+            const data = await response.json();
+            const items = data.data ?? [];
+            if (items.length === 0) { setError('Нет активных действий'); return; }
+            const durationMs = { '1h': 3600000, '4h': 14400000, '8h': 28800000, '1d': 86400000, '3d': 259200000, '1w': 604800000 }[duration] || 86400000;
+            const snoozeUntil = new Date(Date.now() + durationMs).toISOString();
+            await apiRequest(`/api/v1/attention/items/${items[0].id}/snooze`, {
+                method: 'POST',
+                body: JSON.stringify({ until: snoozeUntil, reason }),
+            });
+            setIsSnoozeOpen(false);
+            const freshResponse = await apiRequest(`/api/v1/attention/entities/communication/${selectedCommunication.id}`);
+            const freshData = await freshResponse.json();
+            setSelectedCommunicationAttentionCount(freshData.data?.length ?? 0);
+        } catch (err) { setError('Ошибка'); console.error(err); }
+        finally { setIsLoading(false); }
+    };
+
+    const handleCreateLead = async (leadData: any) => {
+        if (!selectedCommunication) return;
+        setIsLoading(true);
+        setError('');
+        try {
+            await apiRequest('/api/v1/leads', {
+                method: 'POST',
+                body: JSON.stringify({...leadData, related_communication_id: selectedCommunication.id, source: 'communication_conversion'}),
+            });
+            setIsCreateLeadOpen(false);
+        } catch (err) { setError('Ошибка'); console.error(err); }
+        finally { setIsLoading(false); }
+    };
+
+    const handleResolveMainTrigger = async () => {
+        if (!selectedCommunication) return;
+        setIsLoading(true);
+        setError('');
+        try {
+            const response = await apiRequest(`/api/v1/attention/entities/communication/${selectedCommunication.id}`);
+            const data = await response.json();
+            const items = data.data ?? [];
+            if (items.length === 0) { setError('Нет активных действий'); return; }
+            await apiRequest(`/api/v1/attention/items/${items[0].id}/resolve`, {
+                method: 'POST',
+                body: JSON.stringify({ resolution_type: 'completed' }),
+            });
+            const freshResponse = await apiRequest(`/api/v1/attention/entities/communication/${selectedCommunication.id}`);
+            const freshData = await freshResponse.json();
+            setSelectedCommunicationAttentionCount(freshData.data?.length ?? 0);
+        } catch (err) { setError('Ошибка'); console.error(err); }
+        finally { setIsLoading(false); }
     };
 
     const getStatusLabel = (status: Communication['status']) => ({
@@ -508,6 +591,28 @@ export default function Communications({
                         dynamicFieldValues={selectedCommunication?.dynamic_field_values}
                         sections={selectedCommunicationSections}
                         exportFileName={selectedCommunication ? `communication-${selectedCommunication.id}` : 'communication-details'}
+                        entityType="communication"
+                        entityId={selectedCommunication?.id}
+                        attentionCount={selectedCommunicationAttentionCount}
+                        onSnooze={() => setIsSnoozeOpen(true)}
+                        onResolve={() => handleResolveMainTrigger()}
+                        onCreateLead={() => setIsCreateLeadOpen(true)}
+                        triggerActionsLoading={isLoading}
+                    />
+
+                    <SnoozeDialog
+                        open={isSnoozeOpen}
+                        onOpenChange={setIsSnoozeOpen}
+                        onConfirm={handleSnooze}
+                        isLoading={isLoading}
+                    />
+
+                    <CreateLeadDialog
+                        open={isCreateLeadOpen}
+                        onOpenChange={setIsCreateLeadOpen}
+                        onConfirm={handleCreateLead}
+                        isLoading={isLoading}
+                        relatedEntity={selectedCommunication ? { name: selectedCommunication.subject || 'Коммуникация', type: 'communication' } : undefined}
                     />
                 </div>
             </CRMLayout>

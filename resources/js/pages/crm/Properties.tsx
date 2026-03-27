@@ -12,6 +12,8 @@ import {
     ChevronDown,
     Search,
     X,
+    Lightbulb,
+    Clock,
 } from 'lucide-react';
 import CRMLayout from '@/layouts/crm-layout';
 import { Button } from '@/components/ui/button';
@@ -41,6 +43,8 @@ import { EntityDetailsDialog, type EntityDetailsSection } from '@/components/dia
 import { DynamicEntityFilters, appendDynamicFilterParams } from '@/components/forms/DynamicEntityFilters';
 import { DynamicFieldValues } from '@/components/forms/DynamicFieldValues';
 import { EntityAttentionPanel } from '@/components/attention/entity-attention-panel';
+import { SnoozeDialog } from '@/components/dialogs/SnoozeDialog';
+import { CreateLeadDialog } from '@/components/dialogs/CreateLeadDialog';
 import { apiRequest } from '@/lib/csrf';
 import type { EntitySchema, SerializedDynamicFieldValueMap } from '@/types/entity-schema';
 
@@ -126,7 +130,10 @@ export default function Properties({ properties, filters: initialFilters, agents
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isSnoozeOpen, setIsSnoozeOpen] = useState(false);
+    const [isCreateLeadOpen, setIsCreateLeadOpen] = useState(false);
     const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+    const [selectedPropertyAttentionCount, setSelectedPropertyAttentionCount] = useState(0);
 
     const applyFilters = async () => {
         setIsLoading(true);
@@ -199,6 +206,27 @@ export default function Properties({ properties, filters: initialFilters, agents
             setSelectedProperty(sortedProperties[0]);
         }
     }, [selectedProperty, sortedProperties]);
+
+    // Load attention items for selected property
+    useEffect(() => {
+        const loadAttentionItems = async () => {
+            if (!selectedProperty || !isViewModalOpen) {
+                setSelectedPropertyAttentionCount(0);
+                return;
+            }
+
+            try {
+                const response = await apiRequest(`/api/v1/attention/entities/property/${selectedProperty.id}`);
+                const data = await response.json();
+                setSelectedPropertyAttentionCount(data.data?.length ?? 0);
+            } catch (err) {
+                console.error('Error loading attention items:', err);
+                setSelectedPropertyAttentionCount(0);
+            }
+        };
+
+        void loadAttentionItems();
+    }, [selectedProperty, isViewModalOpen]);
 
     const handleCreate = async (data: Partial<Property>) => {
         setIsLoading(true);
@@ -408,6 +436,112 @@ export default function Properties({ properties, filters: initialFilters, agents
         ],
         [entitySchema, setIsDeleteModalOpen, setIsEditModalOpen, setIsViewModalOpen, setSelectedProperty]
     );
+
+    const handleSnooze = async (duration: string, reason?: string) => {
+        if (!selectedProperty) return;
+
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            const response = await apiRequest(`/api/v1/properties/${selectedProperty.id}/snooze`, {
+                method: 'POST',
+                body: JSON.stringify({ duration, reason }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Ошибка при отложении');
+            }
+
+            setIsSnoozeOpen(false);
+            setSuccess('Действие отложено');
+            setTimeout(() => setSuccess(null), 3000);
+        } catch (err) {
+            setError('Ошибка при отложении');
+            console.error(err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleCreateLead = async (leadData: {
+        contact_name: string;
+        contact_email?: string;
+        contact_phone?: string;
+        priority: 'low' | 'medium' | 'high';
+        description: string;
+    }) => {
+        if (!selectedProperty) return;
+
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            const response = await apiRequest('/api/v1/leads', {
+                method: 'POST',
+                body: JSON.stringify({
+                    ...leadData,
+                    related_property_id: selectedProperty.id,
+                    source: 'property_conversion',
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Ошибка при создании лида');
+            }
+
+            setIsCreateLeadOpen(false);
+            setSuccess('Лид успешно создан');
+            setTimeout(() => setSuccess(null), 3000);
+        } catch (err) {
+            setError('Ошибка при создании лида');
+            console.error(err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleResolveMainTrigger = async () => {
+        if (!selectedProperty) return;
+
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            // Find the first active attention item for this property
+            const response = await apiRequest(`/api/v1/attention/entities/property/${selectedProperty.id}`);
+            const data = await response.json();
+            const items = data.data ?? [];
+
+            if (items.length === 0) {
+                setError('Нет активных действий для выполнения');
+                return;
+            }
+
+            // Resolve the first item
+            const firstItem = items[0];
+            const resolveResponse = await apiRequest(`/api/v1/attention/items/${firstItem.id}/resolve`, {
+                method: 'POST',
+                body: JSON.stringify({ resolution_type: 'completed' }),
+            });
+
+            if (!resolveResponse.ok) {
+                throw new Error('Ошибка при выполнении действия');
+            }
+
+            // Reload attention count
+            const freshResponse = await apiRequest(`/api/v1/attention/entities/property/${selectedProperty.id}`);
+            const freshData = await freshResponse.json();
+            setSelectedPropertyAttentionCount(freshData.data?.length ?? 0);
+            setSuccess('Действие успешно завершено');
+            setTimeout(() => setSuccess(null), 3000);
+        } catch (err) {
+            setError('Ошибка при выполнении действия');
+            console.error(err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const selectedPropertySections: EntityDetailsSection[] = selectedProperty
         ? [
@@ -654,6 +788,14 @@ export default function Properties({ properties, filters: initialFilters, agents
                     dynamicFieldValues={selectedProperty?.dynamic_field_values}
                     sections={selectedPropertySections}
                     exportFileName={selectedProperty ? `property-${selectedProperty.id}` : 'property-details'}
+                    // Trigger system
+                    entityType="property"
+                    entityId={selectedProperty?.id}
+                    attentionCount={selectedPropertyAttentionCount}
+                    onSnooze={() => setIsSnoozeOpen(true)}
+                    onResolve={() => handleResolveMainTrigger()}
+                    onCreateLead={() => setIsCreateLeadOpen(true)}
+                    triggerActionsLoading={isLoading}
                 />
                 {/* Edit Modal */}
                 {selectedProperty && (
@@ -687,6 +829,25 @@ export default function Properties({ properties, filters: initialFilters, agents
                     itemName={selectedProperty?.address}
                     isLoading={isLoading}
                     onConfirm={handleDelete}
+                />
+
+                <SnoozeDialog
+                    open={isSnoozeOpen}
+                    onOpenChange={setIsSnoozeOpen}
+                    onConfirm={handleSnooze}
+                    isLoading={isLoading}
+                />
+
+                <CreateLeadDialog
+                    open={isCreateLeadOpen}
+                    onOpenChange={setIsCreateLeadOpen}
+                    onConfirm={handleCreateLead}
+                    isLoading={isLoading}
+                    relatedEntity={
+                        selectedProperty
+                            ? { name: selectedProperty.address, type: 'property' }
+                            : undefined
+                    }
                 />
             </CRMLayout>
         </>

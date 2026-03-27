@@ -4,6 +4,7 @@ import { Download, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/radix/dialog';
 import { DynamicFieldValues, getDynamicFieldDisplayItems } from '@/components/forms/DynamicFieldValues';
+import { TriggerActionsBar } from '@/components/triggers/TriggerActionsBar';
 import type { EntitySchema, SerializedDynamicFieldValueMap } from '@/types/entity-schema';
 
 export interface EntityDetailsField {
@@ -26,6 +27,14 @@ interface EntityDetailsDialogProps {
     dynamicFieldValues?: SerializedDynamicFieldValueMap;
     sections?: EntityDetailsSection[];
     exportFileName?: string;
+    // Trigger system props
+    entityType?: string;
+    entityId?: number;
+    attentionCount?: number;
+    onSnooze?: () => void;
+    onResolve?: () => void;
+    onCreateLead?: () => void;
+    triggerActionsLoading?: boolean;
 }
 
 function formatPlainValue(value: unknown): string {
@@ -80,6 +89,13 @@ export function EntityDetailsDialog({
     dynamicFieldValues,
     sections = [],
     exportFileName,
+    entityType,
+    entityId,
+    attentionCount = 0,
+    onSnooze,
+    onResolve,
+    onCreateLead,
+    triggerActionsLoading = false,
 }: EntityDetailsDialogProps) {
     const dynamicItems = getDynamicFieldDisplayItems(entitySchema, values, dynamicFieldValues);
 
@@ -193,6 +209,20 @@ export function EntityDetailsDialog({
                     <DialogTitle>{title}</DialogTitle>
                     {description && <DialogDescription>{description}</DialogDescription>}
                 </DialogHeader>
+
+                {/* Trigger Actions Bar */}
+                {entityType && entityId && (
+                    <TriggerActionsBar
+                        entityType={entityType}
+                        entityId={entityId}
+                        entityTitle={title}
+                        attentionCount={attentionCount}
+                        onSnooze={onSnooze}
+                        onResolve={onResolve}
+                        onCreateLead={onCreateLead}
+                        isLoading={triggerActionsLoading}
+                    />
+                )}
 
                 <div className="flex flex-wrap gap-2">
                     <Button type="button" variant="outline" onClick={handlePrint}>

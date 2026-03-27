@@ -1,8 +1,8 @@
 'use client';
 
 import { Head } from '@inertiajs/react';
-import { useState } from 'react';
-import { AlertCircle, Edit2, Eye, Trash2, Plus } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { AlertCircle, Edit2, Eye, Trash2, Plus, Lightbulb, Clock } from 'lucide-react';
 import CRMLayout from '@/layouts/crm-layout';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/radix/dialog';
 import { Button } from '@/components/ui/button';
@@ -25,6 +25,9 @@ import { DeleteConfirmationDialog } from '@/components/dialogs/DeleteConfirmatio
 import { EntityDetailsDialog, type EntityDetailsSection } from '@/components/dialogs/EntityDetailsDialog';
 import { DynamicEntityFilters, appendDynamicFilterParams } from '@/components/forms/DynamicEntityFilters';
 import { DynamicFieldValues } from '@/components/forms/DynamicFieldValues';
+import { SnoozeDialog } from '@/components/dialogs/SnoozeDialog';
+import { CreateLeadDialog } from '@/components/dialogs/CreateLeadDialog';
+import { EntityAttentionPanel } from '@/components/attention/entity-attention-panel';
 import { apiRequest } from '@/lib/csrf';
 import type { EntitySchema, SerializedDynamicFieldValueMap } from '@/types/entity-schema';
 
@@ -67,7 +70,10 @@ export default function Agents({ agents: initialAgents, filters: initialFilters,
     const [isEditOpen, setIsEditOpen] = useState(false);
         const [isViewOpen, setIsViewOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+    const [isSnoozeOpen, setIsSnoozeOpen] = useState(false);
+    const [isCreateLeadOpen, setIsCreateLeadOpen] = useState(false);
     const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
+    const [selectedAgentAttentionCount, setSelectedAgentAttentionCount] = useState(0);
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
@@ -77,6 +83,27 @@ export default function Agents({ agents: initialAgents, filters: initialFilters,
         filters.specialization || ''
     );
     const [dynamicFilters, setDynamicFilters] = useState<Record<string, unknown>>(filters.dynamic_filters || {});
+
+    // Load attention items for selected agent
+    useEffect(() => {
+        const loadAttentionItems = async () => {
+            if (!selectedAgent || !isViewOpen) {
+                setSelectedAgentAttentionCount(0);
+                return;
+            }
+
+            try {
+                const response = await apiRequest(`/api/v1/attention/entities/agent/${selectedAgent.id}`);
+                const data = await response.json();
+                setSelectedAgentAttentionCount(data.data?.length ?? 0);
+            } catch (err) {
+                console.error('Error loading attention items:', err);
+                setSelectedAgentAttentionCount(0);
+            }
+        };
+
+        void loadAttentionItems();
+    }, [selectedAgent, isViewOpen]);
 
     const applyFilters = async () => {
         setIsLoading(true);
@@ -180,6 +207,112 @@ export default function Agents({ agents: initialAgents, filters: initialFilters,
             await applyFilters();
         } catch (err) {
             setError('Ошибка при удалении агента');
+            console.error(err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleSnooze = async (duration: string, reason?: string) => {
+        if (!selectedAgent) return;
+
+        setIsLoading(true);
+        setError('');
+
+        try {
+            // Find and snooze first attention item
+            const response = await apiRequest(`/api/v1/attention/entities/agent/${selectedAgent.id}`);
+            const data = await response.json();
+            const items = data.data ?? [];
+
+            if (items.length === 0) {
+                setError('Нет активных действий');
+                return;
+            }
+
+            const durationMs = { '1h': 3600000, '4h': 14400000, '8h': 28800000, '1d': 86400000, '3d': 259200000, '1w': 604800000 }[duration] || 86400000;
+            const snoozeUntil = new Date(Date.now() + durationMs).toISOString();
+
+            const snoozeResponse = await apiRequest(`/api/v1/attention/items/${items[0].id}/snooze`, {
+                method: 'POST',
+                body: JSON.stringify({ until: snoozeUntil, reason }),
+            });
+
+            if (!snoozeResponse.ok) throw new Error('Failed to snooze');
+
+            setIsSnoozeOpen(false);
+            const freshResponse = await apiRequest(`/api/v1/attention/entities/agent/${selectedAgent.id}`);
+            const freshData = await freshResponse.json();
+            setSelectedAgentAttentionCount(freshData.data?.length ?? 0);
+        } catch (err) {
+            setError('Ошибка при отложении');
+            console.error(err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleCreateLead = async (leadData: {
+        contact_name: string;
+        contact_email?: string;
+        contact_phone?: string;
+        priority: 'low' | 'medium' | 'high';
+        description: string;
+    }) => {
+        if (!selectedAgent) return;
+
+        setIsLoading(true);
+        setError('');
+
+        try {
+            const response = await apiRequest('/api/v1/leads', {
+                method: 'POST',
+                body: JSON.stringify({
+                    ...leadData,
+                    related_agent_id: selectedAgent.id,
+                    source: 'agent_conversion',
+                }),
+            });
+
+            if (!response.ok) throw new Error('Failed to create lead');
+
+            setIsCreateLeadOpen(false);
+        } catch (err) {
+            setError('Ошибка при создании лида');
+            console.error(err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleResolveMainTrigger = async () => {
+        if (!selectedAgent) return;
+
+        setIsLoading(true);
+        setError('');
+
+        try {
+            const response = await apiRequest(`/api/v1/attention/entities/agent/${selectedAgent.id}`);
+            const data = await response.json();
+            const items = data.data ?? [];
+
+            if (items.length === 0) {
+                setError('Нет активных действий для выполнения');
+                return;
+            }
+
+            const resolveResponse = await apiRequest(`/api/v1/attention/items/${items[0].id}/resolve`, {
+                method: 'POST',
+                body: JSON.stringify({ resolution_type: 'completed' }),
+            });
+
+            if (!resolveResponse.ok) throw new Error('Failed to resolve');
+
+            const freshResponse = await apiRequest(`/api/v1/attention/entities/agent/${selectedAgent.id}`);
+            const freshData = await freshResponse.json();
+            setSelectedAgentAttentionCount(freshData.data?.length ?? 0);
+        } catch (err) {
+            setError('Ошибка при выполнении действия');
             console.error(err);
         } finally {
             setIsLoading(false);
@@ -518,6 +651,33 @@ export default function Agents({ agents: initialAgents, filters: initialFilters,
                         dynamicFieldValues={selectedAgent?.dynamic_field_values}
                         sections={selectedAgentSections}
                         exportFileName={selectedAgent ? `agent-${selectedAgent.id}` : 'agent-details'}
+                        // Trigger system
+                        entityType="agent"
+                        entityId={selectedAgent?.id}
+                        attentionCount={selectedAgentAttentionCount}
+                        onSnooze={() => setIsSnoozeOpen(true)}
+                        onResolve={() => handleResolveMainTrigger()}
+                        onCreateLead={() => setIsCreateLeadOpen(true)}
+                        triggerActionsLoading={isLoading}
+                    />
+
+                    <SnoozeDialog
+                        open={isSnoozeOpen}
+                        onOpenChange={setIsSnoozeOpen}
+                        onConfirm={handleSnooze}
+                        isLoading={isLoading}
+                    />
+
+                    <CreateLeadDialog
+                        open={isCreateLeadOpen}
+                        onOpenChange={setIsCreateLeadOpen}
+                        onConfirm={handleCreateLead}
+                        isLoading={isLoading}
+                        relatedEntity={
+                            selectedAgent
+                                ? { name: selectedAgent.name, type: 'agent' }
+                                : undefined
+                        }
                     />
                 </div>
             </CRMLayout>
