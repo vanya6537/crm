@@ -1,4 +1,6 @@
 import { Form, Head, usePage } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
+import { isCsrfReady, waitForCsrf } from '@/lib/csrf';
 import InputError from '@/components/input-error';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
@@ -23,8 +25,31 @@ export default function Login({
     canRegister,
 }: Props) {
     const { csrf_token } = usePage().props;
+    const [csrfReady, setCsrfReady] = useState<boolean>(isCsrfReady());
     
     console.debug('[Login] CSRF Token from props:', csrf_token ? csrf_token.substring(0, 20) + '...' : 'MISSING');
+    console.debug('[Login] CSRF Ready status:', csrfReady);
+    
+    // Wait for CSRF to be ready before allowing form submission
+    useEffect(() => {
+        console.debug('[Login] Setting up CSRF readiness check');
+        
+        if (isCsrfReady()) {
+            console.debug('[Login] CSRF already ready');
+            setCsrfReady(true);
+            return;
+        }
+        
+        console.debug('[Login] Waiting for CSRF to be ready...');
+        waitForCsrf().then(() => {
+            console.debug('[Login] CSRF is now ready');
+            setCsrfReady(true);
+        }).catch(error => {
+            console.error('[Login] Error waiting for CSRF:', error);
+            // Even if there's an error, mark as ready to allow form submission
+            setCsrfReady(true);
+        });
+    }, []);
     
     return (
         <AuthLayout
@@ -95,11 +120,12 @@ export default function Login({
                                 type="submit"
                                 className="mt-4 w-full"
                                 tabIndex={4}
-                                disabled={processing}
+                                disabled={processing || !csrfReady}
                                 data-test="login-button"
+                                title={!csrfReady ? 'Initializing security tokens...' : undefined}
                             >
                                 {processing && <Spinner />}
-                                Log in
+                                {!csrfReady && !processing ? 'Initializing...' : 'Log in'}
                             </Button>
                         </div>
 

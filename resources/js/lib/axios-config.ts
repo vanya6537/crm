@@ -26,17 +26,31 @@ export function configureAxios(): void {
         withCredentials: axios.defaults.withCredentials,
     });
 
-    // Interceptor to update CSRF token if needed
+    // Interceptor to handle 419 CSRF token errors
     axios.interceptors.response.use(
         (response) => response,
         (error) => {
-            // If we get a 419 error, refresh the CSRF token and retry
+            // If we get a 419 error, refresh the CSRF token
             if (error.response?.status === 419) {
-                const newToken = getCsrfToken();
-                if (newToken) {
-                    axios.defaults.headers.common['X-CSRF-TOKEN'] = newToken;
-                    console.warn('[CSRF] Token refreshed after 419 error');
-                }
+                console.warn('[CSRF] Got 419 error, attempting to refresh CSRF token');
+                
+                // Reinitialize CSRF to get fresh token
+                fetch('/sanctum/csrf-cookie', {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                    },
+                }).then(() => {
+                    const newToken = getCsrfToken();
+                    if (newToken) {
+                        axios.defaults.headers.common['X-CSRF-TOKEN'] = newToken;
+                        console.debug('[CSRF] Token updated after 419:', newToken.substring(0, 10) + '...');
+                    }
+                }).catch(err => {
+                    console.error('[CSRF] Failed to refresh token after 419:', err);
+                });
             }
             return Promise.reject(error);
         }

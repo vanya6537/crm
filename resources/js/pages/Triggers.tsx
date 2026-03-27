@@ -3,8 +3,10 @@ import { useEffect, useState } from 'react';
 import {
     Activity,
     BarChart3,
+    Check,
     CheckCircle2,
     Filter,
+    Info,
     Power,
     Search,
     ShieldAlert,
@@ -106,6 +108,15 @@ const priorityColors: Record<string, string> = {
     low: 'bg-slate-100 text-slate-700',
 };
 
+const attentionStateLabels: Record<string, string> = {
+    urgent: 'Срочно',
+    risk: 'Риск',
+    need_action: 'Сделать сейчас',
+    waiting_me: 'Ждёт меня',
+    waiting_client: 'Ждёт клиента',
+    opportunity: 'Возможность',
+};
+
 export default function TriggersPage() {
     const [tab, setTab] = useState<'catalog' | 'active' | 'journal'>('catalog');
     const [overview, setOverview] = useState<Overview | null>(null);
@@ -114,8 +125,10 @@ export default function TriggersPage() {
     const [journal, setJournal] = useState<JournalRow[]>([]);
     const [search, setSearch] = useState('');
     const [family, setFamily] = useState('all');
+    const [supportFilter, setSupportFilter] = useState<'all' | 'runtime_ready' | 'catalog_only'>('all');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [selectedDefinition, setSelectedDefinition] = useState<TriggerDefinition | null>(null);
 
     const loadData = async () => {
         setLoading(true);
@@ -141,11 +154,18 @@ export default function TriggersPage() {
             const catalogData: TriggerCatalogResponse = await catalogResponse.json();
             const activeData = await activeResponse.json();
             const journalData = await journalResponse.json();
+            const definitions = catalogData.data.data ?? [];
 
             setOverview(overviewData);
-            setCatalog(catalogData.data.data ?? []);
+            setCatalog(definitions);
             setActiveRules(activeData.data ?? []);
             setJournal(journalData.data ?? []);
+
+            if (definitions.length === 0) {
+                setSelectedDefinition(null);
+            } else if (!selectedDefinition || !definitions.some((definition) => definition.id === selectedDefinition.id)) {
+                setSelectedDefinition(definitions[0]);
+            }
         } catch (loadError) {
             console.error(loadError);
             setError('Не удалось загрузить центр правил.');
@@ -157,6 +177,14 @@ export default function TriggersPage() {
     useEffect(() => {
         void loadData();
     }, [family]);
+
+    const filteredCatalog = catalog.filter((definition) => {
+        if (supportFilter === 'all') {
+            return true;
+        }
+
+        return (definition.metadata?.support_status ?? 'catalog_only') === supportFilter;
+    });
 
     const activateDefinition = async (definitionId: number) => {
         try {
@@ -270,14 +298,62 @@ export default function TriggersPage() {
                         <div className="mt-4 flex flex-wrap gap-2">
                             <Button variant={family === 'all' ? 'default' : 'outline'} size="sm" onClick={() => setFamily('all')}>
                                 Все семьи
+                                {overview ? <span className="ml-2 text-xs opacity-70">{overview.total_definitions}</span> : null}
                             </Button>
                             {Object.entries(familyLabels).map(([key, label]) => (
                                 <Button key={key} variant={family === key ? 'default' : 'outline'} size="sm" onClick={() => setFamily(key)}>
                                     {label}
+                                    {overview?.families?.[key] ? <span className="ml-2 text-xs opacity-70">{overview.families[key]}</span> : null}
                                 </Button>
                             ))}
                         </div>
+
+                        <div className="mt-4 flex flex-wrap gap-2 border-t pt-4">
+                            <Button variant={supportFilter === 'all' ? 'default' : 'outline'} size="sm" onClick={() => setSupportFilter('all')}>
+                                Все статусы
+                            </Button>
+                            <Button variant={supportFilter === 'runtime_ready' ? 'default' : 'outline'} size="sm" onClick={() => setSupportFilter('runtime_ready')}>
+                                <Check className="mr-2 h-4 w-4" />
+                                Runtime-ready
+                            </Button>
+                            <Button variant={supportFilter === 'catalog_only' ? 'default' : 'outline'} size="sm" onClick={() => setSupportFilter('catalog_only')}>
+                                <Info className="mr-2 h-4 w-4" />
+                                Catalog-only
+                            </Button>
+                        </div>
                     </Card>
+
+                    {overview ? (
+                        <div className="grid gap-4 lg:grid-cols-2">
+                            <Card className="p-4">
+                                <p className="text-sm font-medium text-muted-foreground">Слои внимания</p>
+                                <div className="mt-3 flex flex-wrap gap-2">
+                                    {Object.entries(overview.attention_states).map(([state, count]) => (
+                                        <Badge key={state} variant="outline" className="px-3 py-1">
+                                            {attentionStateLabels[state] ?? state}: {count}
+                                        </Badge>
+                                    ))}
+                                </div>
+                            </Card>
+                            <Card className="p-4">
+                                <p className="text-sm font-medium text-muted-foreground">Покрытие каталога</p>
+                                <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                                    <div className="rounded-lg border p-3">
+                                        <p className="text-xs text-muted-foreground">Runtime-ready</p>
+                                        <p className="text-xl font-semibold">{overview.activation_ready}</p>
+                                    </div>
+                                    <div className="rounded-lg border p-3">
+                                        <p className="text-xs text-muted-foreground">Catalog-only</p>
+                                        <p className="text-xl font-semibold">{overview.total_definitions - overview.activation_ready}</p>
+                                    </div>
+                                    <div className="rounded-lg border p-3">
+                                        <p className="text-xs text-muted-foreground">Execution total</p>
+                                        <p className="text-xl font-semibold">{overview.executions_total}</p>
+                                    </div>
+                                </div>
+                            </Card>
+                        </div>
+                    ) : null}
 
                     {error ? (
                         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -290,9 +366,14 @@ export default function TriggersPage() {
                     ) : null}
 
                     {!loading && tab === 'catalog' ? (
-                        <div className="grid gap-4 xl:grid-cols-2">
-                            {catalog.map((definition) => (
-                                <Card key={definition.id} className="p-4">
+                        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+                            <div className="grid gap-4 xl:grid-cols-2">
+                                {filteredCatalog.map((definition) => (
+                                <Card
+                                    key={definition.id}
+                                    className={selectedDefinition?.id === definition.id ? 'border-primary p-4' : 'p-4'}
+                                    onClick={() => setSelectedDefinition(definition)}
+                                >
                                     <div className="flex items-start justify-between gap-3">
                                         <div>
                                             <div className="flex flex-wrap items-center gap-2">
@@ -344,6 +425,74 @@ export default function TriggersPage() {
                                     </div>
                                 </Card>
                             ))}
+
+                            {filteredCatalog.length === 0 ? (
+                                <Card className="p-8 text-center text-sm text-muted-foreground xl:col-span-2">
+                                    По текущим фильтрам правил не найдено.
+                                </Card>
+                            ) : null}
+                            </div>
+
+                            <Card className="h-fit p-4 xl:sticky xl:top-6">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">Карточка правила</p>
+                                        <h3 className="mt-1 text-lg font-semibold">{selectedDefinition?.title ?? 'Выберите правило'}</h3>
+                                    </div>
+                                    {selectedDefinition?.metadata?.activation_ready ? <Badge variant="outline">Runtime-ready</Badge> : <Badge variant="secondary">Catalog-only</Badge>}
+                                </div>
+
+                                {selectedDefinition ? (
+                                    <div className="mt-4 space-y-4 text-sm">
+                                        <div className="rounded-lg border p-3">
+                                            <p className="font-medium text-muted-foreground">Описание</p>
+                                            <p className="mt-1">{selectedDefinition.description}</p>
+                                        </div>
+
+                                        <div className="grid gap-3 sm:grid-cols-2">
+                                            <div className="rounded-lg border p-3">
+                                                <p className="font-medium text-muted-foreground">Каталог</p>
+                                                <p className="mt-1">#{selectedDefinition.catalog_number}</p>
+                                            </div>
+                                            <div className="rounded-lg border p-3">
+                                                <p className="font-medium text-muted-foreground">Семья</p>
+                                                <p className="mt-1">{familyLabels[selectedDefinition.family] ?? selectedDefinition.family}</p>
+                                            </div>
+                                            <div className="rounded-lg border p-3">
+                                                <p className="font-medium text-muted-foreground">Событие</p>
+                                                <p className="mt-1">{selectedDefinition.source_event}</p>
+                                            </div>
+                                            <div className="rounded-lg border p-3">
+                                                <p className="font-medium text-muted-foreground">Приоритет</p>
+                                                <p className="mt-1">{selectedDefinition.priority}</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="rounded-lg border p-3">
+                                            <p className="font-medium text-muted-foreground">Условие</p>
+                                            <p className="mt-1">{selectedDefinition.condition_summary}</p>
+                                        </div>
+
+                                        <div className="rounded-lg border p-3">
+                                            <p className="font-medium text-muted-foreground">Рекомендуемое действие</p>
+                                            <p className="mt-1">{selectedDefinition.default_action || selectedDefinition.action_summary || 'Без действия по умолчанию'}</p>
+                                        </div>
+
+                                        <div className="rounded-lg border p-3">
+                                            <p className="font-medium text-muted-foreground">Runtime-статус</p>
+                                            <p className="mt-1">
+                                                {selectedDefinition.metadata?.activation_ready
+                                                    ? `Готово к активации на сущности ${selectedDefinition.runtime_entity_type}`
+                                                    : selectedDefinition.metadata?.activation_blocker || 'Нужна дополнительная runtime-логика'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="mt-4 rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+                                        Выберите правило из каталога, чтобы увидеть детали и статус поддержки.
+                                    </div>
+                                )}
+                            </Card>
                         </div>
                     ) : null}
 

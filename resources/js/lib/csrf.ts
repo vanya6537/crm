@@ -1,3 +1,8 @@
+// Track CSRF initialization state
+let csrfReady = false;
+let csrfReadyPromise: Promise<void> | null = null;
+let csrfReadyResolve: (() => void) | null = null;
+
 /**
  * Get CSRF token from meta tag (most reliable source)
  */
@@ -11,6 +16,41 @@ export function getCsrfToken(): string | null {
     }
     
     return token;
+}
+
+/**
+ * Check if CSRF token is ready and available
+ */
+export function isCsrfReady(): boolean {
+    return csrfReady && getCsrfToken() !== null;
+}
+
+/**
+ * Wait for CSRF token to be available
+ */
+export async function waitForCsrf(): Promise<void> {
+    if (csrfReady && getCsrfToken()) {
+        return Promise.resolve();
+    }
+    
+    if (!csrfReadyPromise) {
+        csrfReadyPromise = new Promise((resolve) => {
+            csrfReadyResolve = resolve;
+        });
+    }
+    
+    return csrfReadyPromise;
+}
+
+/**
+ * Mark CSRF as ready (internal use)
+ */
+function markCsrfReady(): void {
+    csrfReady = true;
+    console.debug('[CSRF] CSRF marked as ready');
+    if (csrfReadyResolve) {
+        csrfReadyResolve();
+    }
 }
 
 /**
@@ -43,6 +83,14 @@ export async function initializeCsrf(): Promise<void> {
     try {
         console.debug('[CSRF] Initializing CSRF cookie from /sanctum/csrf-cookie');
         
+        // First check if token already exists in meta tag
+        const existingToken = getCsrfToken();
+        if (existingToken) {
+            console.debug('[CSRF] Token already available in meta tag:', existingToken.substring(0, 10) + '...');
+            markCsrfReady();
+            return;
+        }
+        
         const response = await fetch('/sanctum/csrf-cookie', {
             method: 'GET',
             credentials: 'include',
@@ -57,6 +105,8 @@ export async function initializeCsrf(): Promise<void> {
                 status: response.status,
                 statusText: response.statusText,
             });
+            // Still mark as ready even if fetch fails, token might be in meta tag
+            markCsrfReady();
             return;
         }
         
@@ -68,10 +118,16 @@ export async function initializeCsrf(): Promise<void> {
             console.warn('[CSRF] Token still not available after initialization');
         }
 
-        // Check auth status after CSRF initialization
-        await checkAuthStatus();
+        markCsrfReady();
+        
+        // Check auth status after CSRF initialization (non-blocking)
+        checkAuthStatus().catch(error => {
+            console.warn('[CSRF] Failed to check auth status after initialization:', error);
+        });
     } catch (error) {
         console.error('[CSRF] Exception during initialization:', error);
+        // Still mark as ready even if there's an exception
+        markCsrfReady();
     }
 }
 

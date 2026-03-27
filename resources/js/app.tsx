@@ -42,12 +42,14 @@ console.log('%c[App] About to initialize theme', 'color: #ff0000');
 initializeTheme();
 console.log('%c[App] Theme initialization complete', 'color: #ff0000');
 
-// Initialize CSRF protection
-console.log('%c[App] About to initialize CSRF', 'color: #ff0000');
-initializeCsrf();
-console.log('%c[App] CSRF initialization complete', 'color: #ff0000');
+// Initialize CSRF protection and configure axios
+console.log('%c[App] About to initialize CSRF and configure axios', 'color: #ff0000');
+
+// Initialize CSRF immediately - this is critical for form submissions
+initializeCsrf().then(() => {
+    console.log('%c[App] CSRF initialization complete', 'color: #ff0000');
+});
 
 // Configure axios with CSRF headers for Inertia Form support
-console.log('%c[App] About to configure axios', 'color: #ff0000');
 configureAxios();
 console.log('%c[App] Axios configuration complete', 'color: #ff0000');

@@ -237,7 +237,7 @@ export function ResizableTable<TData>(props: ResizableTableProps<TData>) {
 
     return (
         <div className={cn("w-full", className)}>
-            <div className="bg-background border border-border/50 overflow-hidden rounded-lg relative">
+            <div className="bg-background border border-border/50 overflow-x-auto rounded-lg relative">
                 {showActionHeader && (
                     <div className="flex items-center justify-between gap-2 px-3 py-2.5 border-b border-border bg-muted/5">
                         <div className="min-w-0 flex items-center gap-2">
@@ -263,8 +263,7 @@ export function ResizableTable<TData>(props: ResizableTableProps<TData>) {
                         {renderedActions && <div className="shrink-0 flex items-center gap-2">{renderedActions}</div>}
                     </div>
                 )}
-                <div className="overflow-x-auto">
-                    <div className="min-w-0" style={{ minWidth: minTableWidth }}>
+                <div className="min-w-0" style={{ minWidth: minTableWidth }}>
                         {/* Header */}
                         <div className="flex py-3 text-xs font-medium text-muted-foreground/70 bg-muted/5 border-b border-border">
                             {enableRowSelection && (
