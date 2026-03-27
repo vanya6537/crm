@@ -510,7 +510,7 @@ export default function Transactions({
                                 columns={columns}
                                 getRowId={(transaction) => String(transaction.id)}
                                 emptyState="Нет сделок"
-                                minTableWidth={1100}
+
                                 onRowClick={(transaction) => setSelectedTransaction(transaction)}
                                 rowClassName={(transaction) => selectedTransaction?.id === transaction.id ? 'ring-1 ring-primary/30' : ''}
                             />

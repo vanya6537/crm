@@ -106,6 +106,29 @@ export function ResizableTable<TData>(props: ResizableTableProps<TData>) {
         clientPagination,
     } = props;
 
+    // Get screen size for responsive column widths
+    const [screenWidth, setScreenWidth] = React.useState(
+        typeof window !== 'undefined' ? window.innerWidth : 1024
+    );
+
+    React.useEffect(() => {
+        const handleResize = () => setScreenWidth(window.innerWidth);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    // Calculate responsive column width multiplier based on screen size
+    const columnWidthMultiplier = React.useMemo(() => {
+        if (screenWidth < 640) return 0.7;    // Mobile: 70% of default
+        if (screenWidth < 1024) return 0.85;  // Tablet: 85% of default
+        return 1.0;                           // Desktop: full size
+    }, [screenWidth]);
+
+    const getResponsiveWidth = (width?: number): number => {
+        const baseWidth = width ?? DEFAULT_COL_WIDTH;
+        return Math.round(baseWidth * columnWidthMultiplier);
+    };
+
     const widthsSeed = React.useMemo(
         () => getInitialWidths(columns, enableRowSelection),
         // columns keys + selection flag are the stable seed
@@ -113,15 +136,44 @@ export function ResizableTable<TData>(props: ResizableTableProps<TData>) {
         [enableRowSelection, ...columns.map((c) => `${c.key}:${c.width ?? ""}`)]
     );
 
-    const [columnWidths, setColumnWidths] = React.useState<Record<string, number>>(widthsSeed);
+    // Calculate actual minimum table width based on columns with responsive sizing
+    const calculatedMinWidth = React.useMemo(() => {
+        let total = 0;
+        if (enableRowSelection) total += 50;
+        columns.forEach(col => {
+            total += getResponsiveWidth(col.width);
+        });
+        return total;
+    }, [columns, enableRowSelection, columnWidthMultiplier]);
+
+    const [columnWidths, setColumnWidths] = React.useState<Record<string, number>>(() => {
+        const initial: Record<string, number> = {};
+        if (enableRowSelection) {
+            initial[CHECKBOX_COL_KEY] = 50;
+        }
+        columns.forEach(col => {
+            const baseWidth = col.width ?? DEFAULT_COL_WIDTH;
+            initial[col.key] = Math.round(baseWidth * columnWidthMultiplier);
+        });
+        return initial;
+    });
 
     React.useEffect(() => {
-        // When columns set changes, merge previous widths with new defaults.
-        setColumnWidths((prev) => ({
-            ...widthsSeed,
-            ...prev,
-        }));
-    }, [widthsSeed]);
+        // When columns set changes, merge previous widths with new defaults
+        // and apply responsive multiplier
+        setColumnWidths((prev) => {
+            const merged = {
+                ...widthsSeed,
+                ...Object.fromEntries(
+                    Object.entries(prev).map(([key, width]) => [
+                        key,
+                        Math.round(width * columnWidthMultiplier)
+                    ])
+                ),
+            };
+            return merged;
+        });
+    }, [widthsSeed, columnWidthMultiplier]);
 
     const isSelectionControlled = rowSelection?.selectedRowIds !== undefined;
     const [internalSelected, setInternalSelected] = React.useState<string[]>([]);
@@ -236,8 +288,11 @@ export function ResizableTable<TData>(props: ResizableTableProps<TData>) {
     const showActionHeader = Boolean(title) || Boolean(renderedActions) || (enableRowSelection && selectedRowIds.length > 0);
 
     return (
-        <div className={cn("w-full", className)}>
-            <div className="bg-background border border-border/50 overflow-x-auto rounded-lg relative">
+        <div className={cn("w-full gap-4", className)}>
+            <div 
+                className="w-full bg-background border border-border/50 overflow-x-auto rounded-lg relative sm:mx-0 -mx-2"
+                style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-x' }}
+            >
                 {showActionHeader && (
                     <div className="flex items-center justify-between gap-2 px-3 py-2.5 border-b border-border bg-muted/5">
                         <div className="min-w-0 flex items-center gap-2">
@@ -263,7 +318,7 @@ export function ResizableTable<TData>(props: ResizableTableProps<TData>) {
                         {renderedActions && <div className="shrink-0 flex items-center gap-2">{renderedActions}</div>}
                     </div>
                 )}
-                <div className="min-w-0" style={{ minWidth: minTableWidth }}>
+                <div className="min-w-0" style={{ minWidth: calculatedMinWidth }}>
                         {/* Header */}
                         <div className="flex py-3 text-xs font-medium text-muted-foreground/70 bg-muted/5 border-b border-border">
                             {enableRowSelection && (
@@ -385,7 +440,6 @@ export function ResizableTable<TData>(props: ResizableTableProps<TData>) {
                         )}
                     </div>
                 </div>
-            </div>
 
             {/* Pagination */}
             {paginationMode !== "none" && totalPages > 1 && (

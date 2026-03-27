@@ -435,7 +435,7 @@ export default function Communications({
                                 columns={columns}
                                 getRowId={(communication) => String(communication.id)}
                                 emptyState="Нет коммуникаций"
-                                minTableWidth={1100}
+
                                 onRowClick={(communication) => setSelectedCommunication(communication)}
                                 rowClassName={(communication) => selectedCommunication?.id === communication.id ? 'ring-1 ring-primary/30' : ''}
                             />

@@ -605,7 +605,6 @@ export default function Properties({ properties, filters: initialFilters, agents
                                     data={sortedProperties}
                                     columns={columns}
                                     getRowId={(property) => String(property.id)}
-                                    minTableWidth={980}
                                     onRowClick={(property) => setSelectedProperty(property)}
                                     rowClassName={(property) => selectedProperty?.id === property.id ? 'ring-1 ring-primary/30' : ''}
                                 />

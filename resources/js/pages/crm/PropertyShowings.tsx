@@ -405,7 +405,6 @@ export default function PropertyShowings({
                                 columns={columns}
                                 getRowId={(showing) => String(showing.id)}
                                 emptyState="Нет показов"
-                                minTableWidth={1050}
                                 onRowClick={(showing) => setSelectedShowing(showing)}
                                 rowClassName={(showing) => selectedShowing?.id === showing.id ? 'ring-1 ring-primary/30' : ''}
                             />

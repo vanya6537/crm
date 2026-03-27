@@ -383,7 +383,7 @@ export default function ListOfValuesAdvancedPage() {
               data={filteredLOVs}
               columns={columns}
               getRowId={(lov) => String(lov.id ?? lov.key)}
-              minTableWidth={1200}
+
             />
           ) : (
             <div className="text-center py-12">
