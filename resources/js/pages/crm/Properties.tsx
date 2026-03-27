@@ -367,11 +367,9 @@ export default function Properties({ properties, filters: initialFilters, agents
             {
                 key: 'actions',
                 header: 'Действия',
-                width: 120,
+                width: 140,
                 minWidth: 110,
                 maxWidth: 220,
-                headerClassName: 'justify-end',
-                cellClassName: 'justify-end',
                 cell: (property) => (
                     <div className="flex items-center justify-end gap-2">
                         <button

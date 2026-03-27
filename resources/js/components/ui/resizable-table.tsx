@@ -129,6 +129,21 @@ export function ResizableTable<TData>(props: ResizableTableProps<TData>) {
         return Math.round(baseWidth * columnWidthMultiplier);
     };
 
+    // Helper to check if a column is visible at current screen width
+    const isColumnVisible = (headerClassName?: string, cellClassName?: string): boolean => {
+        const className = headerClassName || cellClassName || '';
+        if (!className.includes('hidden')) return true;
+        
+        // Check responsive visibility
+        if (className.includes('hidden sm:') && screenWidth >= 640) return true;
+        if (className.includes('hidden md:') && screenWidth >= 1024) return true;
+        if (className.includes('hidden lg:') && screenWidth >= 1280) return true;
+        if (className.includes('hidden xl:') && screenWidth >= 1536) return true;
+        if (!className.includes('hidden')) return true;
+        
+        return false;
+    };
+
     const widthsSeed = React.useMemo(
         () => getInitialWidths(columns, enableRowSelection),
         // columns keys + selection flag are the stable seed
@@ -136,15 +151,18 @@ export function ResizableTable<TData>(props: ResizableTableProps<TData>) {
         [enableRowSelection, ...columns.map((c) => `${c.key}:${c.width ?? ""}`)]
     );
 
-    // Calculate actual minimum table width based on columns with responsive sizing
+    // Calculate actual minimum table width based on VISIBLE columns only
     const calculatedMinWidth = React.useMemo(() => {
         let total = 0;
         if (enableRowSelection) total += 50;
         columns.forEach(col => {
-            total += getResponsiveWidth(col.width);
+            // Only count visible columns
+            if (isColumnVisible(col.headerClassName, col.cellClassName)) {
+                total += getResponsiveWidth(col.width);
+            }
         });
         return total;
-    }, [columns, enableRowSelection, columnWidthMultiplier]);
+    }, [columns, enableRowSelection, columnWidthMultiplier, screenWidth]);
 
     const [columnWidths, setColumnWidths] = React.useState<Record<string, number>>(() => {
         const initial: Record<string, number> = {};
@@ -336,6 +354,11 @@ export function ResizableTable<TData>(props: ResizableTableProps<TData>) {
                             )}
 
                             {columns.map((col) => {
+                                // Skip rendering hidden columns
+                                if (!isColumnVisible(col.headerClassName, col.cellClassName)) {
+                                    return null;
+                                }
+
                                 const width = columnWidths[col.key] ?? col.width ?? DEFAULT_COL_WIDTH;
                                 const minWidth = col.minWidth ?? DEFAULT_MIN_COL_WIDTH;
                                 const maxWidth = col.maxWidth ?? DEFAULT_MAX_COL_WIDTH;
@@ -411,15 +434,26 @@ export function ResizableTable<TData>(props: ResizableTableProps<TData>) {
                                             )}
 
                                             {columns.map((col, index) => {
+                                                // Skip rendering hidden columns
+                                                if (!isColumnVisible(col.headerClassName, col.cellClassName)) {
+                                                    return null;
+                                                }
+
                                                 const width =
                                                     columnWidths[col.key] ?? col.width ?? DEFAULT_COL_WIDTH;
+                                                
+                                                // Get the actual column index among visible columns for border logic
+                                                const visibleColumns = columns.filter((c) => 
+                                                    isColumnVisible(c.headerClassName, c.cellClassName)
+                                                );
+                                                const visibleIndex = visibleColumns.findIndex((c) => c.key === col.key);
 
                                                 return (
                                                     <div
                                                         key={`${rowId}:${col.key}`}
                                                         className={cn(
                                                             "flex items-center min-w-0 overflow-hidden",
-                                                            index < columns.length - 1
+                                                            visibleIndex < visibleColumns.length - 1
                                                                 ? "border-r border-border"
                                                                 : null,
                                                             "px-3",
@@ -427,7 +461,7 @@ export function ResizableTable<TData>(props: ResizableTableProps<TData>) {
                                                         )}
                                                         style={{ width }}
                                                     >
-                                                        <div className="min-w-0 w-full overflow-hidden">
+                                                        <div className="min-w-0 flex-1 overflow-hidden">
                                                             {col.cell(row)}
                                                         </div>
                                                     </div>

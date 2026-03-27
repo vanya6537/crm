@@ -276,7 +276,7 @@ export default function PropertyShowings({
         {
             key: 'actions',
             header: 'Действия',
-            width: 120,
+            width: 140,
             minWidth: 110,
             maxWidth: 220,
             headerClassName: 'justify-end',

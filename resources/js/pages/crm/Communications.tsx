@@ -287,7 +287,7 @@ export default function Communications({
         {
             key: 'actions',
             header: 'Действия',
-            width: 120,
+            width: 10,
             minWidth: 110,
             maxWidth: 220,
             headerClassName: 'justify-end',

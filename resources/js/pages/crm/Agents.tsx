@@ -281,7 +281,7 @@ export default function Agents({ agents: initialAgents, filters: initialFilters,
         {
             key: 'actions',
             header: 'Действия',
-            width: 120,
+            width: 140,
             minWidth: 110,
             maxWidth: 220,
             headerClassName: 'justify-end',
